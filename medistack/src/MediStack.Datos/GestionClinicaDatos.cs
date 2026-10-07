@@ -55,6 +55,43 @@ namespace MediStack.Datos
                 ParametroGuid("@PacienteId", pacienteId));
         }
 
+        public Paciente ObtenerPacientePorAfiliado(string numeroAfiliado)
+        {
+            DataTable tabla = Consultar(@"
+        SELECT TOP 1 p.PacienteId, p.ObraSocialId, p.NumeroAfiliado
+        FROM dbo.Pacientes p
+        WHERE p.NumeroAfiliado = @NumeroAfiliado;",
+                ParametroTexto("@NumeroAfiliado", numeroAfiliado, 50));
+
+            if (tabla.Rows.Count == 0) return null;
+
+            DataRow fila = tabla.Rows[0];
+            return new Paciente
+            {
+                UsuarioId = (Guid)fila["PacienteId"],
+                ObraSocialId = fila["ObraSocialId"] == DBNull.Value ? (int?)null : (int)fila["ObraSocialId"],
+                NumeroAfiliado = fila["NumeroAfiliado"] == DBNull.Value ? null : fila["NumeroAfiliado"].ToString()
+            };
+        }
+
+        public Paciente ObtenerPacientePorDocumento(string numeroDocumento)
+        {
+            DataTable tabla = Consultar(@"
+        SELECT TOP 1 p.PacienteId, u.NumeroDocumento
+        FROM dbo.Pacientes p
+        INNER JOIN dbo.Usuarios u ON u.UsuarioId = p.PacienteId
+        WHERE u.NumeroDocumento = @NumeroDocumento;",
+                ParametroTexto("@NumeroDocumento", numeroDocumento, 20));
+
+            if (tabla.Rows.Count == 0) return null;
+
+            DataRow fila = tabla.Rows[0];
+            return new Paciente
+            {
+                UsuarioId = (Guid)fila["PacienteId"]
+            };
+        }
+
         public DataTable ObtenerHistorialPaciente(Guid pacienteId)
         {
             return Consultar(@"

@@ -89,6 +89,8 @@ namespace MediStack.Negocio
         public void GuardarPaciente(Paciente paciente, string password)
         {
             ValidarPaciente(paciente);
+            ValidarUnicidadAfiliado(paciente);                                     
+            ValidarUnicidadDocumento(paciente);
             string hash = null;
             if (paciente.UsuarioId == Guid.Empty)
             {
@@ -280,6 +282,31 @@ namespace MediStack.Negocio
             ValidarFechaNacimiento(paciente.FechaNacimiento);
         }
 
+        private void ValidarUnicidadAfiliado(Paciente paciente)
+        {
+            if (string.IsNullOrWhiteSpace(paciente.NumeroAfiliado))
+                return;
+
+            var pacienteExistente = _datos.ObtenerPacientePorAfiliado(paciente.NumeroAfiliado);
+
+            if (pacienteExistente != null && pacienteExistente.UsuarioId != paciente.UsuarioId)
+            {
+                throw new InvalidOperationException("El número de afiliado ya se encuentra registrado para otro paciente.");
+            }
+        }
+
+        private void ValidarUnicidadDocumento(Paciente paciente)
+        {
+            if (string.IsNullOrWhiteSpace(paciente.NumeroDocumento))
+                return;
+
+            var pacienteExistente = _datos.ObtenerPacientePorDocumento(paciente.NumeroDocumento);
+
+            if (pacienteExistente != null && pacienteExistente.UsuarioId != paciente.UsuarioId)
+            {
+                throw new InvalidOperationException("El número de documento ya se encuentra registrado para otro paciente.");
+            }
+        }
         private static void ValidarProfesional(Profesional profesional)
         {
             if (profesional == null)
