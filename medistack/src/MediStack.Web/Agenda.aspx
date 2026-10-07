@@ -3,12 +3,12 @@
     <section class="page-heading">
         <p class="eyebrow">Organización clínica</p>
         <h1>Agendas</h1>
-        <p>Consulta las franjas disponibles y los turnos del profesional seleccionado.</p>
+        <p>Elige un profesional y una fecha para ver sus horarios de atención, cuáles están libres u ocupados y los turnos asignados.</p>
     </section>
     <asp:Label ID="Mensaje" runat="server" Visible="false" role="status" />
 
     <section class="panel management-panel" aria-labelledby="agenda-dia-title">
-        <h2 id="agenda-dia-title" class="section-title">Agenda diaria</h2>
+        <h2 id="agenda-dia-title" class="section-title">Agenda diaria: horarios del día</h2>
         <div class="search-row agenda-filter">
             <div class="form-group agenda-professional-filter">
                 <asp:Label ID="ProfesionalLabel" runat="server" AssociatedControlID="Profesional" Text="Profesional" />
@@ -17,23 +17,24 @@
             </div>
             <div class="form-group">
                 <asp:Label ID="FechaLabel" runat="server" AssociatedControlID="Fecha" Text="Fecha" />
-                <asp:TextBox ID="Fecha" runat="server" CssClass="form-control" TextMode="Date" />
+                <asp:TextBox ID="Fecha" runat="server" CssClass="form-control" TextMode="Date"
+                    AutoPostBack="true" OnTextChanged="Actualizar_Click" />
             </div>
             <asp:Button ID="Actualizar" runat="server" Text="Consultar agenda" CssClass="button button-secondary"
-                CausesValidation="false" OnClick="Actualizar_Click" />
+                CausesValidation="false" OnClick="Actualizar_Click" formnovalidate="formnovalidate" />
         </div>
         <p class="form-note"><asp:Literal ID="ResumenAgenda" runat="server" /></p>
         <div class="table-wrap">
             <asp:GridView ID="DisponibilidadGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
-                GridLines="None" EmptyDataText="No hay franjas activas para este profesional en la fecha seleccionada.">
+                GridLines="None" EmptyDataText="El profesional no tiene horarios de atención en la fecha seleccionada.">
                 <Columns>
-                    <asp:BoundField DataField="FechaHora" HeaderText="Horario" DataFormatString="{0:HH:mm}" />
+                    <asp:BoundField DataField="FechaHora" HeaderText="Desde" DataFormatString="{0:HH:mm}" />
                     <asp:BoundField DataField="Fin" HeaderText="Hasta" DataFormatString="{0:HH:mm}" />
                     <asp:BoundField DataField="Especialidad" HeaderText="Especialidad" />
                     <asp:TemplateField HeaderText="Estado">
                         <ItemTemplate>
                             <span class='<%# Convert.ToBoolean(Eval("Disponible")) ? "status-tag status-available" : "status-tag status-occupied" %>'>
-                                <%#: Eval("Estado") %>
+                                <%#: Convert.ToBoolean(Eval("Disponible")) ? "Disponible" : "Ocupado · " + Eval("Estado") %>
                             </span>
                         </ItemTemplate>
                     </asp:TemplateField>
@@ -52,10 +53,10 @@
     </section>
 
     <section class="panel management-panel" aria-labelledby="turnos-dia-title">
-        <h2 id="turnos-dia-title" class="section-title">Turnos de la fecha</h2>
+        <h2 id="turnos-dia-title" class="section-title">Turnos asignados en la fecha</h2>
         <div class="table-wrap">
             <asp:GridView ID="TurnosGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
-                GridLines="None" EmptyDataText="No hay turnos para esta fecha.">
+                GridLines="None" EmptyDataText="No hay turnos asignados para este profesional en la fecha seleccionada.">
                 <Columns>
                     <asp:BoundField DataField="FechaHora" HeaderText="Hora" DataFormatString="{0:HH:mm}" />
                     <asp:BoundField DataField="Paciente" HeaderText="Paciente" />
@@ -79,7 +80,7 @@
             <div class="section-heading-row">
                 <h2 id="horarios-titulo" class="section-title">Franjas semanales</h2>
                 <asp:Button ID="NuevoHorario" runat="server" Text="Nueva franja" CssClass="button button-light"
-                    CausesValidation="false" OnClick="NuevoHorario_Click" />
+                    CausesValidation="false" OnClick="NuevoHorario_Click" formnovalidate="formnovalidate" />
             </div>
             <div class="table-wrap">
                 <asp:GridView ID="HorariosGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
@@ -151,7 +152,7 @@
                 <asp:Button ID="GuardarHorario" runat="server" Text="Guardar franja" CssClass="button button-primary"
                     OnClick="GuardarHorario_Click" />
                 <asp:Button ID="CancelarHorario" runat="server" Text="Cancelar" CssClass="button button-light"
-                    CausesValidation="false" OnClick="NuevoHorario_Click" />
+                    CausesValidation="false" OnClick="NuevoHorario_Click" formnovalidate="formnovalidate" />
             </div>
         </section>
     </asp:Panel>

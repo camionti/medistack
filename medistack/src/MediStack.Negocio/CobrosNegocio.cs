@@ -10,9 +10,13 @@ namespace MediStack.Negocio
         private readonly CobrosDatos _datos = new CobrosDatos();
 
         public DataTable ObtenerCobros(
-            Guid? pacienteId, Guid? profesionalId, DateTime desde, DateTime hasta)
+            Guid? pacienteId, Guid? profesionalId, DateTime? desde, DateTime? hasta)
         {
-            ValidarPeriodo(desde, hasta);
+            if (desde.HasValue && hasta.HasValue)
+            {
+                ValidarPeriodo(desde.Value, hasta.Value);
+            }
+
             return _datos.ObtenerCobros(pacienteId, profesionalId, desde, hasta);
         }
 

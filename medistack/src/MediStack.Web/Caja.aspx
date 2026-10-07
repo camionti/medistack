@@ -37,7 +37,7 @@
                 <asp:TextBox ID="Hasta" runat="server" CssClass="form-control" TextMode="Date" />
             </div>
             <asp:Button ID="Filtrar" runat="server" Text="Filtrar" CssClass="button button-secondary"
-                CausesValidation="false" OnClick="Filtrar_Click" />
+                CausesValidation="false" OnClick="Filtrar_Click" formnovalidate="formnovalidate" />
         </div>
         <div class="table-wrap">
             <asp:GridView ID="TotalesGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"

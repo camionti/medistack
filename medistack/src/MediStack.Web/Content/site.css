@@ -583,3 +583,207 @@ input:focus-visible,
         flex-direction: column;
     }
 }
+
+/* ---------- Íconos y botones de acción ---------- */
+.admin-nav-inner a,
+.logout-link,
+.data-table a,
+.dashboard-card a {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+}
+
+.admin-nav-inner a::before,
+.logout-link::before,
+.data-table a::before,
+.dashboard-card a::after {
+    content: "";
+    flex: 0 0 auto;
+    width: 1.1em;
+    height: 1.1em;
+    background: currentColor;
+    -webkit-mask: var(--ico) center / contain no-repeat;
+    mask: var(--ico) center / contain no-repeat;
+}
+
+.admin-nav-inner a {
+    transition: background .15s, color .15s;
+}
+
+.admin-nav-inner a[href*="Dashboard.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M3%209l9-7%209%207v11a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2z'/%3E%3Cpath%20d='M9%2022V12h6v10'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="Pacientes.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M17%2021v-2a4%204%200%200%200-4-4H5a4%204%200%200%200-4%204v2'/%3E%3Ccircle%20cx='9'%20cy='7'%20r='4'/%3E%3Cpath%20d='M23%2021v-2a4%204%200%200%200-3-3.87'/%3E%3Cpath%20d='M16%203.13a4%204%200%200%201%200%207.75'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="Turnos.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Crect%20x='3'%20y='4'%20width='18'%20height='18'%20rx='2'/%3E%3Cpath%20d='M16%202v4M8%202v4M3%2010h18'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="Cobros.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M12%201v22'/%3E%3Cpath%20d='M17%205H9.5a3.5%203.5%200%200%200%200%207h5a3.5%203.5%200%200%201%200%207H6'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="Caja.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Crect%20x='2'%20y='7'%20width='20'%20height='14'%20rx='2'/%3E%3Cpath%20d='M16%207V5a2%202%200%200%200-2-2h-4a2%202%200%200%200-2%202v2M2%2013h20'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="Agenda.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Ccircle%20cx='12'%20cy='12'%20r='10'/%3E%3Cpath%20d='M12%206v6l4%202'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="Profesionales.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M20%2021v-2a4%204%200%200%200-4-4H8a4%204%200%200%200-4%204v2'/%3E%3Ccircle%20cx='12'%20cy='7'%20r='4'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="Especialidades.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M20.84%204.61a5.5%205.5%200%200%200-7.78%200L12%205.67l-1.06-1.06a5.5%205.5%200%200%200-7.78%207.78l1.06%201.06L12%2021.23l7.78-7.78%201.06-1.06a5.5%205.5%200%200%200%200-7.78z'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="ObrasSociales.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M12%2022s8-4%208-10V5l-8-3-8%203v7c0%206%208%2010%208%2010z'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="Coberturas.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M12%2022s8-4%208-10V5l-8-3-8%203v7c0%206%208%2010%208%2010z'/%3E%3Cpath%20d='M9%2012l2%202%204-4'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="Convenios.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M14%202H6a2%202%200%200%200-2%202v16a2%202%200%200%200%202%202h12a2%202%200%200%200%202-2V8z'/%3E%3Cpath%20d='M14%202v6h6M16%2013H8M16%2017H8'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="FichaPaciente.aspx"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M16%204h2a2%202%200%200%201%202%202v14a2%202%200%200%201-2%202H6a2%202%200%200%201-2-2V6a2%202%200%200%201%202-2h2'/%3E%3Crect%20x='8'%20y='2'%20width='8'%20height='4'%20rx='1'/%3E%3C/svg%3E");
+}
+
+.admin-nav-inner a[href*="#solicitar-turno-title"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Crect%20x='3'%20y='4'%20width='18'%20height='18'%20rx='2'/%3E%3Cpath%20d='M16%202v4M8%202v4M3%2010h18M12%2014v4M10%2016h4'/%3E%3C/svg%3E");
+}
+
+.logout-link {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M9%2021H5a2%202%200%200%201-2-2V5a2%202%200%200%201%202-2h4'/%3E%3Cpath%20d='M16%2017l5-5-5-5M21%2012H9'/%3E%3C/svg%3E");
+}
+
+.logout-link {
+    padding: .35rem .8rem;
+    color: var(--color-primary-dark);
+    background: #eef1ff;
+    border-radius: 999px;
+    font-size: .88rem;
+    text-decoration: none;
+}
+
+.logout-link:hover {
+    color: var(--color-white);
+    background: var(--color-primary);
+}
+
+/* Acciones dentro de tablas: antes eran texto subrayado */
+.row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.data-table a {
+    --btn-fg: var(--color-primary-dark);
+    --btn-bg: #eef1ff;
+    padding: .28rem .7rem;
+    color: var(--btn-fg);
+    background: var(--btn-bg);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s, color .15s, box-shadow .15s;
+}
+
+.data-table a:hover,
+.row-actions a:hover {
+    color: var(--color-white);
+    background: var(--btn-fg);
+    text-decoration: none;
+    box-shadow: 0 2px 6px rgba(30, 41, 59, .18);
+}
+
+.data-table a[id*="CambiarEstado"] { --btn-fg: #824900; --btn-bg: #fff4df; }
+.data-table a[id*="CancelarTurno"],
+.data-table a[id*="Eliminar"],
+.data-table a[id*="MarcarAusente"] { --btn-fg: var(--color-error); --btn-bg: #fff1f1; }
+.data-table a[id*="Confirmar"],
+.data-table a[id*="MarcarAtendido"],
+.data-table a[id*="Solicitar"] { --btn-fg: #1a5c32; --btn-bg: #eef8f0; }
+
+.data-table a[id*="Editar"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M12%2020h9'/%3E%3Cpath%20d='M16.5%203.5a2.1%202.1%200%200%201%203%203L7%2019l-4%201%201-4z'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="CambiarEstado"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M18.36%206.64a9%209%200%201%201-12.73%200'/%3E%3Cpath%20d='M12%202v10'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="CancelarTurno"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Ccircle%20cx='12'%20cy='12'%20r='10'/%3E%3Cpath%20d='M15%209l-6%206M9%209l6%206'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="Eliminar"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M3%206h18'/%3E%3Cpath%20d='M19%206l-1%2014a2%202%200%200%201-2%202H8a2%202%200%200%201-2-2L5%206'/%3E%3Cpath%20d='M10%2011v6M14%2011v6'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="MarcarAusente"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Ccircle%20cx='12'%20cy='12'%20r='10'/%3E%3Cpath%20d='M15%209l-6%206M9%209l6%206'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="Confirmar"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M20%206L9%2017l-5-5'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="MarcarAtendido"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M20%206L9%2017l-5-5'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="Reprogramar"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M23%204v6h-6'/%3E%3Cpath%20d='M20.49%2015a9%209%200%201%201-2.12-9.36L23%2010'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="Solicitar"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Ccircle%20cx='12'%20cy='12'%20r='10'/%3E%3Cpath%20d='M12%208v8M8%2012h8'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="FichaPaciente"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M1%2012s4-8%2011-8%2011%208%2011%208-4%208-11%208-11-8-11-8z'/%3E%3Ccircle%20cx='12'%20cy='12'%20r='3'/%3E%3C/svg%3E");
+}
+
+.data-table a[id*="VerFicha"] {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M1%2012s4-8%2011-8%2011%208%2011%208-4%208-11%208-11-8-11-8z'/%3E%3Ccircle%20cx='12'%20cy='12'%20r='3'/%3E%3C/svg%3E");
+}
+
+/* Enlaces de las tarjetas del inicio */
+.dashboard-card a {
+    margin: .25rem .3rem .25rem 0;
+    padding: .45rem .9rem;
+    color: var(--color-primary-dark);
+    background: #eef1ff;
+    border-radius: 999px;
+    font-size: .88rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .15s, color .15s, transform .15s;
+}
+
+.dashboard-card a:hover {
+    color: var(--color-white);
+    background: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.dashboard-card a {
+    --ico: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2012h14M12%205l7%207-7%207'/%3E%3C/svg%3E");
+}
+

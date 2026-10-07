@@ -32,6 +32,68 @@ namespace MediStack.Negocio
             return _datos.ObtenerEspecialidadesProfesional(profesionalId);
         }
 
+        public DataTable ObtenerEspecialidadesActivas()
+        {
+            return _datos.ObtenerEspecialidadesActivas();
+        }
+
+        public DataTable ObtenerProfesionalesPorEspecialidad(int especialidadId)
+        {
+            if (especialidadId <= 0)
+            {
+                return new DataTable();
+            }
+
+            return _datos.ObtenerProfesionalesPorEspecialidad(especialidadId);
+        }
+
+        // Días de la semana (1 = lunes ... 7 = domingo) en los que el profesional atiende la especialidad.
+        public IList<int> ObtenerDiasAtencion(Guid profesionalId, int especialidadId)
+        {
+            List<int> dias = new List<int>();
+            if (profesionalId == Guid.Empty || especialidadId <= 0)
+            {
+                return dias;
+            }
+
+            foreach (DataRow fila in _datos.ObtenerDiasAtencion(profesionalId, especialidadId).Rows)
+            {
+                dias.Add(Convert.ToInt32(fila["DiaSemana"]));
+            }
+
+            return dias;
+        }
+
+        // Primera fecha, desde "desde" y dentro de los próximos 60 días, con al menos un horario libre.
+        public DateTime? BuscarProximaFechaDisponible(
+            Guid profesionalId, int especialidadId, DateTime desde, int? turnoExcluido = null)
+        {
+            IList<int> dias = ObtenerDiasAtencion(profesionalId, especialidadId);
+            if (dias.Count == 0)
+            {
+                return null;
+            }
+
+            DateTime inicio = desde.Date < DateTime.Today ? DateTime.Today : desde.Date;
+            for (int i = 0; i < 60; i++)
+            {
+                DateTime fecha = inicio.AddDays(i);
+                int dia = ((int)fecha.DayOfWeek + 6) % 7 + 1;
+                if (!dias.Contains(dia))
+                {
+                    continue;
+                }
+
+                if (ObtenerDisponibilidad(profesionalId, especialidadId, fecha, turnoExcluido)
+                    .Any(franja => franja.Disponible))
+                {
+                    return fecha;
+                }
+            }
+
+            return null;
+        }
+
         public IList<TurnoDisponible> ObtenerDisponibilidad(
             Guid profesionalId, int especialidadId, DateTime fecha, int? turnoExcluido = null)
         {
@@ -104,16 +166,11 @@ namespace MediStack.Negocio
             return franjas;
         }
 
-        public DataTable ObtenerTurnos(Guid? pacienteId, Guid? profesionalId, DateTime desde, DateTime hasta)
+        public DataTable ObtenerTurnos(Guid? pacienteId, Guid? profesionalId, DateTime? desde, DateTime? hasta)
         {
-            if (desde.Date > hasta.Date)
+            if (desde.HasValue && hasta.HasValue && desde.Value.Date > hasta.Value.Date)
             {
                 throw new InvalidOperationException("La fecha inicial no puede ser posterior a la fecha final.");
-            }
-
-            if (hasta.Date > DateTime.Today.AddYears(5))
-            {
-                throw new InvalidOperationException("El rango de fechas no puede superar cinco años.");
             }
 
             return _datos.ObtenerTurnos(pacienteId, profesionalId, desde, hasta);

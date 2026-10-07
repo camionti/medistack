@@ -51,6 +51,7 @@
             <nav class="admin-nav-inner" aria-label="Mi cuenta de paciente">
                 <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Inicio</a>
                 <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Mis turnos</a>
+                <a href="<%: ResolveUrl("~/Turnos.aspx") %>#solicitar-turno-title">Solicitar turno</a>
                 <a href="<%: ResolveUrl("~/FichaPaciente.aspx") %>">Mi ficha</a>
                 <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Mis cobros</a>
             </nav>

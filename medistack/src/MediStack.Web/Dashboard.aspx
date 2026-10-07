@@ -54,25 +54,25 @@
                     <span class="card-number" aria-hidden="true">01</span>
                     <h3>Gestión clínica</h3>
                     <p>Pacientes, profesionales, especialidades y agendas.</p>
-                    <a href="<%: ResolveUrl("~/Pacientes.aspx") %>">Pacientes</a> ·
-                    <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Turnos</a> ·
-                    <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Agendas</a> ·
-                    <a href="<%: ResolveUrl("~/Profesionales.aspx") %>">Profesionales</a> ·
+                    <a href="<%: ResolveUrl("~/Pacientes.aspx") %>">Pacientes</a>
+                    <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Turnos</a>
+                    <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Agendas</a>
+                    <a href="<%: ResolveUrl("~/Profesionales.aspx") %>">Profesionales</a>
                     <a href="<%: ResolveUrl("~/Especialidades.aspx") %>">Especialidades</a>
                 </article>
                 <article class="panel dashboard-card">
                     <span class="card-number" aria-hidden="true">02</span>
                     <h3>Caja y cobros</h3>
                     <p>Registra pagos, consulta ingresos y controla los cierres diarios.</p>
-                    <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Administrar cobros</a> ·
+                    <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Administrar cobros</a>
                     <a href="<%: ResolveUrl("~/Caja.aspx") %>">Consultar y cerrar caja</a>
                 </article>
                 <article class="panel dashboard-card">
                     <span class="card-number" aria-hidden="true">03</span>
                     <h3>Obras sociales y reportes</h3>
                     <p>Convenios, coberturas y estadísticas de la clínica.</p>
-                    <a href="<%: ResolveUrl("~/ObrasSociales.aspx") %>">Obras sociales</a> ·
-                    <a href="<%: ResolveUrl("~/Coberturas.aspx") %>">Coberturas</a> ·
+                    <a href="<%: ResolveUrl("~/ObrasSociales.aspx") %>">Obras sociales</a>
+                    <a href="<%: ResolveUrl("~/Coberturas.aspx") %>">Coberturas</a>
                     <a href="<%: ResolveUrl("~/Convenios.aspx") %>">Convenios</a>
                 </article>
             </div>

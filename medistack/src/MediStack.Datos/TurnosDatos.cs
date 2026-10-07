@@ -41,6 +41,40 @@ namespace MediStack.Datos
                 ORDER BY u.Apellido, u.Nombre;");
         }
 
+        public DataTable ObtenerEspecialidadesActivas()
+        {
+            return Consultar(@"
+                SELECT e.EspecialidadId, e.Nombre, e.DuracionEstandarMinutos
+                FROM dbo.Especialidades e
+                WHERE e.Activa = 1
+                ORDER BY e.Nombre;");
+        }
+
+        public DataTable ObtenerProfesionalesPorEspecialidad(int especialidadId)
+        {
+            return Consultar(@"
+                SELECT p.ProfesionalId, u.Nombre + N' ' + u.Apellido AS Nombre
+                FROM dbo.ProfesionalesEspecialidades pe
+                INNER JOIN dbo.Profesionales p ON p.ProfesionalId = pe.ProfesionalId
+                INNER JOIN dbo.Usuarios u ON u.UsuarioId = p.ProfesionalId
+                WHERE pe.EspecialidadId = @EspecialidadId
+                  AND pe.Activa = 1 AND p.Activo = 1 AND u.Activo = 1
+                ORDER BY u.Apellido, u.Nombre;",
+                ParametroInt32("@EspecialidadId", especialidadId));
+        }
+
+        public DataTable ObtenerDiasAtencion(Guid profesionalId, int especialidadId)
+        {
+            return Consultar(@"
+                SELECT DISTINCT h.DiaSemana
+                FROM dbo.HorariosAtencion h
+                WHERE h.ProfesionalId = @ProfesionalId AND h.EspecialidadId = @EspecialidadId
+                  AND h.Activo = 1
+                ORDER BY h.DiaSemana;",
+                ParametroGuid("@ProfesionalId", profesionalId),
+                ParametroInt32("@EspecialidadId", especialidadId));
+        }
+
         public DataTable ObtenerEspecialidadesProfesional(Guid profesionalId)
         {
             return Consultar(@"
@@ -99,7 +133,7 @@ namespace MediStack.Datos
                 });
         }
 
-        public DataTable ObtenerTurnos(Guid? pacienteId, Guid? profesionalId, DateTime desde, DateTime hasta)
+        public DataTable ObtenerTurnos(Guid? pacienteId, Guid? profesionalId, DateTime? desde, DateTime? hasta)
         {
             return Consultar(@"
                 SELECT t.TurnoId, t.PacienteId, t.ProfesionalId, t.EspecialidadId,
@@ -115,13 +149,13 @@ namespace MediStack.Datos
                 INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
                 WHERE (@PacienteId IS NULL OR t.PacienteId = @PacienteId)
                   AND (@ProfesionalId IS NULL OR t.ProfesionalId = @ProfesionalId)
-                  AND t.FechaHora >= @Desde
-                  AND t.FechaHora < DATEADD(day, 1, @Hasta)
+                  AND (@Desde IS NULL OR t.FechaHora >= @Desde)
+                  AND (@Hasta IS NULL OR t.FechaHora < DATEADD(day, 1, @Hasta))
                 ORDER BY t.FechaHora DESC, t.TurnoId DESC;",
                 ParametroGuidNullable("@PacienteId", pacienteId),
                 ParametroGuidNullable("@ProfesionalId", profesionalId),
-                new SqlParameter("@Desde", SqlDbType.Date) { Value = desde.Date },
-                new SqlParameter("@Hasta", SqlDbType.Date) { Value = hasta.Date });
+                new SqlParameter("@Desde", SqlDbType.Date) { Value = desde.HasValue ? (object)desde.Value.Date : DBNull.Value },
+                new SqlParameter("@Hasta", SqlDbType.Date) { Value = hasta.HasValue ? (object)hasta.Value.Date : DBNull.Value });
         }
 
         public TurnoDetalle ObtenerTurno(int turnoId)

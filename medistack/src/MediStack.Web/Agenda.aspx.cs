@@ -1,7 +1,9 @@
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Web;
 using System.Web.UI.WebControls;
 using MediStack.Dominio;
@@ -271,15 +273,62 @@ namespace MediStack.Web
                 return;
             }
 
-            DisponibilidadGrid.DataSource = _negocio.ObtenerDisponibilidad(profesionalId, fecha);
+            IList<FranjaAgenda> franjas = _negocio.ObtenerDisponibilidad(profesionalId, fecha);
+            DataTable turnos = _negocio.ObtenerTurnos(profesionalId, fecha);
+            DataTable semanal = _negocio.ObtenerHorarios(profesionalId);
+            DisponibilidadGrid.DataSource = franjas;
             DisponibilidadGrid.DataBind();
-            TurnosGrid.DataSource = _negocio.ObtenerTurnos(profesionalId, fecha);
+            TurnosGrid.DataSource = turnos;
             TurnosGrid.DataBind();
-            HorariosGrid.DataSource = _negocio.ObtenerHorarios(profesionalId);
+            HorariosGrid.DataSource = semanal;
             HorariosGrid.DataBind();
             ResumenAgenda.Text = HttpUtility.HtmlEncode(
-                "Franja horaria semanal para " + Profesional.SelectedItem.Text + " · " +
-                fecha.ToString("dddd dd/MM/yyyy", CultureInfo.GetCultureInfo("es-AR")) + ".");
+                ArmarResumen(Profesional.SelectedItem.Text, fecha, franjas, turnos, semanal));
+        }
+
+        private static string ArmarResumen(
+            string profesional, DateTime fecha, IList<FranjaAgenda> franjas, DataTable turnos, DataTable semanal)
+        {
+            CultureInfo es = CultureInfo.GetCultureInfo("es-AR");
+            string dia = fecha.ToString("dddd dd/MM/yyyy", es);
+            int turnosVigentes = turnos.Rows.Cast<DataRow>()
+                .Count(f => Convert.ToString(f["Estado"]) != "Cancelado");
+            string turnosTexto = turnos.Rows.Count + (turnos.Rows.Count == 1 ? " turno asignado" : " turnos asignados")
+                + (turnos.Rows.Count != turnosVigentes ? " (" + (turnos.Rows.Count - turnosVigentes) + " cancelado/s)" : string.Empty);
+
+            if (franjas.Count > 0)
+            {
+                int libres = franjas.Count(f => f.Disponible);
+                string especialidades = string.Join(", ", franjas.Select(f => f.Especialidad).Distinct());
+                return "Profesional: " + profesional + " · Especialidad: " + especialidades + " · Día: " + dia
+                    + " · " + franjas.Count + " horarios: " + libres + " disponibles y " + (franjas.Count - libres)
+                    + " ocupados · " + turnosTexto + ".";
+            }
+
+            // Sin horarios ese día: explicar cuándo atiende realmente.
+            string[] nombres = { string.Empty, "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo" };
+            var activos = semanal.Rows.Cast<DataRow>().Where(f => Convert.ToBoolean(f["Activo"])).ToList();
+            string texto = profesional + " no tiene horarios de atención el " + dia + " · " + turnosTexto + ".";
+            if (activos.Count == 0)
+            {
+                return texto + " No tiene franjas semanales activas.";
+            }
+
+            string atencion = string.Join("; ", activos.Select(f =>
+                nombres[Convert.ToInt32(f["DiaSemana"])] + " " + Convert.ToString(f["Especialidad"]) + " "
+                + ((TimeSpan)f["HoraInicio"]).ToString(@"hh\:mm") + "-" + ((TimeSpan)f["HoraFin"]).ToString(@"hh\:mm")));
+            DateTime proxima = fecha.Date;
+            for (int i = 1; i <= 14; i++)
+            {
+                proxima = fecha.Date.AddDays(i);
+                int d = ((int)proxima.DayOfWeek + 6) % 7 + 1;
+                if (activos.Any(f => Convert.ToInt32(f["DiaSemana"]) == d))
+                {
+                    break;
+                }
+            }
+
+            return texto + " Atiende: " + atencion + ". Próximo día de atención: " + proxima.ToString("dddd dd/MM/yyyy", es) + ".";
         }
 
         private void EditarHorario(int indice, DataKey datos, int horarioId, Guid profesionalId)

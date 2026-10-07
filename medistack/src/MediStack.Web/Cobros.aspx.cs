@@ -31,8 +31,6 @@ namespace MediStack.Web
 
             if (!IsPostBack)
             {
-                Desde.Text = DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                Hasta.Text = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                 if (esAdministrativo)
                 {
                     CargarTurnosCobrables();
@@ -46,6 +44,13 @@ namespace MediStack.Web
         protected void Filtrar_Click(object sender, EventArgs e)
         {
             EjecutarConManejoDeErrores("No se pudieron filtrar los cobros", CargarCobros);
+        }
+
+        protected void LimpiarFiltro_Click(object sender, EventArgs e)
+        {
+            Desde.Text = string.Empty;
+            Hasta.Text = string.Empty;
+            EjecutarConManejoDeErrores("No se pudieron cargar los cobros", CargarCobros);
         }
 
         protected void Turno_SelectedIndexChanged(object sender, EventArgs e)
@@ -99,14 +104,12 @@ namespace MediStack.Web
 
         private void CargarCobros()
         {
-            DateTime desde;
-            DateTime hasta;
-            if (!DateTime.TryParseExact(Desde.Text, "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                    DateTimeStyles.None, out desde)
-                || !DateTime.TryParseExact(Hasta.Text, "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                    DateTimeStyles.None, out hasta))
+            DateTime? desde;
+            DateTime? hasta;
+            string errorFiltro;
+            if (!TryLeerFiltroFechas(Desde, Hasta, out desde, out hasta, out errorFiltro))
             {
-                MostrarError("Selecciona un período de fechas válido.");
+                MostrarError(errorFiltro);
                 return;
             }
 
@@ -114,6 +117,13 @@ namespace MediStack.Web
             Guid? profesionalId = TieneRol("PROFESIONAL") ? (Guid?)ObtenerUsuarioActual() : null;
             CobrosGrid.DataSource = _negocio.ObtenerCobros(pacienteId, profesionalId, desde, hasta);
             CobrosGrid.DataBind();
+            string periodo = !desde.HasValue && !hasta.HasValue ? "sin filtro de fecha"
+                : desde.HasValue && hasta.HasValue && desde.Value == hasta.Value
+                    ? "el " + desde.Value.ToString("dd/MM/yyyy")
+                : (desde.HasValue ? "desde el " + desde.Value.ToString("dd/MM/yyyy") + " " : string.Empty)
+                    + (hasta.HasValue ? "hasta el " + hasta.Value.ToString("dd/MM/yyyy") : string.Empty);
+            ResumenFiltro.Text = HttpUtility.HtmlEncode(
+                CobrosGrid.Rows.Count + (CobrosGrid.Rows.Count == 1 ? " cobro" : " cobros") + " (" + periodo.Trim() + ").");
         }
 
         private void CargarTurnosCobrables()

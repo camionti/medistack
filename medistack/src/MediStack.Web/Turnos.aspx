@@ -16,7 +16,7 @@
                 </div>
                 <asp:Button ID="CancelarReprogramacion" runat="server" Text="Salir de la reprogramación"
                     CssClass="button button-light" CausesValidation="false" Visible="false"
-                    OnClick="CancelarReprogramacion_Click" />
+                    OnClick="CancelarReprogramacion_Click" formnovalidate="formnovalidate" />
             </div>
             <div class="form-grid">
                 <asp:Panel ID="PacienteSelectorPanel" runat="server" CssClass="form-group" Visible="false">
@@ -24,17 +24,17 @@
                     <asp:DropDownList ID="Paciente" runat="server" CssClass="form-control" />
                 </asp:Panel>
                 <div class="form-group">
-                    <asp:Label ID="ProfesionalLabel" runat="server" AssociatedControlID="Profesional" Text="Profesional" />
-                    <asp:DropDownList ID="Profesional" runat="server" CssClass="form-control"
-                        AutoPostBack="true" OnSelectedIndexChanged="Profesional_SelectedIndexChanged" />
-                </div>
-                <div class="form-group">
-                    <asp:Label ID="EspecialidadLabel" runat="server" AssociatedControlID="Especialidad" Text="Especialidad" />
+                    <asp:Label ID="EspecialidadLabel" runat="server" AssociatedControlID="Especialidad" Text="1. Especialidad" />
                     <asp:DropDownList ID="Especialidad" runat="server" CssClass="form-control"
                         AutoPostBack="true" OnSelectedIndexChanged="Especialidad_SelectedIndexChanged" />
                 </div>
                 <div class="form-group">
-                    <asp:Label ID="FechaDisponibilidadLabel" runat="server" AssociatedControlID="FechaDisponibilidad" Text="Fecha del turno" />
+                    <asp:Label ID="ProfesionalLabel" runat="server" AssociatedControlID="Profesional" Text="2. Profesional" />
+                    <asp:DropDownList ID="Profesional" runat="server" CssClass="form-control"
+                        AutoPostBack="true" OnSelectedIndexChanged="Profesional_SelectedIndexChanged" />
+                </div>
+                <div class="form-group">
+                    <asp:Label ID="FechaDisponibilidadLabel" runat="server" AssociatedControlID="FechaDisponibilidad" Text="3. Fecha del turno" />
                     <asp:TextBox ID="FechaDisponibilidad" runat="server" CssClass="form-control" TextMode="Date" />
                 </div>
                 <div class="form-group form-group-full">
@@ -44,13 +44,13 @@
             </div>
             <p class="form-note"><asp:Literal ID="DuracionEspecialidad" runat="server" /></p>
             <div class="form-actions">
-                <asp:Button ID="ConsultarDisponibilidad" runat="server" Text="Consultar disponibilidad"
-                    CssClass="button button-secondary" CausesValidation="false" OnClick="ConsultarDisponibilidad_Click" />
+                <asp:Button ID="ConsultarDisponibilidad" runat="server" Text="Ver horarios disponibles"
+                    CssClass="button button-secondary" CausesValidation="false" OnClick="ConsultarDisponibilidad_Click" formnovalidate="formnovalidate" />
             </div>
             <div class="table-wrap">
                 <asp:GridView ID="DisponibilidadGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
                     GridLines="None" DataKeyNames="ProfesionalId,EspecialidadId,FechaHora,Disponible,DuracionMinutos"
-                    EmptyDataText="No hay horarios disponibles para la selección. Prueba otra fecha."
+                    EmptyDataText="Seleccioná especialidad, profesional y fecha para ver los horarios."
                     OnRowCommand="DisponibilidadGrid_RowCommand">
                     <Columns>
                         <asp:BoundField DataField="FechaHora" HeaderText="Desde" DataFormatString="{0:HH:mm}" />
@@ -95,8 +95,11 @@
                 <asp:TextBox ID="Hasta" runat="server" CssClass="form-control" TextMode="Date" />
             </div>
             <asp:Button ID="Filtrar" runat="server" Text="Filtrar" CssClass="button button-secondary"
-                CausesValidation="false" OnClick="Filtrar_Click" />
+                CausesValidation="false" OnClick="Filtrar_Click" formnovalidate="formnovalidate" />
+            <asp:Button ID="LimpiarFiltro" runat="server" Text="Limpiar filtro" CssClass="button button-light"
+                CausesValidation="false" OnClick="LimpiarFiltro_Click" formnovalidate="formnovalidate" />
         </div>
+        <p class="form-note">Elige una fecha en "Desde" para ver solo ese día, o completa "Desde" y "Hasta" para un rango. Sin fechas se muestran todos los turnos. <strong><asp:Literal ID="ResumenFiltro" runat="server" /></strong></p>
         <div class="table-wrap">
             <asp:GridView ID="TurnosGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
                 GridLines="None" DataKeyNames="TurnoId,PacienteId,ProfesionalId,EspecialidadId,FechaHora,Estado"

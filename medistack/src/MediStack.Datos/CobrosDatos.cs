@@ -21,7 +21,7 @@ namespace MediStack.Datos
         }
 
         public DataTable ObtenerCobros(
-            Guid? pacienteId, Guid? profesionalId, DateTime desde, DateTime hasta)
+            Guid? pacienteId, Guid? profesionalId, DateTime? desde, DateTime? hasta)
         {
             return Consultar(@"
                 SELECT c.CobroId, c.TurnoId, c.TipoCobro, c.MontoBase, c.MontoObraSocial,
@@ -38,13 +38,13 @@ namespace MediStack.Datos
                 INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
                 WHERE (@PacienteId IS NULL OR t.PacienteId = @PacienteId)
                   AND (@ProfesionalId IS NULL OR t.ProfesionalId = @ProfesionalId)
-                  AND c.FechaHoraCobro >= @Desde
-                  AND c.FechaHoraCobro < DATEADD(day, 1, @Hasta)
+                  AND (@Desde IS NULL OR c.FechaHoraCobro >= @Desde)
+                  AND (@Hasta IS NULL OR c.FechaHoraCobro < DATEADD(day, 1, @Hasta))
                 ORDER BY c.FechaHoraCobro DESC, c.CobroId DESC;",
                 ParametroGuidNullable("@PacienteId", pacienteId),
                 ParametroGuidNullable("@ProfesionalId", profesionalId),
-                new SqlParameter("@Desde", SqlDbType.Date) { Value = desde.Date },
-                new SqlParameter("@Hasta", SqlDbType.Date) { Value = hasta.Date });
+                new SqlParameter("@Desde", SqlDbType.Date) { Value = desde.HasValue ? (object)desde.Value.Date : DBNull.Value },
+                new SqlParameter("@Hasta", SqlDbType.Date) { Value = hasta.HasValue ? (object)hasta.Value.Date : DBNull.Value });
         }
 
         public DataTable ObtenerTurnosCobrables(Guid? pacienteId, Guid? profesionalId)

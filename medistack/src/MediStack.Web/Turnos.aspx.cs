@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
@@ -55,8 +55,6 @@ namespace MediStack.Web
                 EjecutarConManejoDeErrores("No se pudieron cargar los turnos", () =>
                 {
                     CargarOpcionesIniciales();
-                    Desde.Text = DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                    Hasta.Text = DateTime.Today.AddDays(365).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     FechaDisponibilidad.Text = DateTime.Today.AddDays(1)
                         .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     CargarTurnos();
@@ -64,20 +62,39 @@ namespace MediStack.Web
             }
         }
 
-        protected void Profesional_SelectedIndexChanged(object sender, EventArgs e)
+        protected void Especialidad_SelectedIndexChanged(object sender, EventArgs e)
         {
-            EjecutarConManejoDeErrores("No se pudieron cargar las especialidades", () =>
+            EjecutarConManejoDeErrores("No se pudieron cargar los profesionales", () =>
             {
-                CargarEspecialidades();
+                LimpiarMensaje();
+                CargarProfesionales();
+                MostrarDuracionSeleccionada();
                 LimpiarDisponibilidad();
+                if (Profesional.Items.Count == 2)
+                {
+                    Profesional.SelectedIndex = 1;
+                    ProponerProximaFecha();
+                    CargarDisponibilidad();
+                }
+                else if (Profesional.Items.Count == 1 && Especialidad.SelectedValue.Length > 0)
+                {
+                    MostrarError("No hay profesionales activos que atiendan esta especialidad.");
+                }
             });
         }
 
-        protected void Especialidad_SelectedIndexChanged(object sender, EventArgs e)
+        protected void Profesional_SelectedIndexChanged(object sender, EventArgs e)
         {
-            LimpiarMensaje();
-            MostrarDuracionSeleccionada();
-            LimpiarDisponibilidad();
+            EjecutarConManejoDeErrores("No se pudo consultar la disponibilidad", () =>
+            {
+                LimpiarMensaje();
+                LimpiarDisponibilidad();
+                if (Profesional.SelectedValue.Length > 0)
+                {
+                    ProponerProximaFecha();
+                    CargarDisponibilidad();
+                }
+            });
         }
 
         protected void ConsultarDisponibilidad_Click(object sender, EventArgs e)
@@ -88,6 +105,13 @@ namespace MediStack.Web
         protected void Filtrar_Click(object sender, EventArgs e)
         {
             EjecutarConManejoDeErrores("No se pudieron filtrar los turnos", CargarTurnos);
+        }
+
+        protected void LimpiarFiltro_Click(object sender, EventArgs e)
+        {
+            Desde.Text = string.Empty;
+            Hasta.Text = string.Empty;
+            EjecutarConManejoDeErrores("No se pudieron cargar los turnos", CargarTurnos);
         }
 
         protected void DisponibilidadGrid_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -152,7 +176,11 @@ namespace MediStack.Web
                 else
                 {
                     _negocio.SolicitarTurno(solicitud);
-                    MostrarExito("La solicitud de turno se registro correctamente.");
+                    CargarDisponibilidad();
+                    MostrarExito("La solicitud de turno se registro correctamente. El horario reservado ya no figura como disponible.");
+                    Motivo.Text = string.Empty;
+                    CargarTurnos();
+                    return;
                 }
 
                 LimpiarDisponibilidad();
@@ -298,36 +326,38 @@ namespace MediStack.Web
                 Paciente.Items.Insert(0, new ListItem("Selecciona un paciente", string.Empty));
             }
 
-            Profesional.DataSource = _negocio.ObtenerProfesionalesActivos();
-            Profesional.DataTextField = "Nombre";
-            Profesional.DataValueField = "ProfesionalId";
-            Profesional.DataBind();
-            Profesional.Items.Insert(0, new ListItem("Selecciona un profesional", string.Empty));
-            if (Profesional.Items.Count > 1)
-            {
-                Profesional.SelectedIndex = 1;
-            }
-
             CargarEspecialidades();
+            CargarProfesionales();
         }
 
+        // Todas las especialidades activas del sistema (no depende del profesional).
         private void CargarEspecialidades()
         {
-            Guid profesionalId;
-            Especialidad.Items.Clear();
-            if (!Guid.TryParse(Profesional.SelectedValue, out profesionalId))
-            {
-                Especialidad.Items.Insert(0, new ListItem("Selecciona una especialidad", string.Empty));
-                DuracionEspecialidad.Text = string.Empty;
-                return;
-            }
-
-            Especialidad.DataSource = _negocio.ObtenerEspecialidades(profesionalId);
+            Especialidad.DataSource = _negocio.ObtenerEspecialidadesActivas();
             Especialidad.DataTextField = "Nombre";
             Especialidad.DataValueField = "EspecialidadId";
             Especialidad.DataBind();
             Especialidad.Items.Insert(0, new ListItem("Selecciona una especialidad", string.Empty));
-            MostrarDuracionSeleccionada();
+            DuracionEspecialidad.Text = string.Empty;
+        }
+
+        // Profesionales activos que atienden la especialidad elegida.
+        private void CargarProfesionales()
+        {
+            int especialidadId;
+            Profesional.Items.Clear();
+            if (int.TryParse(Especialidad.SelectedValue, out especialidadId))
+            {
+                Profesional.DataSource = _negocio.ObtenerProfesionalesPorEspecialidad(especialidadId);
+                Profesional.DataTextField = "Nombre";
+                Profesional.DataValueField = "ProfesionalId";
+                Profesional.DataBind();
+            }
+
+            Profesional.Items.Insert(0, new ListItem(
+                Especialidad.SelectedValue.Length == 0
+                    ? "Primero selecciona una especialidad" : "Selecciona un profesional",
+                string.Empty));
         }
 
         private void MostrarDuracionSeleccionada()
@@ -339,9 +369,7 @@ namespace MediStack.Web
                 return;
             }
 
-            DataTable especialidades = _negocio.ObtenerEspecialidades(
-                Guid.Parse(Profesional.SelectedValue));
-            foreach (DataRow fila in especialidades.Rows)
+            foreach (DataRow fila in _negocio.ObtenerEspecialidadesActivas().Rows)
             {
                 if (Convert.ToInt32(fila["EspecialidadId"]) == especialidadId)
                 {
@@ -354,6 +382,54 @@ namespace MediStack.Web
             DuracionEspecialidad.Text = string.Empty;
         }
 
+        // Ubica la fecha en el primer día con horarios libres para el profesional y la especialidad.
+        private void ProponerProximaFecha()
+        {
+            Guid profesionalId;
+            int especialidadId;
+            if (!Guid.TryParse(Profesional.SelectedValue, out profesionalId)
+                || !int.TryParse(Especialidad.SelectedValue, out especialidadId))
+            {
+                return;
+            }
+
+            DateTime? proxima = _negocio.BuscarProximaFechaDisponible(
+                profesionalId, especialidadId, DateTime.Today, TurnoExcluido());
+            if (proxima.HasValue)
+            {
+                FechaDisponibilidad.Text = proxima.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            }
+        }
+
+        private int? TurnoExcluido()
+        {
+            return ViewState["TurnoAReprogramar"] == null
+                ? (int?)null : Convert.ToInt32(ViewState["TurnoAReprogramar"]);
+        }
+
+        private string ExplicarSinHorarios(Guid profesionalId, int especialidadId, DateTime fecha)
+        {
+            CultureInfo es = CultureInfo.GetCultureInfo("es-AR");
+            System.Collections.Generic.IList<int> dias = _negocio.ObtenerDiasAtencion(profesionalId, especialidadId);
+            if (dias.Count == 0)
+            {
+                return "El profesional no tiene una agenda semanal activa para esta especialidad.";
+            }
+
+            string[] nombres = { string.Empty, "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo" };
+            string atiende = string.Join(", ", System.Linq.Enumerable.Select(dias, d => nombres[d]));
+            int diaSeleccionado = ((int)fecha.DayOfWeek + 6) % 7 + 1;
+            string texto = dias.Contains(diaSeleccionado)
+                ? "No quedan horarios libres el " + fecha.ToString("dddd dd/MM/yyyy", es) + "."
+                : "El profesional no atiende los días " + nombres[diaSeleccionado] + ". Atiende: " + atiende + ".";
+
+            DateTime? proxima = _negocio.BuscarProximaFechaDisponible(
+                profesionalId, especialidadId, fecha.AddDays(1), TurnoExcluido());
+            return proxima.HasValue
+                ? texto + " Próxima fecha con horarios libres: " + proxima.Value.ToString("dddd dd/MM/yyyy", es) + "."
+                : texto + " No hay horarios libres en los próximos 60 días.";
+        }
+
         private void CargarDisponibilidad()
         {
             Guid profesionalId;
@@ -364,7 +440,7 @@ namespace MediStack.Web
                 || !DateTime.TryParseExact(FechaDisponibilidad.Text, "yyyy-MM-dd",
                     CultureInfo.InvariantCulture, DateTimeStyles.None, out fecha))
             {
-                MostrarError("Selecciona un profesional, una especialidad y una fecha válidos.");
+                MostrarError("Selecciona una especialidad, un profesional y una fecha válidos.");
                 LimpiarDisponibilidad();
                 return;
             }
@@ -384,18 +460,20 @@ namespace MediStack.Web
             DisponibilidadGrid.DataBind();
             MostrarDuracionSeleccionada();
             LimpiarMensaje();
+            if (DisponibilidadGrid.Rows.Count == 0)
+            {
+                MostrarError(ExplicarSinHorarios(profesionalId, especialidadId, fecha));
+            }
         }
 
         private void CargarTurnos()
         {
-            DateTime desde;
-            DateTime hasta;
-            if (!DateTime.TryParseExact(Desde.Text, "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                    DateTimeStyles.None, out desde)
-                || !DateTime.TryParseExact(Hasta.Text, "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                    DateTimeStyles.None, out hasta))
+            DateTime? desde;
+            DateTime? hasta;
+            string errorFiltro;
+            if (!TryLeerFiltroFechas(Desde, Hasta, out desde, out hasta, out errorFiltro))
             {
-                MostrarError("Selecciona un período de fechas válido.");
+                MostrarError(errorFiltro);
                 return;
             }
 
@@ -403,6 +481,17 @@ namespace MediStack.Web
             Guid? profesionalId = TieneRol("PROFESIONAL") ? (Guid?)ObtenerUsuarioActual() : null;
             TurnosGrid.DataSource = _negocio.ObtenerTurnos(pacienteId, profesionalId, desde, hasta);
             TurnosGrid.DataBind();
+            ResumenFiltro.Text = HttpUtility.HtmlEncode(DescribirFiltro(desde, hasta, TurnosGrid.Rows.Count, "turno"));
+        }
+
+        private static string DescribirFiltro(DateTime? desde, DateTime? hasta, int cantidad, string objeto)
+        {
+            string periodo = !desde.HasValue && !hasta.HasValue ? "sin filtro de fecha"
+                : desde.HasValue && hasta.HasValue && desde.Value == hasta.Value
+                    ? "el " + desde.Value.ToString("dd/MM/yyyy")
+                : (desde.HasValue ? "desde el " + desde.Value.ToString("dd/MM/yyyy") + " " : string.Empty)
+                    + (hasta.HasValue ? "hasta el " + hasta.Value.ToString("dd/MM/yyyy") : string.Empty);
+            return cantidad + (cantidad == 1 ? " " + objeto : " " + objeto + "s") + " (" + periodo.Trim() + ").";
         }
 
         private void PrepararReprogramacion(int turnoId, Guid pacienteId)
@@ -427,17 +516,19 @@ namespace MediStack.Web
                 Paciente.SelectedValue = turno.PacienteId.ToString();
             }
 
+            ListItem especialidad = Especialidad.Items.FindByValue(turno.EspecialidadId.ToString());
+            if (especialidad != null)
+            {
+                Especialidad.ClearSelection();
+                especialidad.Selected = true;
+            }
+
+            CargarProfesionales();
             ListItem profesional = Profesional.Items.FindByValue(turno.ProfesionalId.ToString());
             if (profesional != null)
             {
                 Profesional.ClearSelection();
                 profesional.Selected = true;
-            }
-
-            CargarEspecialidades();
-            if (Especialidad.Items.FindByValue(turno.EspecialidadId.ToString()) != null)
-            {
-                Especialidad.SelectedValue = turno.EspecialidadId.ToString();
             }
 
             FechaDisponibilidad.Text = turno.FechaHora.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);

@@ -26,6 +26,8 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.Label HastaLabel;
         protected global::System.Web.UI.WebControls.TextBox Hasta;
         protected global::System.Web.UI.WebControls.Button Filtrar;
+        protected global::System.Web.UI.WebControls.Button LimpiarFiltro;
+        protected global::System.Web.UI.WebControls.Literal ResumenFiltro;
         protected global::System.Web.UI.WebControls.GridView TurnosGrid;
     }
 }

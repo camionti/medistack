@@ -58,8 +58,11 @@
                 <asp:TextBox ID="Hasta" runat="server" CssClass="form-control" TextMode="Date" />
             </div>
             <asp:Button ID="Filtrar" runat="server" Text="Filtrar" CssClass="button button-secondary"
-                CausesValidation="false" OnClick="Filtrar_Click" />
+                CausesValidation="false" OnClick="Filtrar_Click" formnovalidate="formnovalidate" />
+            <asp:Button ID="LimpiarFiltro" runat="server" Text="Limpiar filtro" CssClass="button button-light"
+                CausesValidation="false" OnClick="LimpiarFiltro_Click" formnovalidate="formnovalidate" />
         </div>
+        <p class="form-note">Elige una fecha en "Desde" para ver solo ese día, o completa "Desde" y "Hasta" para un rango. Sin fechas se muestran todos los cobros. <strong><asp:Literal ID="ResumenFiltro" runat="server" /></strong></p>
         <div class="table-wrap">
             <asp:GridView ID="CobrosGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
                 GridLines="None" EmptyDataText="No hay cobros para el período seleccionado.">

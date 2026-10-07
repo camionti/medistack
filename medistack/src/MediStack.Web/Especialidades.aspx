@@ -11,8 +11,8 @@
         <div class="search-row">
             <asp:Label ID="BusquedaLabel" runat="server" AssociatedControlID="Busqueda" Text="Código o nombre" CssClass="visually-hidden" />
             <asp:TextBox ID="Busqueda" runat="server" CssClass="form-control" MaxLength="100" />
-            <asp:Button ID="Buscar" runat="server" Text="Buscar" CssClass="button button-secondary" OnClick="Buscar_Click" />
-            <asp:Button ID="VerTodas" runat="server" Text="Ver todas" CssClass="button button-light" CausesValidation="false" OnClick="VerTodas_Click" />
+            <asp:Button ID="Buscar" runat="server" Text="Buscar" CssClass="button button-secondary" CausesValidation="false" OnClick="Buscar_Click" formnovalidate="formnovalidate" />
+            <asp:Button ID="VerTodas" runat="server" Text="Ver todas" CssClass="button button-light" CausesValidation="false" OnClick="VerTodas_Click" formnovalidate="formnovalidate" />
         </div>
         <div class="table-wrap">
             <asp:GridView ID="EspecialidadesGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
@@ -45,7 +45,7 @@
     <section class="panel management-panel" aria-labelledby="formulario-especialidad-title">
         <div class="section-heading-row">
             <h2 id="formulario-especialidad-title" class="section-title"><asp:Literal ID="TituloFormulario" runat="server" /></h2>
-            <asp:Button ID="Nuevo" runat="server" Text="Nueva especialidad" CssClass="button button-light" CausesValidation="false" OnClick="Nuevo_Click" />
+            <asp:Button ID="Nuevo" runat="server" Text="Nueva especialidad" CssClass="button button-light" CausesValidation="false" OnClick="Nuevo_Click" formnovalidate="formnovalidate" />
         </div>
         <div class="form-grid form-grid-short">
             <div class="form-group">
@@ -67,7 +67,7 @@
         </div>
         <div class="form-actions">
             <asp:Button ID="Guardar" runat="server" Text="Guardar especialidad" CssClass="button button-primary" OnClick="Guardar_Click" />
-            <asp:Button ID="Cancelar" runat="server" Text="Cancelar" CssClass="button button-light" CausesValidation="false" OnClick="Nuevo_Click" />
+            <asp:Button ID="Cancelar" runat="server" Text="Cancelar" CssClass="button button-light" CausesValidation="false" OnClick="Nuevo_Click" formnovalidate="formnovalidate" />
         </div>
     </section>
 </asp:Content>

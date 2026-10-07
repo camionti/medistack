@@ -5,8 +5,9 @@
     "\\medistack\\database",
     "\\medistack\\pantallas",
     "\\medistack\\spec",
-    "\\medistack\\src"
+    "\\medistack\\src",
+    "\\medistack\\src\\MediStack.Negocio"
   ],
-  "SelectedNode": "\\medistack\\MediStack.sln",
+  "SelectedNode": "\\medistack\\src\\MediStack.Negocio\\VerificadorPassword.cs",
   "PreviewInSolutionExplorer": false
 }
