@@ -10,6 +10,7 @@ namespace MediStack.Web.Account
     public partial class Registro : Page
     {
         private readonly GestionClinicaNegocio _negocio = new GestionClinicaNegocio();
+        private readonly EmailNegocio _email = new EmailNegocio(); 
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -74,6 +75,7 @@ namespace MediStack.Web.Account
             try
             {
                 _negocio.GuardarPaciente(paciente, Password.Text);
+                _email.EnviarBienvenida(paciente);
                 FormularioPanel.Visible = false;
                 ExitoMessage.Text = "¡Cuenta creada con éxito! Ya puedes iniciar sesión.";
                 ExitoMessage.Visible = true;
