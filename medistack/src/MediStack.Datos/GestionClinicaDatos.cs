@@ -92,6 +92,34 @@ namespace MediStack.Datos
             };
         }
 
+        public bool ExisteEmail(string email)
+        {
+            string query = "SELECT 1 FROM dbo.Usuarios WHERE Email = @Email";
+            var dt = Consultar(query, new SqlParameter("@Email", email));
+            return dt.Rows.Count > 0;
+        }
+
+        public bool ExisteNombreUsuario(string nombreUsuario)
+        {
+            string query = "SELECT 1 FROM dbo.Usuarios WHERE NombreUsuario = @Usuario";
+            var dt = Consultar(query, ParametroTexto("@Usuario", nombreUsuario, 50));
+            return dt.Rows.Count > 0;
+        }
+        public bool ExisteDni(string dni)
+        {
+            string query = "SELECT 1 FROM dbo.Usuarios WHERE NumeroDocumento = @Dni";
+            var dt = Consultar(query, ParametroTexto("@Dni", dni, 20));
+            return dt.Rows.Count > 0;
+        }
+
+        public bool ExisteAfiliado(string numeroAfiliado)
+        {
+            if (string.IsNullOrWhiteSpace(numeroAfiliado)) return false;
+            string query = "SELECT 1 FROM dbo.Pacientes WHERE NumeroAfiliado = @Afiliado";
+            var dt = Consultar(query, ParametroTexto("@Afiliado", numeroAfiliado, 50));
+            return dt.Rows.Count > 0;
+        }
+
         public DataTable ObtenerHistorialPaciente(Guid pacienteId)
         {
             return Consultar(@"

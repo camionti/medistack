@@ -156,3 +156,28 @@ body:has(.login-page) .main-container {
 @media (prefers-reduced-motion: reduce) {
     .login-card { animation: none; }
 }
+.login-card-ancho {
+    max-width: 680px;
+}
+.form-fila {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.login-card select.form-control {
+    background: #fff;
+}
+.login-card .form-check {
+    color: #475569;
+    font-size: .875rem;
+}
+
+.login-card .alert-success {
+    margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+    .form-fila {
+        grid-template-columns: 1fr;
+    }
+}

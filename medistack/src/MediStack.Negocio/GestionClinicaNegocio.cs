@@ -89,8 +89,10 @@ namespace MediStack.Negocio
         public void GuardarPaciente(Paciente paciente, string password)
         {
             ValidarPaciente(paciente);
-            ValidarUnicidadAfiliado(paciente);                                     
+            ValidarUnicidadAfiliado(paciente);
             ValidarUnicidadDocumento(paciente);
+            ValidarUnicidadEmail(paciente);           
+            ValidarUnicidadNombreUsuario(paciente);   
             string hash = null;
             if (paciente.UsuarioId == Guid.Empty)
             {
@@ -305,6 +307,21 @@ namespace MediStack.Negocio
             if (pacienteExistente != null && pacienteExistente.UsuarioId != paciente.UsuarioId)
             {
                 throw new InvalidOperationException("El número de documento ya se encuentra registrado para otro paciente.");
+            }
+        }
+        private void ValidarUnicidadEmail(Paciente paciente)
+        {
+            if (_datos.ExisteEmail(paciente.Email))
+            {
+                throw new InvalidOperationException("El correo electrónico ingresado ya se encuentra registrado.");
+            }
+        }
+
+        private void ValidarUnicidadNombreUsuario(Paciente paciente)
+        {
+            if (_datos.ExisteNombreUsuario(paciente.NombreUsuario))
+            {
+                throw new InvalidOperationException("Ese nombre de usuario ya está en uso. Por favor, elegí otro.");
             }
         }
         private static void ValidarProfesional(Profesional profesional)
