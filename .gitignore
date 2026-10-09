@@ -3,6 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Repository-level generated files
+.github/
+.vs/
+vslog.xml
+
 # User-specific files
 *.rsuser
 *.suo
