@@ -1,5 +1,4 @@
 using System;
-using System.Web.Security;
 using System.Web.UI;
 using MediStack.Negocio;
 
@@ -31,14 +30,7 @@ namespace MediStack.Web.Account
                 return;
             }
 
-            Session.Clear();
-            Session["UsuarioId"] = resultado.Usuario.UsuarioId;
-            Session["NombreUsuario"] = resultado.Usuario.NombreUsuario;
-            Session["NombreCompleto"] = resultado.Usuario.Nombre + " " + resultado.Usuario.Apellido;
-            Session["RolCodigo"] = resultado.Usuario.RolCodigo;
-            Session["RolNombre"] = resultado.Usuario.RolNombre;
-
-            FormsAuthentication.SetAuthCookie(resultado.Usuario.NombreUsuario, false);
+            SesionUsuario.Iniciar(Context, resultado.Usuario);
             Redirigir("~/Dashboard.aspx");
         }
 

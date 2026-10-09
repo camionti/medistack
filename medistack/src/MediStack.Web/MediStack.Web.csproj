@@ -117,6 +117,7 @@
     <Compile Include="PaginaAdministrativa.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="SesionUsuario.cs" />
     <Compile Include="Pacientes.aspx.cs">
       <DependentUpon>Pacientes.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>

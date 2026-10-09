@@ -61,7 +61,7 @@
             </div>
             <div class="form-group">
                 <asp:Label ID="DocumentoLabel" runat="server" AssociatedControlID="Documento" Text="Documento" />
-                <asp:TextBox ID="Documento" runat="server" CssClass="form-control" MaxLength="20" required="required" />
+                <asp:TextBox ID="Documento" runat="server" CssClass="form-control" MaxLength="10" inputmode="numeric" required="required" pattern="[0-9]{7,8}|[0-9]{1,2}\.[0-9]{3}\.[0-9]{3}" title="Ingresa solo numeros: 7 u 8 digitos (por ejemplo 41736377)." />
             </div>
             <div class="form-group">
                 <asp:Label ID="NacimientoLabel" runat="server" AssociatedControlID="Nacimiento" Text="Fecha de nacimiento" />
