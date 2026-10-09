@@ -22,6 +22,7 @@
                     <p>Consulta tus datos, turnos, atenciones y cobros asociados.</p>
                     <a href="<%: ResolveUrl("~/FichaPaciente.aspx") %>">Ver mi ficha e historial</a>
                     <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Consultar mis cobros</a>
+                    <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Hablar con el asistente</a>
                 </article>
             </div>
         </section>

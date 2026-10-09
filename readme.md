@@ -95,7 +95,16 @@ Validación realizada: rebuild y precompilación de Web Forms; registro y consul
 
 ## Etapa futura
 
-El modulo de Inteligencia Artificial esta postergado y no forma parte de la aplicacion actual. La tabla `InteraccionesIA` del esquema SQL existente se conserva sin uso desde Web Forms; no se agregan paginas, logica ni dependencias de IA en esta etapa.
+Se incorporó una primera base para el asistente de pacientes:
+
+- `AsistentePaciente.aspx` está protegido para el rol `PACIENTE` y permite enviar consultas de texto.
+- `AgenteIAPacienteNegocio` centraliza el flujo y consulta turnos mediante las capas existentes.
+- `InteraccionesIADatos` registra las interacciones en la tabla `InteraccionesIA` con parámetros tipados.
+- La navegación de pacientes incluye el acceso al asistente.
+- `IAContratos.cs` e `IProveedorIA.cs` definen la frontera para conectar más adelante un modelo real con respuestas estructuradas y herramientas allowlist.
+- `ProveedorIAFactory` selecciona el adaptador mediante `IA.Proveedor`; por defecto usa el stub provisional y un nombre no implementado devuelve un error explícito.
+
+La respuesta actual del asistente es un stub provisional basado en coincidencias de texto; no debe considerarse una integración de inteligencia artificial. Todavía no hay API key, cliente HTTP/SDK ni proveedor externo configurado, y tampoco se ejecutan reservas, cancelaciones o reprogramaciones desde lenguaje natural. Esos flujos requieren implementar un adaptador real sobre `IProveedorIA`, contexto conversacional y confirmación explícita antes de modificar datos.
 
 ## Preparar para la presentacion
 

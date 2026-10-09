@@ -7,6 +7,8 @@
 .github/
 .vs/
 vslog.xml
+.agents
+AGENTS.md
 
 # User-specific files
 *.rsuser
