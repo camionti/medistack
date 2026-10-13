@@ -232,6 +232,13 @@ namespace MediStack.Datos
                             throw new InvalidOperationException("Solo se pueden reprogramar turnos futuros solicitados o confirmados.");
                         }
 
+                        // Regla de 24 hs: solo aplica al paciente; el administrativo puede reprogramar siempre.
+                        if (pacienteAutorizado.HasValue && !ReglasTurno.PacienteDentroDelPlazo(original.FechaHora))
+                        {
+                            throw new InvalidOperationException("Los turnos solo se pueden reprogramar con al menos "
+                                + ReglasTurno.HorasMinimasCancelacionPaciente + " horas de anticipacion. Comunicate con la clinica.");
+                        }
+
                         if (original.ProfesionalId == destino.ProfesionalId
                             && original.EspecialidadId == destino.EspecialidadId
                             && original.FechaHora == destino.FechaHora)
@@ -286,6 +293,13 @@ namespace MediStack.Datos
                         if (turno.FechaHora <= DateTime.Now || !EsVigente(turno.Estado))
                         {
                             throw new InvalidOperationException("Solo se pueden cancelar turnos futuros solicitados o confirmados.");
+                        }
+
+                        // Regla de 24 hs: solo aplica al paciente; el administrativo puede cancelar siempre.
+                        if (pacienteAutorizado.HasValue && !ReglasTurno.PacienteDentroDelPlazo(turno.FechaHora))
+                        {
+                            throw new InvalidOperationException("Los turnos solo se pueden cancelar con al menos "
+                                + ReglasTurno.HorasMinimasCancelacionPaciente + " horas de anticipacion. Comunicate con la clinica.");
                         }
 
                         CancelarTurnoEnTransaccion(conexion, transaccion, turnoId);

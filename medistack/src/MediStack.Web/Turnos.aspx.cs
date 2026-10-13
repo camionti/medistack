@@ -305,7 +305,21 @@ namespace MediStack.Web
 
             return EsAdministrativo
                 || (EsPaciente && Guid.TryParse(Convert.ToString(paciente), out Guid pacienteId)
-                    && pacienteId == ObtenerUsuarioActual());
+                    && pacienteId == ObtenerUsuarioActual()
+                    && ReglasTurno.PacienteDentroDelPlazo(fecha));
+        }
+
+        // Turno propio y vigente del paciente al que le faltan menos de 24 hs:
+        // no puede cancelarlo ni reprogramarlo, y se le muestra el motivo en lugar de los botones.
+        protected bool FueraDePlazoParaPaciente(object paciente, object estado, object fechaHora)
+        {
+            DateTime fecha = Convert.ToDateTime(fechaHora);
+            bool vigente = Convert.ToString(estado) == "Solicitado"
+                || Convert.ToString(estado) == "Confirmado";
+            return EsPaciente && vigente && fecha > DateTime.Now
+                && !ReglasTurno.PacienteDentroDelPlazo(fecha)
+                && Guid.TryParse(Convert.ToString(paciente), out Guid pacienteId)
+                && pacienteId == ObtenerUsuarioActual();
         }
 
         protected bool PuedeCerrarTurno(object estado, object fechaHora)
@@ -507,6 +521,13 @@ namespace MediStack.Web
                 || (turno.Estado != "Solicitado" && turno.Estado != "Confirmado"))
             {
                 MostrarError("Solo se pueden reprogramar turnos futuros solicitados o confirmados.");
+                return;
+            }
+
+            if (EsPaciente && !ReglasTurno.PacienteDentroDelPlazo(turno.FechaHora))
+            {
+                MostrarError("Los turnos solo se pueden reprogramar con al menos "
+                    + ReglasTurno.HorasMinimasCancelacionPaciente + " horas de anticipacion. Comunicate con la clinica.");
                 return;
             }
 

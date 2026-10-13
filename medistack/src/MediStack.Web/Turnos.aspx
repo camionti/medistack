@@ -142,12 +142,15 @@
                                     CommandName="CancelarTurno" CommandArgument="<%# Container.DataItemIndex %>"
                                     CausesValidation="false" Visible='<%# PuedeCancelarOReprogramar(Eval("PacienteId"), Eval("Estado"), Eval("FechaHora")) %>'
                                     OnClientClick="return confirm('¿Cancelar este turno? La operación no procesa reembolsos de señas.');" />
+                                <asp:Label ID="FueraDePlazo" runat="server" CssClass="form-note"
+                                    Text="Faltan menos de 24 hs: para cancelarlo o reprogramarlo comunicate con la clínica."
+                                    Visible='<%# FueraDePlazoParaPaciente(Eval("PacienteId"), Eval("Estado"), Eval("FechaHora")) %>' />
                             </div>
                         </ItemTemplate>
                     </asp:TemplateField>
                 </Columns>
             </asp:GridView>
         </div>
-        <p class="form-note">Cancelar un turno libera su horario. El estado de una seña pagada no implica un reembolso; los cobros y reembolsos se gestionarán en la etapa de Caja.</p>
+        <p class="form-note">Los pacientes pueden cancelar o reprogramar sus turnos hasta 24 horas antes. Cancelar un turno libera su horario. El estado de una seña pagada no implica un reembolso; los cobros y reembolsos se gestionarán en la etapa de Caja.</p>
     </section>
 </asp:Content>
