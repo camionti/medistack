@@ -26,6 +26,7 @@
                     <asp:TextBox ID="Password" runat="server" CssClass="form-control" TextMode="Password" MaxLength="128" autocomplete="current-password" required="required" />
                 </div>
                 <asp:Button ID="Ingresar" runat="server" Text="Iniciar sesión" CssClass="button button-primary button-wide" OnClick="Ingresar_Click" />
+                <p class="enlace-recuperar"><a href="<%: ResolveUrl("~/Account/RecuperarCuenta.aspx") %>">¿Olvidaste tu usuario o contraseña?</a></p>
                <p class="form-note">¿No tienes cuenta? <a href="<%: ResolveUrl("~/Account/Registro.aspx") %>">Regístrate aquí</a></p> 
             </div>
         </div>

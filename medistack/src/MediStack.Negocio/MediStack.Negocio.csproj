@@ -30,6 +30,8 @@
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MediStack.Dominio\MediStack.Dominio.csproj">
@@ -43,12 +45,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EmailNegocio.cs" />
+    <Compile Include="TokenRecuperacion.cs" />
     <Compile Include="UsuarioNegocio.cs" />
     <Compile Include="GestionClinicaNegocio.cs" />
     <Compile Include="FichaPacienteNegocio.cs" />
     <Compile Include="AgendaNegocio.cs" />
     <Compile Include="TurnosNegocio.cs" />
     <Compile Include="CobrosNegocio.cs" />
+    <Compile Include="AgenteIAPacienteNegocio.cs" />
+    <Compile Include="IProveedorIA.cs" />
+    <Compile Include="GeminiProveedorIA.cs" />
     <Compile Include="ResultadoLogin.cs" />
     <Compile Include="VerificadorPassword.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
