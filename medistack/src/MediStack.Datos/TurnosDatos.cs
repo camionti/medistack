@@ -8,6 +8,28 @@ namespace MediStack.Datos
 {
     public sealed class TurnosDatos
     {
+        // Regla UNICA de cobertura, usada por el listado de profesionales y por el calculo de la seña.
+        // Un paciente esta cubierto para un profesional y especialidad si su obra social tiene un
+        // convenio activo y vigente en @FechaCobertura con ese profesional y especialidad, con un
+        // porcentaje de cobertura mayor a 0. La consulta que la usa debe tener el alias "pe"
+        // (dbo.ProfesionalesEspecialidades) y los parametros @PacienteId y @FechaCobertura.
+        private const string SqlTieneCobertura = @"
+            EXISTS
+            (
+                SELECT 1
+                FROM dbo.Pacientes pac
+                INNER JOIN dbo.Convenios co ON co.ObraSocialId = pac.ObraSocialId
+                    AND co.ProfesionalId = pe.ProfesionalId
+                    AND co.EspecialidadId = pe.EspecialidadId
+                INNER JOIN dbo.CoberturasEspecialidades ce
+                    ON ce.ObraSocialId = co.ObraSocialId AND ce.EspecialidadId = co.EspecialidadId
+                WHERE pac.PacienteId = @PacienteId
+                  AND co.Activo = 1
+                  AND ce.PorcentajeCobertura > 0
+                  AND co.FechaDesde <= @FechaCobertura
+                  AND (co.FechaHasta IS NULL OR co.FechaHasta >= @FechaCobertura)
+            )";
+
         private readonly string _cadenaConexion;
 
         public TurnosDatos()
@@ -61,6 +83,24 @@ namespace MediStack.Datos
                   AND pe.Activa = 1 AND p.Activo = 1 AND u.Activo = 1
                 ORDER BY u.Apellido, u.Nombre;",
                 ParametroInt32("@EspecialidadId", especialidadId));
+        }
+
+        // Profesionales de la especialidad vistos por un paciente: primero los que su obra social
+        // cubre, despues los que no. La cobertura se evalua a la fecha de hoy.
+        public DataTable ObtenerProfesionalesPorEspecialidadParaPaciente(int especialidadId, Guid pacienteId)
+        {
+            return Consultar(@"
+                SELECT p.ProfesionalId, u.Nombre + N' ' + u.Apellido AS Nombre, pe.ValorConsulta,
+                       CASE WHEN " + SqlTieneCobertura + @" THEN 1 ELSE 0 END AS TieneCobertura
+                FROM dbo.ProfesionalesEspecialidades pe
+                INNER JOIN dbo.Profesionales p ON p.ProfesionalId = pe.ProfesionalId
+                INNER JOIN dbo.Usuarios u ON u.UsuarioId = p.ProfesionalId
+                WHERE pe.EspecialidadId = @EspecialidadId
+                  AND pe.Activa = 1 AND p.Activo = 1 AND u.Activo = 1
+                ORDER BY TieneCobertura DESC, u.Apellido, u.Nombre;",
+                ParametroInt32("@EspecialidadId", especialidadId),
+                ParametroGuid("@PacienteId", pacienteId),
+                new SqlParameter("@FechaCobertura", SqlDbType.Date) { Value = DateTime.Today });
         }
 
         public DataTable ObtenerDiasAtencion(Guid profesionalId, int especialidadId)
@@ -185,7 +225,8 @@ namespace MediStack.Datos
             };
         }
 
-        public void SolicitarTurno(SolicitudTurno solicitud)
+        // Devuelve el monto de la seña que quedó pendiente (0 si el turno no requiere seña).
+        public decimal SolicitarTurno(SolicitudTurno solicitud)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
             {
@@ -194,9 +235,27 @@ namespace MediStack.Datos
                 {
                     try
                     {
+                        // Limpieza perezosa: antes de validar el horario, se liberan las reservas vencidas.
+                        LiberarReservasVencidas(conexion, transaccion);
                         ValidarHorarioYDisponibilidad(conexion, transaccion, solicitud, null);
-                        InsertarTurno(conexion, transaccion, solicitud);
+
+                        // Seña: solo para reservas online de pacientes sin cobertura para este turno.
+                        decimal montoSena = 0m;
+                        string estadoSena = "NoRequerida";
+                        DateTime? vencimientoSena = null;
+                        if (solicitud.EsReservaOnline)
+                        {
+                            montoSena = CalcularSenaRequerida(conexion, transaccion, solicitud);
+                            if (montoSena > 0)
+                            {
+                                estadoSena = "Pendiente";
+                                vencimientoSena = ReglasTurno.CalcularVencimientoSena(DateTime.Now);
+                            }
+                        }
+
+                        InsertarTurno(conexion, transaccion, solicitud, montoSena, estadoSena, vencimientoSena);
                         transaccion.Commit();
+                        return montoSena;
                     }
                     catch
                     {
@@ -216,6 +275,9 @@ namespace MediStack.Datos
                 {
                     try
                     {
+                        // Limpieza perezosa: el horario destino puede estar ocupado por una reserva vencida.
+                        LiberarReservasVencidas(conexion, transaccion);
+
                         TurnoDetalle original = ObtenerTurnoBloqueado(conexion, transaccion, turnoId);
                         if (original == null)
                         {
@@ -492,14 +554,91 @@ namespace MediStack.Datos
             }
         }
 
-        private static void InsertarTurno(
+        // Limpieza perezosa (version publica): la usa Negocio antes de mostrar la disponibilidad
+        // o los turnos de un paciente. Abre su propia conexion y se confirma sola.
+        public void LiberarReservasVencidas()
+        {
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            {
+                conexion.Open();
+                LiberarReservasVencidas(conexion, null);
+            }
+        }
+
+        // Cancela las reservas online cuya seña sigue pendiente y ya vencio, para liberar el horario.
+        // No hay ningun proceso programado: se ejecuta justo antes de cada operacion que depende de
+        // la agenda ("limpieza perezosa"). El indice IX_Turnos_SenaPendienteVencimiento la hace rapida.
+        // La seña pasa a 'NoRequerida' (ya no se va a cobrar); MontoSena y VencimientoSena quedan como historial.
+        private static void LiberarReservasVencidas(SqlConnection conexion, SqlTransaction transaccion)
+        {
+            using (SqlCommand comando = new SqlCommand(@"
+                UPDATE dbo.Turnos
+                SET Estado = N'Cancelado',
+                    EstadoSena = N'NoRequerida'
+                WHERE EstadoSena = N'Pendiente'
+                  AND VencimientoSena IS NOT NULL
+                  AND VencimientoSena <= SYSDATETIME()
+                  AND Estado = N'Solicitado';",
+                conexion, transaccion))
+            {
+                comando.ExecuteNonQuery();
+            }
+        }
+
+        // Calcula la seña de una reserva online: si el paciente NO tiene cobertura vigente para este
+        // profesional y especialidad (sin obra social, o sin convenio vigente), paga un porcentaje
+        // del valor de la consulta. Usa el mismo criterio de convenio vigente que CobrosDatos.
+        private static decimal CalcularSenaRequerida(
             SqlConnection conexion, SqlTransaction transaccion, SolicitudTurno solicitud)
         {
             using (SqlCommand comando = new SqlCommand(@"
-                INSERT INTO dbo.Turnos (PacienteId, ProfesionalId, EspecialidadId, FechaHora, Estado, Motivo)
-                VALUES (@PacienteId, @ProfesionalId, @EspecialidadId, @FechaHora, N'Solicitado', @Motivo);",
+                SELECT pe.ValorConsulta,
+                       CASE WHEN " + SqlTieneCobertura + @" THEN 1 ELSE 0 END AS TieneCobertura
+                FROM dbo.ProfesionalesEspecialidades pe
+                WHERE pe.ProfesionalId = @ProfesionalId
+                  AND pe.EspecialidadId = @EspecialidadId
+                  AND pe.Activa = 1;",
                 conexion, transaccion))
             {
+                comando.Parameters.Add("@PacienteId", SqlDbType.UniqueIdentifier).Value = solicitud.PacienteId;
+                comando.Parameters.Add("@ProfesionalId", SqlDbType.UniqueIdentifier).Value = solicitud.ProfesionalId;
+                comando.Parameters.Add("@EspecialidadId", SqlDbType.Int).Value = solicitud.EspecialidadId;
+                // Para la seña, la cobertura se evalua a la fecha DEL TURNO (no a la de hoy).
+                comando.Parameters.Add("@FechaCobertura", SqlDbType.Date).Value = solicitud.FechaHora.Date;
+
+                using (SqlDataReader lector = comando.ExecuteReader())
+                {
+                    if (!lector.Read())
+                    {
+                        return 0m;
+                    }
+
+                    decimal valorConsulta = lector.GetDecimal(0);
+                    bool tieneCobertura = lector.GetInt32(1) == 1;
+                    return tieneCobertura ? 0m : ReglasTurno.CalcularSena(valorConsulta);
+                }
+            }
+        }
+
+        private static void InsertarTurno(
+            SqlConnection conexion, SqlTransaction transaccion, SolicitudTurno solicitud,
+            decimal montoSena = 0m, string estadoSena = "NoRequerida", DateTime? vencimientoSena = null)
+        {
+            using (SqlCommand comando = new SqlCommand(@"
+                INSERT INTO dbo.Turnos
+                    (PacienteId, ProfesionalId, EspecialidadId, FechaHora, Estado, Motivo,
+                     MontoSena, EstadoSena, VencimientoSena)
+                VALUES
+                    (@PacienteId, @ProfesionalId, @EspecialidadId, @FechaHora, N'Solicitado', @Motivo,
+                     @MontoSena, @EstadoSena, @VencimientoSena);",
+                conexion, transaccion))
+            {
+                comando.Parameters.Add("@MontoSena", SqlDbType.Decimal).Value = montoSena;
+                comando.Parameters["@MontoSena"].Precision = 12;
+                comando.Parameters["@MontoSena"].Scale = 2;
+                comando.Parameters.Add("@EstadoSena", SqlDbType.NVarChar, 20).Value = estadoSena;
+                comando.Parameters.Add("@VencimientoSena", SqlDbType.DateTime2).Value =
+                    vencimientoSena.HasValue ? (object)vencimientoSena.Value : DBNull.Value;
                 comando.Parameters.Add("@PacienteId", SqlDbType.UniqueIdentifier).Value = solicitud.PacienteId;
                 comando.Parameters.Add("@ProfesionalId", SqlDbType.UniqueIdentifier).Value = solicitud.ProfesionalId;
                 comando.Parameters.Add("@EspecialidadId", SqlDbType.Int).Value = solicitud.EspecialidadId;

@@ -47,6 +47,34 @@ namespace MediStack.Negocio
             return _datos.ObtenerProfesionalesPorEspecialidad(especialidadId);
         }
 
+        // Profesionales de la especialidad para el paciente que reserva online: cada uno indica si
+        // su obra social lo cubre y, si no, la seña que pagaria. Vienen ordenados: cubiertos primero.
+        public IList<ProfesionalParaPaciente> ObtenerProfesionalesParaPaciente(int especialidadId, Guid pacienteId)
+        {
+            List<ProfesionalParaPaciente> profesionales = new List<ProfesionalParaPaciente>();
+            if (especialidadId <= 0 || pacienteId == Guid.Empty)
+            {
+                return profesionales;
+            }
+
+            DataTable datos = _datos.ObtenerProfesionalesPorEspecialidadParaPaciente(especialidadId, pacienteId);
+            foreach (DataRow fila in datos.Rows)
+            {
+                decimal valorConsulta = Convert.ToDecimal(fila["ValorConsulta"]);
+                bool tieneCobertura = Convert.ToInt32(fila["TieneCobertura"]) == 1;
+                profesionales.Add(new ProfesionalParaPaciente
+                {
+                    ProfesionalId = (Guid)fila["ProfesionalId"],
+                    Nombre = Convert.ToString(fila["Nombre"]),
+                    ValorConsulta = valorConsulta,
+                    TieneCobertura = tieneCobertura,
+                    MontoSena = tieneCobertura ? 0m : ReglasTurno.CalcularSena(valorConsulta)
+                });
+            }
+
+            return profesionales;
+        }
+
         // Días de la semana (1 = lunes ... 7 = domingo) en los que el profesional atiende la especialidad.
         public IList<int> ObtenerDiasAtencion(Guid profesionalId, int especialidadId)
         {
@@ -74,6 +102,9 @@ namespace MediStack.Negocio
                 return null;
             }
 
+            // Limpieza perezosa una sola vez, antes de recorrer hasta 60 dias.
+            _datos.LiberarReservasVencidas();
+
             DateTime inicio = desde.Date < DateTime.Today ? DateTime.Today : desde.Date;
             for (int i = 0; i < 60; i++)
             {
@@ -84,7 +115,7 @@ namespace MediStack.Negocio
                     continue;
                 }
 
-                if (ObtenerDisponibilidad(profesionalId, especialidadId, fecha, turnoExcluido)
+                if (CalcularDisponibilidad(profesionalId, especialidadId, fecha, turnoExcluido)
                     .Any(franja => franja.Disponible))
                 {
                     return fecha;
@@ -96,6 +127,15 @@ namespace MediStack.Negocio
 
         public IList<TurnoDisponible> ObtenerDisponibilidad(
             Guid profesionalId, int especialidadId, DateTime fecha, int? turnoExcluido = null)
+        {
+            // Limpieza perezosa: las reservas vencidas no deben aparecer ocupando horarios.
+            _datos.LiberarReservasVencidas();
+            return CalcularDisponibilidad(profesionalId, especialidadId, fecha, turnoExcluido);
+        }
+
+        // Calculo de franjas libres/ocupadas, sin limpieza (la hace quien llama).
+        private IList<TurnoDisponible> CalcularDisponibilidad(
+            Guid profesionalId, int especialidadId, DateTime fecha, int? turnoExcluido)
         {
             ValidarSeleccion(profesionalId, especialidadId, fecha);
             List<TurnoDisponible> franjas = new List<TurnoDisponible>();
@@ -173,6 +213,8 @@ namespace MediStack.Negocio
                 throw new InvalidOperationException("La fecha inicial no puede ser posterior a la fecha final.");
             }
 
+            // Limpieza perezosa: si una reserva vencio, en "Mis turnos" ya se ve como cancelada.
+            _datos.LiberarReservasVencidas();
             return _datos.ObtenerTurnos(pacienteId, profesionalId, desde, hasta);
         }
 
@@ -186,10 +228,13 @@ namespace MediStack.Negocio
             return _datos.ObtenerTurno(turnoId);
         }
 
-        public void SolicitarTurno(SolicitudTurno solicitud)
+        // Devuelve el monto de la seña pendiente (0 si el turno no requiere seña).
+        public decimal SolicitarTurno(SolicitudTurno solicitud)
         {
             ValidarSolicitud(solicitud);
-            EjecutarSeguro(() => _datos.SolicitarTurno(solicitud));
+            decimal montoSena = 0m;
+            EjecutarSeguro(() => montoSena = _datos.SolicitarTurno(solicitud));
+            return montoSena;
         }
 
         public void ReprogramarTurno(int turnoId, Guid? pacienteAutorizado, SolicitudTurno destino)

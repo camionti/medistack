@@ -23,6 +23,10 @@ namespace MediStack.Dominio
         public int EspecialidadId { get; set; }
         public DateTime FechaHora { get; set; }
         public string Motivo { get; set; }
+
+        // true = la reserva la hace el propio paciente desde la web (canal online).
+        // false = la carga el administrativo (canal presencial): nunca exige seña al reservar.
+        public bool EsReservaOnline { get; set; }
     }
 
     // Reglas de turnos compartidas por Datos (la regla real) y Web (para mostrar u ocultar botones).
@@ -36,6 +40,42 @@ namespace MediStack.Dominio
         {
             return fechaHoraTurno >= DateTime.Now.AddHours(HorasMinimasCancelacionPaciente);
         }
+
+        // --- Seña de reservas online ---
+        // Un paciente sin cobertura para el turno (sin obra social o sin convenio vigente con ese
+        // profesional y especialidad) debe pagar una seña para reservar online.
+        public const decimal PorcentajeSenaParticular = 50m;
+
+        // Minutos que tiene el paciente para pagar la seña antes de que la reserva se libere.
+        public const int MinutosParaPagarSena = 15;
+
+        // Monto de la seña: un porcentaje del valor de la consulta, redondeado a centavos.
+        public static decimal CalcularSena(decimal valorConsulta)
+        {
+            if (valorConsulta <= 0)
+            {
+                return 0m;
+            }
+
+            return Math.Round(valorConsulta * PorcentajeSenaParticular / 100m, 2, MidpointRounding.AwayFromZero);
+        }
+
+        // Hasta cuando se guarda el lugar de una reserva con seña pendiente.
+        public static DateTime CalcularVencimientoSena(DateTime momentoReserva)
+        {
+            return momentoReserva.AddMinutes(MinutosParaPagarSena);
+        }
+    }
+
+    // Profesional que atiende una especialidad, visto desde un paciente concreto:
+    // si su obra social lo cubre y, si no, cuanto pagaria de seña al reservar online.
+    public sealed class ProfesionalParaPaciente
+    {
+        public Guid ProfesionalId { get; set; }
+        public string Nombre { get; set; }
+        public decimal ValorConsulta { get; set; }
+        public bool TieneCobertura { get; set; }
+        public decimal MontoSena { get; set; }
     }
 
     public sealed class TurnoDetalle

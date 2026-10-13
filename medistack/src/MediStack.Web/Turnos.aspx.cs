@@ -155,7 +155,8 @@ namespace MediStack.Web
                     ProfesionalId = profesionalId,
                     EspecialidadId = especialidadId,
                     FechaHora = fechaHora,
-                    Motivo = Motivo.Text
+                    Motivo = Motivo.Text,
+                    EsReservaOnline = EsPaciente   // el paciente reserva online; el administrativo, presencial
                 };
 
                 if (EsReprogramacion)
@@ -175,9 +176,19 @@ namespace MediStack.Web
                 }
                 else
                 {
-                    _negocio.SolicitarTurno(solicitud);
+                    decimal montoSena = _negocio.SolicitarTurno(solicitud);
                     CargarDisponibilidad();
-                    MostrarExito("La solicitud de turno se registro correctamente. El horario reservado ya no figura como disponible.");
+                    if (montoSena > 0)
+                    {
+                        MostrarExito("Reservamos tu turno por " + ReglasTurno.MinutosParaPagarSena
+                            + " minutos. Para confirmarlo, pagá la seña de "
+                            + montoSena.ToString("C", CultureInfo.GetCultureInfo("es-AR"))
+                            + "; si no, el horario se libera.");
+                    }
+                    else
+                    {
+                        MostrarExito("La solicitud de turno se registro correctamente. El horario reservado ya no figura como disponible.");
+                    }
                     Motivo.Text = string.Empty;
                     CargarTurnos();
                     return;
@@ -362,10 +373,27 @@ namespace MediStack.Web
             Profesional.Items.Clear();
             if (int.TryParse(Especialidad.SelectedValue, out especialidadId))
             {
-                Profesional.DataSource = _negocio.ObtenerProfesionalesPorEspecialidad(especialidadId);
-                Profesional.DataTextField = "Nombre";
-                Profesional.DataValueField = "ProfesionalId";
-                Profesional.DataBind();
+                if (EsPaciente)
+                {
+                    // El paciente ve si su obra social cubre a cada profesional (cubiertos primero).
+                    CultureInfo es = CultureInfo.GetCultureInfo("es-AR");
+                    foreach (ProfesionalParaPaciente opcion in
+                        _negocio.ObtenerProfesionalesParaPaciente(especialidadId, ObtenerUsuarioActual()))
+                    {
+                        string detalle = opcion.TieneCobertura
+                            ? "Cubierto por tu obra social"
+                            : "Sin cobertura - seña " + opcion.MontoSena.ToString("C", es);
+                        Profesional.Items.Add(new ListItem(
+                            opcion.Nombre + " · " + detalle, opcion.ProfesionalId.ToString()));
+                    }
+                }
+                else
+                {
+                    Profesional.DataSource = _negocio.ObtenerProfesionalesPorEspecialidad(especialidadId);
+                    Profesional.DataTextField = "Nombre";
+                    Profesional.DataValueField = "ProfesionalId";
+                    Profesional.DataBind();
+                }
             }
 
             Profesional.Items.Insert(0, new ListItem(
