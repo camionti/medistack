@@ -181,3 +181,50 @@ body:has(.login-page) .main-container {
         grid-template-columns: 1fr;
     }
 }
+
+.login-card .enlace-recuperar {
+    margin: 0;
+    text-align: center;
+    font-size: .875rem;
+}
+
+.login-card .etiqueta-grupo {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.login-card .opciones-recuperacion {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+    .login-card .opciones-recuperacion li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+        .login-card .opciones-recuperacion li:focus-within,
+        .login-card .opciones-recuperacion li:hover {
+            border-color: #2152ff;
+        }
+
+    .login-card .opciones-recuperacion label {
+        margin: 0;
+        cursor: pointer;
+        flex: 1;
+    }
+
+.login-card .cuenta-recuperada {
+    margin: 0;
+    color: #475569;
+    text-align: center;
+}
