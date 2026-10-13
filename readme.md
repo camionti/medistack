@@ -102,9 +102,20 @@ Se incorporó una primera base para el asistente de pacientes:
 - `InteraccionesIADatos` registra las interacciones en la tabla `InteraccionesIA` con parámetros tipados.
 - La navegación de pacientes incluye el acceso al asistente.
 - `IAContratos.cs` e `IProveedorIA.cs` definen la frontera para conectar más adelante un modelo real con respuestas estructuradas y herramientas allowlist.
-- `ProveedorIAFactory` selecciona el adaptador mediante `IA.Proveedor`; por defecto usa el stub provisional y un nombre no implementado devuelve un error explícito.
+- `ProveedorIAFactory` mantiene el asistente bloqueado hasta que se implemente y configure un adaptador real.
 
-La respuesta actual del asistente es un stub provisional basado en coincidencias de texto; no debe considerarse una integración de inteligencia artificial. Todavía no hay API key, cliente HTTP/SDK ni proveedor externo configurado, y tampoco se ejecutan reservas, cancelaciones o reprogramaciones desde lenguaje natural. Esos flujos requieren implementar un adaptador real sobre `IProveedorIA`, contexto conversacional y confirmación explícita antes de modificar datos.
+No hay respuestas mock ni clasificación local. El proveedor Gemini ya tiene un adaptador HTTP, pero el asistente informa que no está disponible hasta que se agreguen localmente la API key y el modelo en `secrets.config`. Tampoco se ejecutan reservas, cancelaciones o reprogramaciones desde lenguaje natural.
+
+El adaptador HTTP de Gemini ya está incorporado. `Web.config` selecciona el proveedor con `IA.Proveedor=Gemini` y define el timeout; la API key y el modelo deben agregarse localmente en `src/MediStack.Web/secrets.config`:
+
+```xml
+<appSettings>
+  <add key="Gemini.ApiKey" value="CLAVE_DE_GOOGLE_AI_STUDIO" />
+  <add key="Gemini.Modelo" value="MODELO_GEMINI" />
+</appSettings>
+```
+
+La clave no debe guardarse en el repositorio. El adaptador utiliza el endpoint HTTPS `generateContent`, valida errores de autenticación, límites, timeout y respuestas inválidas, y registra el consumo informado por Gemini. Esta etapa permite obtener texto del modelo; todavía no habilita llamadas de herramientas ni operaciones de turnos hasta completar el contrato estructurado y sus validaciones.
 
 ## Preparar para la presentacion
 
