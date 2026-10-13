@@ -414,7 +414,11 @@ namespace MediStack.Datos
                         }
 
                         using (SqlCommand comando = new SqlCommand(@"
-                            UPDATE dbo.Turnos SET Estado = @Estado WHERE TurnoId = @TurnoId;",
+                            UPDATE dbo.Turnos
+                            SET Estado = @Estado,
+                                EstadoSena = CASE WHEN @Estado = N'Cancelado' AND EstadoSena = N'Pendiente'
+                                                  THEN N'NoRequerida' ELSE EstadoSena END
+                            WHERE TurnoId = @TurnoId;",
                             conexion, transaccion))
                         {
                             comando.Parameters.Add("@Estado", SqlDbType.NVarChar, 20).Value = nuevoEstado;
@@ -545,8 +549,13 @@ namespace MediStack.Datos
         private static void CancelarTurnoEnTransaccion(
             SqlConnection conexion, SqlTransaction transaccion, int turnoId)
         {
+            // Si el turno tenia una seña sin pagar, ya no se va a cobrar: pasa a 'NoRequerida'.
+            // Sin esto, la seña de un turno cancelado quedaba 'Pendiente' para siempre.
             using (SqlCommand comando = new SqlCommand(@"
-                UPDATE dbo.Turnos SET Estado = N'Cancelado' WHERE TurnoId = @TurnoId;",
+                UPDATE dbo.Turnos
+                SET Estado = N'Cancelado',
+                    EstadoSena = CASE WHEN EstadoSena = N'Pendiente' THEN N'NoRequerida' ELSE EstadoSena END
+                WHERE TurnoId = @TurnoId;",
                 conexion, transaccion))
             {
                 comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
@@ -568,13 +577,13 @@ namespace MediStack.Datos
         // Cancela las reservas online cuya seña sigue pendiente y ya vencio, para liberar el horario.
         // No hay ningun proceso programado: se ejecuta justo antes de cada operacion que depende de
         // la agenda ("limpieza perezosa"). El indice IX_Turnos_SenaPendienteVencimiento la hace rapida.
-        // La seña pasa a 'NoRequerida' (ya no se va a cobrar); MontoSena y VencimientoSena quedan como historial.
+        // La seña pasa a 'Vencida' (no se pago a tiempo); MontoSena y VencimientoSena quedan como historial.
         private static void LiberarReservasVencidas(SqlConnection conexion, SqlTransaction transaccion)
         {
             using (SqlCommand comando = new SqlCommand(@"
                 UPDATE dbo.Turnos
                 SET Estado = N'Cancelado',
-                    EstadoSena = N'NoRequerida'
+                    EstadoSena = N'Vencida'
                 WHERE EstadoSena = N'Pendiente'
                   AND VencimientoSena IS NOT NULL
                   AND VencimientoSena <= SYSDATETIME()
