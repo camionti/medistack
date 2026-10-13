@@ -35,6 +35,8 @@
     <Compile Include="FichaPacienteModelos.cs" />
     <Compile Include="AgendaModelos.cs" />
     <Compile Include="TurnoModelos.cs" />
+    <Compile Include="IAModelos.cs" />
+    <Compile Include="IAContratos.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
