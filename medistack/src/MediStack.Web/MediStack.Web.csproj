@@ -42,6 +42,7 @@
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml" />
@@ -61,11 +62,13 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Account\NuevaPassword.aspx" />
     <Content Include="Account\Registro.aspx" />
     <Content Include="Account\Login.aspx" />
     <Content Include="Content\site.css" />
     <Content Include="Content\login.css" />
     <Content Include="Content\accesibilidad.css" />
+    <Content Include="Account\RecuperarCuenta.aspx" />
     <Content Include="Scripts\accesibilidad.js" />
     <Content Include="Content\MediStack-logo-violeta.png" />
     <Content Include="Pacientes.aspx" />
@@ -87,6 +90,13 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Account\NuevaPassword.aspx.cs">
+      <DependentUpon>NuevaPassword.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Account\NuevaPassword.aspx.designer.cs">
+      <DependentUpon>NuevaPassword.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Account\Registro.aspx.cs">
       <DependentUpon>Registro.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -124,6 +134,13 @@
     </Compile>
     <Compile Include="PaginaAdministrativa.cs">
       <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Account\RecuperarCuenta.aspx.cs">
+      <DependentUpon>RecuperarCuenta.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Account\RecuperarCuenta.aspx.designer.cs">
+      <DependentUpon>RecuperarCuenta.aspx</DependentUpon>
     </Compile>
     <Compile Include="SesionUsuario.cs" />
     <Compile Include="Pacientes.aspx.cs">

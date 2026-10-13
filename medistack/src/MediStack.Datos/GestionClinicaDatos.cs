@@ -120,6 +120,53 @@ namespace MediStack.Datos
             return dt.Rows.Count > 0;
         }
 
+        public Usuario ObtenerUsuarioPorEmail(string email)
+        {
+            const string consulta = @"
+                SELECT UsuarioId, NombreUsuario, PasswordHash, Nombre, Apellido, Activo
+                FROM dbo.Usuarios
+                WHERE Email = @Email;";
+
+            DataTable tabla = Consultar(consulta, ParametroTexto("@Email", email, 256));
+            if (tabla.Rows.Count == 0)
+            {
+                return null;
+            }
+
+            DataRow fila = tabla.Rows[0];
+            return new Usuario
+            {
+                UsuarioId = (Guid)fila["UsuarioId"],
+                NombreUsuario = (string)fila["NombreUsuario"],
+                PasswordHash = (string)fila["PasswordHash"],
+                Nombre = (string)fila["Nombre"],
+                Apellido = (string)fila["Apellido"],
+                Activo = (bool)fila["Activo"]
+            };
+        }
+
+        public bool ActualizarPassword(Guid usuarioId, string passwordHashAnterior, string passwordHashNuevo)
+        {
+            const string consulta = @"
+                UPDATE dbo.Usuarios
+                SET PasswordHash = @HashNuevo,
+                    IntentosFallidos = 0,
+                    BloqueadoHasta = NULL
+                WHERE UsuarioId = @UsuarioId
+                  AND PasswordHash = @HashAnterior
+                  AND Activo = 1;";
+
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            using (SqlCommand comando = new SqlCommand(consulta, conexion))
+            {
+                comando.Parameters.Add(ParametroGuid("@UsuarioId", usuarioId));
+                comando.Parameters.Add(ParametroTexto("@HashAnterior", passwordHashAnterior, 256));
+                comando.Parameters.Add(ParametroTexto("@HashNuevo", passwordHashNuevo, 256));
+                conexion.Open();
+                return comando.ExecuteNonQuery() == 1;
+            }
+        }
+
         public DataTable ObtenerHistorialPaciente(Guid pacienteId)
         {
             return Consultar(@"
