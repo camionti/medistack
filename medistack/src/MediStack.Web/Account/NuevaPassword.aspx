@@ -19,9 +19,9 @@
 
             <asp:Label ID="ErrorMessage" runat="server" CssClass="alert alert-error" role="alert" Visible="false" />
 
-            <asp:Panel ID="ExitoPanel" runat="server" Visible="false">
+            <asp:Panel ID="ExitoPanel" runat="server" Visible="false" CssClass="panel-exito">
                 <div class="alert alert-success" role="status">¡Listo! Tu contraseña se actualizó correctamente.</div>
-                <a class="button button-primary button-wide" href="<%: ResolveUrl("~/Account/Login.aspx") %>">Ir a iniciar sesión</a>
+                <a class="button button-primary button-wide button-enlace" href="<%: ResolveUrl("~/Account/Login.aspx") %>">Ir a iniciar sesión</a>
             </asp:Panel>
 
             <asp:Panel ID="FormularioPanel" runat="server" CssClass="login-form">

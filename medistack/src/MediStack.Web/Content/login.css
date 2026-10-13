@@ -228,3 +228,12 @@ body:has(.login-page) .main-container {
     color: #475569;
     text-align: center;
 }
+
+.login-card .panel-exito {
+    display: grid;
+    gap: 16px;
+}
+
+    .login-card .panel-exito ~ .form-note {
+        display: none;
+    }
