@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Net.Mail;
 using MediStack.Datos;
 using MediStack.Dominio;
+using System.Diagnostics;
 
 namespace MediStack.Negocio
 {
@@ -102,7 +103,97 @@ namespace MediStack.Negocio
 
             EjecutarSeguro(() => _datos.GuardarPaciente(paciente, hash));
         }
+        public string ValidarCorreoRecuperacion(string email)
+        {
+            return ValidarEmail(email);
+        }
 
+        public void ProcesarRecuperacion(string email, bool olvidoPassword, string urlNuevaPassword)
+        {
+            try
+            {
+                Usuario usuario = _datos.ObtenerUsuarioPorEmail(email);
+                if (usuario == null || !usuario.Activo)
+                {
+                    return;
+                }
+
+                EmailNegocio correo = new EmailNegocio();
+                string nombre = usuario.Nombre + " " + usuario.Apellido;
+
+                if (!olvidoPassword)
+                {
+                    correo.EnviarNombreUsuario(email, nombre, usuario.NombreUsuario);
+                    return;
+                }
+
+                string token = TokenRecuperacion.Generar(email, usuario.PasswordHash);
+                correo.EnviarRecuperacionPassword(email, nombre, urlNuevaPassword + "?token=" + token);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("No se pudo procesar la recuperacion de cuenta: " + ex);
+            }
+        }
+
+        public ResultadoToken ValidarTokenRecuperacion(string token)
+        {
+            Usuario usuario;
+            return ResolverToken(token, out usuario);
+        }
+
+        public void RestablecerPassword(string token, string nuevaPassword, string repetirPassword)
+        {
+            if (nuevaPassword != repetirPassword)
+            {
+                throw new InvalidOperationException("Las contraseñas no coinciden.");
+            }
+            if (string.IsNullOrEmpty(nuevaPassword) || nuevaPassword.Length < 10 || nuevaPassword.Length > 128)
+            {
+                throw new InvalidOperationException("La contraseña debe tener entre 10 y 128 caracteres.");
+            }
+
+            Usuario usuario;
+            ResultadoToken resultado = ResolverToken(token, out usuario);
+            if (resultado.Estado != EstadoToken.Valido)
+            {
+                throw new InvalidOperationException(resultado.Mensaje);
+            }
+
+            string hashNuevo = VerificadorPassword.CrearHash(nuevaPassword);
+
+            bool actualizada = EjecutarSeguro(() => _datos.ActualizarPassword(usuario.UsuarioId, usuario.PasswordHash, hashNuevo));
+            if (!actualizada)
+            {
+                throw new InvalidOperationException(ResultadoToken.Con(EstadoToken.YaUtilizado).Mensaje);
+            }
+        }
+
+        private ResultadoToken ResolverToken(string token, out Usuario usuario)
+        {
+            usuario = null;
+
+            ResultadoToken resultado = TokenRecuperacion.Descifrar(token);
+            if (resultado.Estado != EstadoToken.Valido)
+            {
+                return resultado;
+            }
+
+            usuario = EjecutarSeguro(() => _datos.ObtenerUsuarioPorEmail(resultado.Email));
+            if (usuario == null || !usuario.Activo)
+            {
+                usuario = null;
+                return ResultadoToken.Con(EstadoToken.Invalido);
+            }
+
+            if (TokenRecuperacion.CalcularHuella(usuario.PasswordHash) != resultado.Huella)
+            {
+                usuario = null;
+                return ResultadoToken.Con(EstadoToken.YaUtilizado);
+            }
+
+            return resultado;
+        }
         public void CambiarEstadoPaciente(Guid pacienteId, bool activo)
         {
             if (pacienteId == Guid.Empty)
