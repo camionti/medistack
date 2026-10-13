@@ -14,10 +14,49 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="<%: ResolveUrl("~/Content/site.css") %>?v=<%: System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Content/site.css")).Ticks %>" rel="stylesheet" />
     <asp:ContentPlaceHolder ID="HeadContent" runat="server" />
+    <link href="<%: ResolveUrl("~/Content/accesibilidad.css") %>?v=1" rel="stylesheet" />
+    <script src="<%: ResolveUrl("~/Scripts/accesibilidad.js") %>?v=1"></script>
 </head>
 <body>
     <form id="MainForm" runat="server">
         <a class="skip-link" href="#main-content">Saltar al contenido</a>
+        <div class="ms-visual-bar">
+            <details id="ms-ajustes-visuales">
+                <summary id="ms-ajustes-resumen" class="ms-visual-summary" aria-label="Abrir ajustes de accesibilidad" title="Ajustes de accesibilidad">
+                    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="8" r="4.5" fill="currentColor" />
+                        <path d="M10 18H38M24 18V40M24 27L14 43M24 27L34 43" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </summary>
+                <div class="ms-visual-panel" role="region" aria-labelledby="ms-ajustes-titulo">
+                    <div class="ms-visual-top">
+                        <div>
+                            <h2 id="ms-ajustes-titulo" class="ms-visual-title">Accesibilidad visual</h2>
+                            <p class="ms-visual-subtitle">Personalizá cómo se ve MediStack.</p>
+                        </div>
+                        <button type="button" id="ms-ajustes-cerrar" class="ms-visual-close" aria-label="Cerrar ajustes">&#215;</button>
+                    </div>
+                    <fieldset id="ms-ajustes-opciones" class="ms-visual-options" disabled>
+                        <legend class="ms-visual-legend">Preferencias visuales</legend>
+                        <div class="ms-visual-group">
+                            <label for="ms-tamano-texto">Tamaño del texto</label>
+                            <select id="ms-tamano-texto" class="form-control">
+                                <option value="normal">100 %</option>
+                                <option value="grande">150 %</option>
+                                <option value="muy-grande">200 %</option>
+                            </select>
+                        </div>
+                        <label class="ms-visual-check" for="ms-alto-contraste">
+                            <input type="checkbox" id="ms-alto-contraste" />
+                            Alto contraste
+                        </label>
+                        <button type="button" id="ms-restablecer" class="button button-light ms-visual-reset">Restablecer apariencia</button>
+                    </fieldset>
+                    <p id="ms-ajustes-estado" class="ms-visual-status" role="status" aria-live="polite" aria-atomic="true">Cargando ajustes de visualización.</p>
+                    <noscript><p>Activá JavaScript para usar estos ajustes. También podés ampliar la página desde el navegador.</p></noscript>
+                </div>
+            </details>
+        </div>
         <header class="site-header">
             <a class="brand" href="<%: ResolveUrl("~/Dashboard.aspx") %>" aria-label="MediStack, inicio">
                 <img class="brand-logo" height="44" style="height:44px;width:auto" src="<%: ResolveUrl("~/Content/MediStack-logo-violeta.png") %>" alt="MediStack" />

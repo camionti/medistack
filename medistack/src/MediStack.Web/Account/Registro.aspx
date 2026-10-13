@@ -33,7 +33,7 @@
                 <div class="form-fila">
                     <div class="form-group">
                         <asp:Label runat="server" AssociatedControlID="Dni" Text="DNI" />
-                        <asp:TextBox ID="Dni" runat="server" CssClass="form-control" MaxLength="20" inputmode="numeric" required="required" />
+                        <asp:TextBox ID="Dni" runat="server" CssClass="form-control" MaxLength="10" inputmode="numeric" required="required" pattern="[0-9]{7,8}|[0-9]{1,2}\.[0-9]{3}\.[0-9]{3}" title="Ingresa solo numeros: 7 u 8 digitos (por ejemplo 41736377)." />
                     </div>
                     <div class="form-group">
                         <asp:Label runat="server" AssociatedControlID="FechaNacimiento" Text="Fecha de nacimiento" />

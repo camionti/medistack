@@ -65,6 +65,8 @@
     <Content Include="Account\Login.aspx" />
     <Content Include="Content\site.css" />
     <Content Include="Content\login.css" />
+    <Content Include="Content\accesibilidad.css" />
+    <Content Include="Scripts\accesibilidad.js" />
     <Content Include="Content\MediStack-logo-violeta.png" />
     <Content Include="Pacientes.aspx" />
     <Content Include="FichaPaciente.aspx" />
@@ -123,6 +125,7 @@
     <Compile Include="PaginaAdministrativa.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="SesionUsuario.cs" />
     <Compile Include="Pacientes.aspx.cs">
       <DependentUpon>Pacientes.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>

@@ -273,7 +273,7 @@ namespace MediStack.Negocio
             paciente.NombreUsuario = TextoObligatorio(paciente.NombreUsuario, "El usuario", 50);
             paciente.Nombre = TextoObligatorio(paciente.Nombre, "El nombre", 100);
             paciente.Apellido = TextoObligatorio(paciente.Apellido, "El apellido", 100);
-            paciente.NumeroDocumento = TextoObligatorio(paciente.NumeroDocumento, "El documento", 20);
+            paciente.NumeroDocumento = ValidarDocumento(paciente.NumeroDocumento);
             paciente.Email = ValidarEmail(paciente.Email);
             paciente.Telefono = TextoOpcional(paciente.Telefono, 30, "El telefono");
             paciente.NumeroAfiliado = TextoOpcional(paciente.NumeroAfiliado, 50, "El numero de afiliado");
@@ -334,12 +334,36 @@ namespace MediStack.Negocio
             profesional.NombreUsuario = TextoObligatorio(profesional.NombreUsuario, "El usuario", 50);
             profesional.Nombre = TextoObligatorio(profesional.Nombre, "El nombre", 100);
             profesional.Apellido = TextoObligatorio(profesional.Apellido, "El apellido", 100);
-            profesional.NumeroDocumento = TextoObligatorio(profesional.NumeroDocumento, "El documento", 20);
+            profesional.NumeroDocumento = ValidarDocumento(profesional.NumeroDocumento);
             profesional.Email = ValidarEmail(profesional.Email);
             profesional.Telefono = TextoOpcional(profesional.Telefono, 30, "El telefono");
             profesional.MatriculaProfesional = TextoObligatorio(
                 profesional.MatriculaProfesional, "La matricula profesional", 50);
             ValidarFechaNacimiento(profesional.FechaNacimiento);
+        }
+
+        // DNI argentino: solo numeros, 7 u 8 digitos. Acepta que lo escriban con puntos o espacios
+        // ("41.736.377") y lo guarda normalizado ("41736377"), asi la unicidad no depende del formato.
+        private static string ValidarDocumento(string documento)
+        {
+            string limpio = TextoObligatorio(documento, "El documento", 20)
+                .Replace(".", string.Empty)
+                .Replace(" ", string.Empty);
+
+            if (limpio.Length < 7 || limpio.Length > 8)
+            {
+                throw new InvalidOperationException("El DNI debe tener 7 u 8 numeros.");
+            }
+
+            foreach (char c in limpio)
+            {
+                if (c < '0' || c > '9')
+                {
+                    throw new InvalidOperationException("El DNI solo puede contener numeros.");
+                }
+            }
+
+            return limpio;
         }
 
         private static void ValidarFechaNacimiento(DateTime fecha)
