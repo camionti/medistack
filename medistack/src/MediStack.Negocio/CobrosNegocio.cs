@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 using MediStack.Datos;
+using MediStack.Dominio;
 
 namespace MediStack.Negocio
 {
@@ -66,6 +67,46 @@ namespace MediStack.Negocio
 
             EjecutarSeguro(() => _datos.RegistrarCobro(
                 turnoId, tipoCobro, medioPago, montoRecibido, cobradorId));
+        }
+
+        // Acredita una seña pagada online. Lo llaman la vuelta de Mercado Pago y el webhook,
+        // SIEMPRE despues de haber verificado el pago contra la API de Mercado Pago.
+        public ResultadoAcreditacionSena AcreditarSenaOnline(int turnoId, string mercadoPagoPagoId, decimal montoPagado)
+        {
+            if (turnoId <= 0)
+            {
+                throw new InvalidOperationException("El pago no corresponde a un turno valido.");
+            }
+
+            mercadoPagoPagoId = (mercadoPagoPagoId ?? string.Empty).Trim();
+            if (mercadoPagoPagoId.Length == 0 || mercadoPagoPagoId.Length > 40)
+            {
+                throw new InvalidOperationException("El identificador del pago no es valido.");
+            }
+
+            if (montoPagado <= 0)
+            {
+                throw new InvalidOperationException("El importe del pago no es valido.");
+            }
+
+            try
+            {
+                return _datos.AcreditarSenaOnline(turnoId, mercadoPagoPagoId, montoPagado);
+            }
+            catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627)
+            {
+                // Dos avisos del mismo pago al mismo tiempo: el indice unico rechazo el segundo.
+                return ResultadoAcreditacionSena.YaAcreditada;
+            }
+            catch (SqlException ex)
+            {
+                if (ex.Number == 1205)
+                {
+                    throw new InvalidOperationException("El pago tuvo un conflicto con otra operacion. Intenta nuevamente.");
+                }
+
+                throw new InvalidOperationException("No se pudo registrar el pago en MediStackDB (error SQL " + ex.Number + ").");
+            }
         }
 
         public DataTable ObtenerMovimientosCaja(DateTime desde, DateTime hasta)

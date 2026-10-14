@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -55,6 +55,8 @@
     <Compile Include="AgenteIAPacienteNegocio.cs" />
     <Compile Include="IProveedorIA.cs" />
     <Compile Include="GeminiProveedorIA.cs" />
+    <Compile Include="MercadoPagoServicio.cs" />
+    <Compile Include="PagoSenaNegocio.cs" />
     <Compile Include="ResultadoLogin.cs" />
     <Compile Include="VerificadorPassword.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -176,13 +176,21 @@ namespace MediStack.Web
                 }
                 else
                 {
-                    decimal montoSena = _negocio.SolicitarTurno(solicitud);
+                    ReservaTurno reserva = _negocio.SolicitarTurno(solicitud);
+                    if (reserva.RequierePagoSena && EsPaciente)
+                    {
+                        // Reserva online con seña: directo al checkout para pagarla.
+                        Response.Redirect(ResolveUrl("~/PagarSena.aspx?turnoId=" + reserva.TurnoId), false);
+                        Context.ApplicationInstance.CompleteRequest();
+                        return;
+                    }
+
                     CargarDisponibilidad();
-                    if (montoSena > 0)
+                    if (reserva.RequierePagoSena)
                     {
                         MostrarExito("Reservamos tu turno por " + ReglasTurno.MinutosParaPagarSena
                             + " minutos. Para confirmarlo, pagá la seña de "
-                            + montoSena.ToString("C", CultureInfo.GetCultureInfo("es-AR"))
+                            + reserva.MontoSena.ToString("C", CultureInfo.GetCultureInfo("es-AR"))
                             + "; si no, el horario se libera.");
                     }
                     else
@@ -331,6 +339,33 @@ namespace MediStack.Web
                 && !ReglasTurno.PacienteDentroDelPlazo(fecha)
                 && Guid.TryParse(Convert.ToString(paciente), out Guid pacienteId)
                 && pacienteId == ObtenerUsuarioActual();
+        }
+
+        // Turno propio con seña pendiente y todavia dentro del plazo: se muestra "Pagar seña".
+        protected bool PuedePagarSena(object paciente, object estado, object estadoSena, object vencimientoSena)
+        {
+            string estadoTurno = Convert.ToString(estado);
+            return EsPaciente
+                && Convert.ToString(estadoSena) == "Pendiente"
+                && (estadoTurno == "Solicitado" || estadoTurno == "Confirmado")
+                && vencimientoSena != null && vencimientoSena != DBNull.Value
+                && Convert.ToDateTime(vencimientoSena) > DateTime.Now
+                && Guid.TryParse(Convert.ToString(paciente), out Guid pacienteId)
+                && pacienteId == ObtenerUsuarioActual();
+        }
+
+        // Texto de la columna Seña: el estado y, si esta pendiente con plazo, el monto y hasta cuando.
+        protected string TextoSena(object estadoSena, object montoSena, object vencimientoSena)
+        {
+            string estado = Convert.ToString(estadoSena);
+            if (estado == "Pendiente" && vencimientoSena != null && vencimientoSena != DBNull.Value)
+            {
+                CultureInfo es = CultureInfo.GetCultureInfo("es-AR");
+                return "Pendiente · " + Convert.ToDecimal(montoSena).ToString("C", es)
+                    + " · vence " + Convert.ToDateTime(vencimientoSena).ToString("HH:mm", es) + " hs";
+            }
+
+            return estado == "NoRequerida" ? "No requerida" : estado;
         }
 
         protected bool PuedeCerrarTurno(object estado, object fechaHora)

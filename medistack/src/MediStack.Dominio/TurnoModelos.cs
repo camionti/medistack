@@ -49,6 +49,11 @@ namespace MediStack.Dominio
         // Minutos que tiene el paciente para pagar la seña antes de que la reserva se libere.
         public const int MinutosParaPagarSena = 15;
 
+        // Margen extra antes de liberar el horario: el paciente y Mercado Pago ven 15 minutos, pero la
+        // limpieza perezosa recien libera a los 15 + 5. Asi un pago hecho en el ultimo segundo, cuyo aviso
+        // llega un poco despues, todavia encuentra la seña Pendiente y se acredita.
+        public const int MinutosMargenPagoSena = 5;
+
         // Monto de la seña: un porcentaje del valor de la consulta, redondeado a centavos.
         public static decimal CalcularSena(decimal valorConsulta)
         {
@@ -76,6 +81,18 @@ namespace MediStack.Dominio
         public decimal ValorConsulta { get; set; }
         public bool TieneCobertura { get; set; }
         public decimal MontoSena { get; set; }
+    }
+
+    // Resultado de reservar un turno: su Id y la seña que quedó pendiente (0 si no requiere).
+    public sealed class ReservaTurno
+    {
+        public int TurnoId { get; set; }
+        public decimal MontoSena { get; set; }
+
+        public bool RequierePagoSena
+        {
+            get { return MontoSena > 0; }
+        }
     }
 
     public sealed class TurnoDetalle

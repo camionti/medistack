@@ -75,6 +75,9 @@
     <Content Include="FichaPaciente.aspx" />
     <Content Include="Agenda.aspx" />
     <Content Include="Turnos.aspx" />
+    <Content Include="PagarSena.aspx" />
+    <Content Include="PagoResultado.aspx" />
+    <Content Include="MercadoPagoWebhook.ashx" />
     <Content Include="Cobros.aspx" />
     <Content Include="Caja.aspx" />
     <Content Include="Profesionales.aspx" />
@@ -167,6 +170,23 @@
     </Compile>
     <Compile Include="Turnos.aspx.designer.cs">
       <DependentUpon>Turnos.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="PagarSena.aspx.cs">
+      <DependentUpon>PagarSena.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="PagarSena.aspx.designer.cs">
+      <DependentUpon>PagarSena.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="PagoResultado.aspx.cs">
+      <DependentUpon>PagoResultado.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="PagoResultado.aspx.designer.cs">
+      <DependentUpon>PagoResultado.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="MercadoPagoWebhook.ashx.cs">
+      <DependentUpon>MercadoPagoWebhook.ashx</DependentUpon>
     </Compile>
     <Compile Include="Cobros.aspx.cs">
       <DependentUpon>Cobros.aspx</DependentUpon>

@@ -228,13 +228,13 @@ namespace MediStack.Negocio
             return _datos.ObtenerTurno(turnoId);
         }
 
-        // Devuelve el monto de la seña pendiente (0 si el turno no requiere seña).
-        public decimal SolicitarTurno(SolicitudTurno solicitud)
+        // Devuelve el Id del turno creado y la seña pendiente (0 si el turno no requiere seña).
+        public ReservaTurno SolicitarTurno(SolicitudTurno solicitud)
         {
             ValidarSolicitud(solicitud);
-            decimal montoSena = 0m;
-            EjecutarSeguro(() => montoSena = _datos.SolicitarTurno(solicitud));
-            return montoSena;
+            ReservaTurno reserva = null;
+            EjecutarSeguro(() => reserva = _datos.SolicitarTurno(solicitud));
+            return reserva;
         }
 
         public void ReprogramarTurno(int turnoId, Guid? pacienteAutorizado, SolicitudTurno destino)

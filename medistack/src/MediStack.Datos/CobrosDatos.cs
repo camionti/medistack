@@ -2,6 +2,7 @@ using System;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using MediStack.Dominio;
 
 namespace MediStack.Datos
 {
@@ -278,6 +279,93 @@ namespace MediStack.Datos
             }
         }
 
+        // Registra la seña de un turno pagada online por Mercado Pago, en UNA transaccion:
+        //   cobro tipo 'Sena' (medio 'MercadoPago', sin cajero) + seña 'Pagada' + turno 'Confirmado'.
+        // Es idempotente: si el mismo pago llega dos veces (vuelta del navegador y webhook),
+        // la segunda vez no hace nada y devuelve YaAcreditada.
+        // No valida la caja abierta: los pagos online no pasan por el mostrador.
+        public ResultadoAcreditacionSena AcreditarSenaOnline(int turnoId, string mercadoPagoPagoId, decimal montoPagado)
+        {
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            {
+                conexion.Open();
+                using (SqlTransaction transaccion = conexion.BeginTransaction(IsolationLevel.Serializable))
+                {
+                    try
+                    {
+                        string resultado;
+                        using (SqlCommand comando = new SqlCommand(@"
+                            DECLARE @Estado NVARCHAR(20);
+                            DECLARE @EstadoSena NVARCHAR(20);
+                            DECLARE @MontoSena DECIMAL(12,2);
+
+                            -- 1) Idempotencia: este mismo pago ya fue registrado.
+                            IF EXISTS (SELECT 1 FROM dbo.Cobros WITH (UPDLOCK, HOLDLOCK)
+                                       WHERE MercadoPagoPagoId = @PagoId)
+                            BEGIN
+                                SELECT N'YaAcreditada';
+                                RETURN;
+                            END;
+
+                            -- 2) Leer y bloquear el turno (nadie lo modifica hasta el commit).
+                            SELECT @Estado = Estado, @EstadoSena = EstadoSena, @MontoSena = MontoSena
+                            FROM dbo.Turnos WITH (UPDLOCK, HOLDLOCK)
+                            WHERE TurnoId = @TurnoId;
+
+                            -- 3) El turno tiene que seguir esperando este pago.
+                            IF @Estado IS NULL
+                               OR @EstadoSena <> N'Pendiente'
+                               OR @Estado NOT IN (N'Solicitado', N'Confirmado')
+                            BEGIN
+                                SELECT N'TurnoNoDisponible';
+                                RETURN;
+                            END;
+
+                            -- 4) Se pago exactamente la seña.
+                            IF @MontoPagado <> @MontoSena
+                            BEGIN
+                                SELECT N'MontoIncorrecto';
+                                RETURN;
+                            END;
+
+                            -- 5) Registrar el cobro online (sin cajero: UsuarioCobradorId NULL).
+                            INSERT INTO dbo.Cobros
+                                (TurnoId, TipoCobro, MontoCobrado, MedioPago, MontoRecibido,
+                                 Vuelto, UsuarioCobradorId, MercadoPagoPagoId)
+                            VALUES
+                                (@TurnoId, N'Sena', @MontoSena, N'MercadoPago', @MontoSena,
+                                 0, NULL, @PagoId);
+
+                            -- 6) Seña pagada y turno confirmado.
+                            UPDATE dbo.Turnos
+                            SET EstadoSena = N'Pagada',
+                                FechaHoraSena = SYSDATETIME(),
+                                Estado = N'Confirmado'
+                            WHERE TurnoId = @TurnoId;
+
+                            SELECT N'Acreditada';",
+                            conexion, transaccion))
+                        {
+                            comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
+                            comando.Parameters.Add("@PagoId", SqlDbType.NVarChar, 40).Value = mercadoPagoPagoId;
+                            comando.Parameters.Add("@MontoPagado", SqlDbType.Decimal).Value = montoPagado;
+                            comando.Parameters["@MontoPagado"].Precision = 12;
+                            comando.Parameters["@MontoPagado"].Scale = 2;
+                            resultado = Convert.ToString(comando.ExecuteScalar());
+                        }
+
+                        transaccion.Commit();
+                        return (ResultadoAcreditacionSena)Enum.Parse(typeof(ResultadoAcreditacionSena), resultado);
+                    }
+                    catch
+                    {
+                        transaccion.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
         public DataTable ObtenerMovimientosCaja(DateTime desde, DateTime hasta)
         {
             return Consultar(@"
@@ -286,7 +374,7 @@ namespace MediStack.Datos
                        paciente.Nombre + N' ' + paciente.Apellido AS Paciente,
                        profesional.Nombre + N' ' + profesional.Apellido AS Profesional,
                        e.Nombre AS Especialidad,
-                       ISNULL(cobrador.Nombre + N' ' + cobrador.Apellido, N'No informado') AS Cobrador
+                       ISNULL(cobrador.Nombre + N' ' + cobrador.Apellido, N'Online') AS Cobrador
                 FROM dbo.Cobros c
                 INNER JOIN dbo.Turnos t ON t.TurnoId = c.TurnoId
                 INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = t.PacienteId
@@ -371,7 +459,9 @@ namespace MediStack.Datos
                                    @TotalGeneral = COALESCE(SUM(MontoCobrado), 0)
                             FROM dbo.Cobros WITH (UPDLOCK, HOLDLOCK, INDEX(IX_Cobros_FechaHoraCobro_MedioPago))
                             WHERE FechaHoraCobro >= @Fecha
-                              AND FechaHoraCobro < DATEADD(day, 1, @Fecha);
+                              AND FechaHoraCobro < DATEADD(day, 1, @Fecha)
+                              -- Los pagos online (Mercado Pago) no pasan por el mostrador: no entran en el cierre.
+                              AND MedioPago <> N'MercadoPago';
 
                             INSERT INTO dbo.CierresCaja
                                 (Fecha, AdministrativoId, TotalEfectivo, TotalTarjeta,

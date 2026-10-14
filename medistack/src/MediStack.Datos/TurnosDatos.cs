@@ -180,7 +180,7 @@ namespace MediStack.Datos
                        paciente.Nombre + N' ' + paciente.Apellido AS Paciente,
                        profesional.Nombre + N' ' + profesional.Apellido AS Profesional,
                        e.Nombre AS Especialidad, e.DuracionEstandarMinutos, t.FechaHora,
-                       t.Estado, t.Motivo, t.EstadoSena, t.MontoSena
+                       t.Estado, t.Motivo, t.EstadoSena, t.MontoSena, t.VencimientoSena
                 FROM dbo.Turnos t
                 INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
                 INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = p.PacienteId
@@ -225,8 +225,41 @@ namespace MediStack.Datos
             };
         }
 
-        // Devuelve el monto de la seña que quedó pendiente (0 si el turno no requiere seña).
-        public decimal SolicitarTurno(SolicitudTurno solicitud)
+        // Datos de la seña de un turno para el checkout. null si el turno no existe.
+        public SenaParaPagar ObtenerSenaDeTurno(int turnoId)
+        {
+            DataTable datos = Consultar(@"
+                SELECT t.TurnoId, t.PacienteId, t.FechaHora, t.Estado, t.EstadoSena,
+                       t.MontoSena, t.VencimientoSena, e.Nombre AS Especialidad,
+                       profesional.Nombre + N' ' + profesional.Apellido AS Profesional
+                FROM dbo.Turnos t
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                INNER JOIN dbo.Usuarios profesional ON profesional.UsuarioId = t.ProfesionalId
+                WHERE t.TurnoId = @TurnoId;",
+                ParametroInt32("@TurnoId", turnoId));
+
+            if (datos.Rows.Count == 0)
+            {
+                return null;
+            }
+
+            DataRow fila = datos.Rows[0];
+            return new SenaParaPagar
+            {
+                TurnoId = Convert.ToInt32(fila["TurnoId"]),
+                PacienteId = (Guid)fila["PacienteId"],
+                FechaHora = Convert.ToDateTime(fila["FechaHora"]),
+                Estado = Convert.ToString(fila["Estado"]),
+                EstadoSena = Convert.ToString(fila["EstadoSena"]),
+                MontoSena = Convert.ToDecimal(fila["MontoSena"]),
+                VencimientoSena = fila.IsNull("VencimientoSena") ? (DateTime?)null : Convert.ToDateTime(fila["VencimientoSena"]),
+                Especialidad = Convert.ToString(fila["Especialidad"]),
+                Profesional = Convert.ToString(fila["Profesional"])
+            };
+        }
+
+        // Devuelve el Id del turno creado y el monto de la seña pendiente (0 si no requiere seña).
+        public ReservaTurno SolicitarTurno(SolicitudTurno solicitud)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
             {
@@ -253,9 +286,9 @@ namespace MediStack.Datos
                             }
                         }
 
-                        InsertarTurno(conexion, transaccion, solicitud, montoSena, estadoSena, vencimientoSena);
+                        int turnoId = InsertarTurno(conexion, transaccion, solicitud, montoSena, estadoSena, vencimientoSena);
                         transaccion.Commit();
-                        return montoSena;
+                        return new ReservaTurno { TurnoId = turnoId, MontoSena = montoSena };
                     }
                     catch
                     {
@@ -586,10 +619,12 @@ namespace MediStack.Datos
                     EstadoSena = N'Vencida'
                 WHERE EstadoSena = N'Pendiente'
                   AND VencimientoSena IS NOT NULL
-                  AND VencimientoSena <= SYSDATETIME()
+                  AND VencimientoSena <= DATEADD(minute, -@MargenMinutos, SYSDATETIME())
                   AND Estado = N'Solicitado';",
                 conexion, transaccion))
             {
+                // Se libera recien cuando paso el vencimiento + el margen para pagos de ultimo momento.
+                comando.Parameters.Add("@MargenMinutos", SqlDbType.Int).Value = ReglasTurno.MinutosMargenPagoSena;
                 comando.ExecuteNonQuery();
             }
         }
@@ -629,7 +664,8 @@ namespace MediStack.Datos
             }
         }
 
-        private static void InsertarTurno(
+        // Inserta el turno y devuelve su Id (SCOPE_IDENTITY: el Id generado por ESTE insert).
+        private static int InsertarTurno(
             SqlConnection conexion, SqlTransaction transaccion, SolicitudTurno solicitud,
             decimal montoSena = 0m, string estadoSena = "NoRequerida", DateTime? vencimientoSena = null)
         {
@@ -639,7 +675,8 @@ namespace MediStack.Datos
                      MontoSena, EstadoSena, VencimientoSena)
                 VALUES
                     (@PacienteId, @ProfesionalId, @EspecialidadId, @FechaHora, N'Solicitado', @Motivo,
-                     @MontoSena, @EstadoSena, @VencimientoSena);",
+                     @MontoSena, @EstadoSena, @VencimientoSena);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);",
                 conexion, transaccion))
             {
                 comando.Parameters.Add("@MontoSena", SqlDbType.Decimal).Value = montoSena;
@@ -654,7 +691,7 @@ namespace MediStack.Datos
                 comando.Parameters.Add("@FechaHora", SqlDbType.DateTime2).Value = solicitud.FechaHora;
                 comando.Parameters.Add("@Motivo", SqlDbType.NVarChar, 500).Value =
                     string.IsNullOrWhiteSpace(solicitud.Motivo) ? (object)DBNull.Value : solicitud.Motivo.Trim();
-                comando.ExecuteNonQuery();
+                return Convert.ToInt32(comando.ExecuteScalar());
             }
         }
 

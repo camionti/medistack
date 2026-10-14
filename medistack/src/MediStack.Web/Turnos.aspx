@@ -122,10 +122,15 @@
                     <asp:TemplateField HeaderText="Estado">
                         <ItemTemplate><span class="status-tag"><%#: Eval("Estado") %></span></ItemTemplate>
                     </asp:TemplateField>
-                    <asp:BoundField DataField="EstadoSena" HeaderText="Seña" />
+                    <asp:TemplateField HeaderText="Seña">
+                        <ItemTemplate><%#: TextoSena(Eval("EstadoSena"), Eval("MontoSena"), Eval("VencimientoSena")) %></ItemTemplate>
+                    </asp:TemplateField>
                     <asp:TemplateField HeaderText="Acciones">
                         <ItemTemplate>
                             <div class="row-actions">
+                                <asp:HyperLink ID="PagarSena" runat="server" Text="Pagar seña"
+                                    NavigateUrl='<%# ResolveUrl("~/PagarSena.aspx?turnoId=" + Eval("TurnoId")) %>'
+                                    Visible='<%# PuedePagarSena(Eval("PacienteId"), Eval("Estado"), Eval("EstadoSena"), Eval("VencimientoSena")) %>' />
                                 <asp:LinkButton ID="Confirmar" runat="server" Text="Confirmar"
                                     CommandName="Confirmar" CommandArgument="<%# Container.DataItemIndex %>"
                                     CausesValidation="false" Visible='<%# EsAdministrativo && Convert.ToString(Eval("Estado")) == "Solicitado" %>' />

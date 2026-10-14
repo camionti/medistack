@@ -18,6 +18,9 @@
     - CK_Turnos_EstadoSena: suma el estado 'Vencida' (la reserva no se pago a tiempo y la
       limpieza la cancelo). Un CHECK no se puede editar: se borra y se vuelve a crear con la
       lista nueva, solo si todavia no incluye 'Vencida'.
+    - CK_Cobros_MedioPago: suma el medio de pago 'MercadoPago' (señas pagadas online).
+    - Cobros.MercadoPagoPagoId: id del pago en Mercado Pago, para rastrearlo. Indice unico
+      filtrado: un mismo pago de Mercado Pago no se puede registrar dos veces.
       Si ya habias ejecutado una version anterior de este script, volve a ejecutarlo completo.
 
     Por que EXEC(N'...'): el indice usa la columna nueva. Si estuvieran en el mismo lote
@@ -50,8 +53,22 @@ BEGIN
     EXEC(N'ALTER TABLE dbo.Turnos ADD CONSTRAINT CK_Turnos_EstadoSena CHECK (EstadoSena IN (N''NoRequerida'', N''Pendiente'', N''Pagada'', N''Reembolsada'', N''Vencida''))');
 END;
 
--- 4) Verificacion: debe devolver ColumnaCreada_Bytes = 6 (tamano de un DATETIME2(0)), IndiceCreado = 1 y AdmiteVencida = 1
+-- 4) Medio de pago 'MercadoPago' (solo si el CHECK todavia no lo admite)
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_Cobros_MedioPago' AND parent_object_id = OBJECT_ID(N'dbo.Cobros') AND definition LIKE N'%MercadoPago%')
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_Cobros_MedioPago' AND parent_object_id = OBJECT_ID(N'dbo.Cobros'))
+        EXEC(N'ALTER TABLE dbo.Cobros DROP CONSTRAINT CK_Cobros_MedioPago');
+    EXEC(N'ALTER TABLE dbo.Cobros ADD CONSTRAINT CK_Cobros_MedioPago CHECK (MedioPago IN (N''Efectivo'', N''Tarjeta'', N''Transferencia'', N''MercadoPago''))');
+END;
+
+-- 5) Id del pago en Mercado Pago (solo si no existe) + indice unico filtrado
+IF COL_LENGTH(N'dbo.Cobros', N'MercadoPagoPagoId') IS NULL EXEC(N'ALTER TABLE dbo.Cobros ADD MercadoPagoPagoId NVARCHAR(40) NULL');
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_Cobros_MercadoPagoPagoId' AND object_id = OBJECT_ID(N'dbo.Cobros')) EXEC(N'CREATE UNIQUE INDEX UX_Cobros_MercadoPagoPagoId ON dbo.Cobros (MercadoPagoPagoId) WHERE MercadoPagoPagoId IS NOT NULL');
+
+-- 6) Verificacion: todas las columnas deben dar 1 (ColumnaCreada_Bytes = 6, tamano de un DATETIME2(0))
 SELECT
     COL_LENGTH(N'dbo.Turnos', N'VencimientoSena') AS ColumnaCreada_Bytes,
     (SELECT COUNT(*) FROM sys.indexes WHERE name = N'IX_Turnos_SenaPendienteVencimiento') AS IndiceCreado,
-    (SELECT COUNT(*) FROM sys.check_constraints WHERE name = N'CK_Turnos_EstadoSena' AND definition LIKE N'%Vencida%') AS AdmiteVencida;
+    (SELECT COUNT(*) FROM sys.check_constraints WHERE name = N'CK_Turnos_EstadoSena' AND definition LIKE N'%Vencida%') AS AdmiteVencida,
+    (SELECT COUNT(*) FROM sys.check_constraints WHERE name = N'CK_Cobros_MedioPago' AND definition LIKE N'%MercadoPago%') AS AdmiteMercadoPago,
+    (SELECT COUNT(*) FROM sys.indexes WHERE name = N'UX_Cobros_MercadoPagoPagoId') AS PagoIdCreado;
