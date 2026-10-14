@@ -402,7 +402,7 @@ namespace MediStack.Negocio
         }
         private void ValidarUnicidadEmail(Paciente paciente)
         {
-            if (_datos.ExisteEmail(paciente.Email))
+            if (_datos.ExisteEmail(paciente.Email, paciente.UsuarioId))
             {
                 throw new InvalidOperationException("El correo electrónico ingresado ya se encuentra registrado.");
             }
@@ -410,7 +410,7 @@ namespace MediStack.Negocio
 
         private void ValidarUnicidadNombreUsuario(Paciente paciente)
         {
-            if (_datos.ExisteNombreUsuario(paciente.NombreUsuario))
+            if (paciente.UsuarioId == Guid.Empty && _datos.ExisteNombreUsuario(paciente.NombreUsuario, paciente.UsuarioId))
             {
                 throw new InvalidOperationException("Ese nombre de usuario ya está en uso. Por favor, elegí otro.");
             }
