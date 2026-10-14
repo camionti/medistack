@@ -55,11 +55,16 @@ namespace MediStack.Web
                 EjecutarConManejoDeErrores("No se pudieron cargar los turnos", () =>
                 {
                     CargarOpcionesIniciales();
-                    FechaDisponibilidad.Text = DateTime.Today.AddDays(1)
-                        .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                    if (EsReprogramacion)
+                    {
+                        FechaDisponibilidad.Text = DateTime.Today.AddDays(1)
+                            .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                    }
                     CargarTurnos();
                 });
             }
+
+            ConfigurarPasosSolicitud();
         }
 
         protected void Especialidad_SelectedIndexChanged(object sender, EventArgs e)
@@ -70,7 +75,7 @@ namespace MediStack.Web
                 CargarProfesionales();
                 MostrarDuracionSeleccionada();
                 LimpiarDisponibilidad();
-                if (Profesional.Items.Count == 2)
+                if (EsReprogramacion && Profesional.Items.Count == 2)
                 {
                     Profesional.SelectedIndex = 1;
                     ProponerProximaFecha();
@@ -91,8 +96,11 @@ namespace MediStack.Web
                 LimpiarDisponibilidad();
                 if (Profesional.SelectedValue.Length > 0)
                 {
-                    ProponerProximaFecha();
-                    CargarDisponibilidad();
+                    if (EsReprogramacion)
+                    {
+                        ProponerProximaFecha();
+                        CargarDisponibilidad();
+                    }
                 }
             });
         }
@@ -390,6 +398,29 @@ namespace MediStack.Web
             CargarProfesionales();
         }
 
+        private void ConfigurarPasosSolicitud()
+        {
+            if (EsReprogramacion)
+            {
+                Especialidad.Enabled = true;
+                Profesional.Enabled = true;
+                FechaDisponibilidad.Enabled = true;
+                Motivo.Enabled = true;
+                ConsultarDisponibilidad.Enabled = true;
+                return;
+            }
+
+            bool tieneEspecialidad = Especialidad.SelectedValue.Length > 0;
+            bool tieneProfesional = Profesional.SelectedValue.Length > 0;
+            bool tieneFecha = !string.IsNullOrWhiteSpace(FechaDisponibilidad.Text);
+
+            Especialidad.Enabled = true;
+            Profesional.Enabled = tieneEspecialidad;
+            FechaDisponibilidad.Enabled = tieneProfesional;
+            Motivo.Enabled = tieneFecha;
+            ConsultarDisponibilidad.Enabled = tieneProfesional && tieneFecha;
+        }
+
         // Todas las especialidades activas del sistema (no depende del profesional).
         private void CargarEspecialidades()
         {
@@ -619,6 +650,7 @@ namespace MediStack.Web
             Motivo.Text = turno.Motivo;
             TituloSolicitud.Text = "Reprogramar turno " + turnoId;
             CancelarReprogramacion.Visible = true;
+            ConfigurarPasosSolicitud();
             CargarDisponibilidad();
             MostrarExito("Elige un nuevo horario disponible. El turno actual se conserva si no se completa la reprogramación.");
         }
