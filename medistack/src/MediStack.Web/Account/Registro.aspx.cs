@@ -18,7 +18,7 @@ namespace MediStack.Web.Account
 
             if (Context.User.Identity.IsAuthenticated)
             {
-                Response.Redirect(ResolveUrl("~/Dashboard.aspx"), false);
+                Response.Redirect(ResolveUrl("~/Default.aspx"), false);
                 Context.ApplicationInstance.CompleteRequest();
                 return;
             }
@@ -93,7 +93,7 @@ namespace MediStack.Web.Account
             if (resultado.Exitoso)
             {
                 SesionUsuario.Iniciar(Context, resultado.Usuario);
-                destino = "~/Dashboard.aspx";
+                destino = "~/Default.aspx";
             }
 
             // 3) Redirect despues del POST: si el usuario aprieta F5 no se reenvia el formulario.

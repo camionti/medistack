@@ -10,12 +10,18 @@ namespace MediStack.Web
             if (Context.User.Identity.IsAuthenticated && Session["UsuarioId"] != null)
             {
                 UsuarioActual.Visible = true;
+                UsuarioAnonimo.Visible = false;
                 NombreActual.Text = Server.HtmlEncode(Convert.ToString(Session["NombreCompleto"]));
                 RolActual.Text = Server.HtmlEncode(Convert.ToString(Session["RolNombre"]));
                 string rolCodigo = Convert.ToString(Session["RolCodigo"]);
                 NavegacionAdministrativa.Visible = EsRol(rolCodigo, "ADMINISTRATIVO");
                 NavegacionPaciente.Visible = EsRol(rolCodigo, "PACIENTE");
                 NavegacionProfesional.Visible = EsRol(rolCodigo, "PROFESIONAL");
+            }
+            else
+            {
+                UsuarioActual.Visible = false;
+                UsuarioAnonimo.Visible = true;
             }
         }
 

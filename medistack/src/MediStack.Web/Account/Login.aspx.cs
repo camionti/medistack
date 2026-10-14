@@ -10,7 +10,7 @@ namespace MediStack.Web.Account
         {
             if (!IsPostBack && Context.User.Identity.IsAuthenticated)
             {
-                Redirigir("~/Dashboard.aspx");
+                Redirigir("~/Default.aspx");
             }
         }
 
@@ -31,7 +31,7 @@ namespace MediStack.Web.Account
             }
 
             SesionUsuario.Iniciar(Context, resultado.Usuario);
-            Redirigir("~/Dashboard.aspx");
+            Redirigir("~/Default.aspx");
         }
 
         private void Redirigir(string url)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Configuration;
 using System.Web.Hosting;
 using System.Web.UI;
@@ -14,7 +14,7 @@ namespace MediStack.Web.Account
         {
             if (!IsPostBack && Context.User.Identity.IsAuthenticated)
             {
-                Response.Redirect(ResolveUrl("~/Dashboard.aspx"), false);
+                Response.Redirect(ResolveUrl("~/Default.aspx"), false);
                 Context.ApplicationInstance.CompleteRequest();
             }
         }

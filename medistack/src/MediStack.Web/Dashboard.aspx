@@ -1,4 +1,4 @@
-<%@ Page Title="Inicio" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Dashboard.aspx.cs" Inherits="MediStack.Web.Dashboard" %>
+<%@ Page Title="Tu espacio" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Dashboard.aspx.cs" Inherits="MediStack.Web.Dashboard" %>
 <asp:Content ID="DashboardContent" ContentPlaceHolderID="MainContent" runat="server">
     <section class="page-heading" aria-labelledby="dashboard-title">
         <p class="eyebrow">Panel principal</p>

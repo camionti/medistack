@@ -123,6 +123,21 @@ input:focus-visible,
     font-size: .9rem;
 }
 
+.header-espacio-link {
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    text-decoration: none;
+    padding: .35rem .75rem;
+    border-radius: .5rem;
+    background: rgba(33, 82, 255, .08);
+    transition: background .2s ease, color .2s ease;
+}
+
+.header-espacio-link:hover {
+    background: rgba(33, 82, 255, .15);
+    color: var(--color-primary);
+}
+
 .logout-link {
     font-weight: 600;
 }
