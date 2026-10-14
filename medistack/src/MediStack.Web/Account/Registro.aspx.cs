@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Web.Hosting;
+using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using MediStack.Dominio;
@@ -16,11 +17,16 @@ namespace MediStack.Web.Account
         {
             if (IsPostBack) return;
 
-            if (Context.User.Identity.IsAuthenticated)
+            if (Context.User.Identity.IsAuthenticated && Session["UsuarioId"] != null)
             {
                 Response.Redirect(ResolveUrl("~/Dashboard.aspx"), false);
                 Context.ApplicationInstance.CompleteRequest();
                 return;
+            }
+            else if (Context.User.Identity.IsAuthenticated)
+            {
+                FormsAuthentication.SignOut();
+                Session.Clear();
             }
 
             CargarObrasSociales();
@@ -93,7 +99,7 @@ namespace MediStack.Web.Account
             if (resultado.Exitoso)
             {
                 SesionUsuario.Iniciar(Context, resultado.Usuario);
-                destino = "~/Dashboard.aspx";
+                destino = "~/Default.aspx";
             }
 
             // 3) Redirect despues del POST: si el usuario aprieta F5 no se reenvia el formulario.

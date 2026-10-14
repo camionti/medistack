@@ -18,26 +18,31 @@
                     CssClass="button button-light" CausesValidation="false" Visible="false"
                     OnClick="CancelarReprogramacion_Click" formnovalidate="formnovalidate" />
             </div>
-            <div class="form-grid">
-                <asp:Panel ID="PacienteSelectorPanel" runat="server" CssClass="form-group" Visible="false">
+            <div class="form-grid solicitud-steps" data-solicitud-steps="true">
+                <asp:Panel ID="PacienteSelectorPanel" runat="server" CssClass="form-group solicitud-step solicitud-step-active" Visible="false">
                     <asp:Label ID="PacienteLabel" runat="server" AssociatedControlID="Paciente" Text="Paciente" />
-                    <asp:DropDownList ID="Paciente" runat="server" CssClass="form-control" />
+                    <asp:DropDownList ID="Paciente" runat="server" CssClass="form-control"
+                        AutoPostBack="true" OnSelectedIndexChanged="Paciente_SelectedIndexChanged" />
+                    <span class="form-note solicitud-step-hint">Elegí el paciente para comenzar la solicitud.</span>
                 </asp:Panel>
-                <div class="form-group">
-                    <asp:Label ID="EspecialidadLabel" runat="server" AssociatedControlID="Especialidad" Text="1. Especialidad" />
+                <div class="form-group solicitud-step solicitud-step-active" data-step="1">
+                    <asp:Label ID="EspecialidadLabel" runat="server" AssociatedControlID="Especialidad" Text="Especialidad" />
                     <asp:DropDownList ID="Especialidad" runat="server" CssClass="form-control"
                         AutoPostBack="true" OnSelectedIndexChanged="Especialidad_SelectedIndexChanged" />
+                    <span class="form-note solicitud-step-hint">Elegí el motivo principal de tu consulta.</span>
                 </div>
-                <div class="form-group">
-                    <asp:Label ID="ProfesionalLabel" runat="server" AssociatedControlID="Profesional" Text="2. Profesional" />
+                <div class="form-group solicitud-step" data-step="2">
+                    <asp:Label ID="ProfesionalLabel" runat="server" AssociatedControlID="Profesional" Text="Profesional" />
                     <asp:DropDownList ID="Profesional" runat="server" CssClass="form-control"
                         AutoPostBack="true" OnSelectedIndexChanged="Profesional_SelectedIndexChanged" />
+                    <span class="form-note solicitud-step-hint">Se habilita al elegir una especialidad.</span>
                 </div>
-                <div class="form-group">
-                    <asp:Label ID="FechaDisponibilidadLabel" runat="server" AssociatedControlID="FechaDisponibilidad" Text="3. Fecha del turno" />
+                <div class="form-group solicitud-step" data-step="3">
+                    <asp:Label ID="FechaDisponibilidadLabel" runat="server" AssociatedControlID="FechaDisponibilidad" Text="Fecha del turno" />
                     <asp:TextBox ID="FechaDisponibilidad" runat="server" CssClass="form-control" TextMode="Date" />
+                    <span class="form-note solicitud-step-hint">Se habilita al elegir un profesional.</span>
                 </div>
-                <div class="form-group form-group-full">
+                <div class="form-group form-group-full solicitud-motivo">
                     <asp:Label ID="MotivoLabel" runat="server" AssociatedControlID="Motivo" Text="Motivo de consulta (opcional)" />
                     <asp:TextBox ID="Motivo" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="2" MaxLength="500" />
                 </div>
@@ -82,6 +87,63 @@
             </div>
         </section>
     </asp:Panel>
+
+    <script type="text/javascript">
+        (function () {
+            var steps = document.querySelector('[data-solicitud-steps="true"]');
+            if (!steps) {
+                return;
+            }
+
+            var specialty = document.getElementById('<%= Especialidad.ClientID %>');
+            var patient = document.getElementById('<%= Paciente.ClientID %>');
+            var professional = document.getElementById('<%= Profesional.ClientID %>');
+            var date = document.getElementById('<%= FechaDisponibilidad.ClientID %>');
+            var reason = document.getElementById('<%= Motivo.ClientID %>');
+            var availability = document.getElementById('<%= ConsultarDisponibilidad.ClientID %>');
+            if (!specialty || !professional || !date || !reason || !availability) {
+                return;
+            }
+
+            function updateSteps() {
+                var hasPatient = !patient || patient.value !== '';
+                var hasSpecialty = specialty.value !== '';
+                var hasProfessional = professional.value !== '';
+                var hasDate = date.value !== '';
+                var patientStep = patient ? patient.closest('.solicitud-step') : null;
+                var specialtyStep = specialty.closest('.solicitud-step');
+                var professionalStep = professional.closest('.solicitud-step');
+                var dateStep = date.closest('.solicitud-step');
+
+                specialty.disabled = !hasPatient;
+                professional.disabled = !hasPatient || !hasSpecialty;
+                date.disabled = !hasPatient || !hasProfessional;
+                reason.disabled = !hasDate;
+                availability.disabled = !hasDate || !hasProfessional;
+
+                if (patientStep) {
+                    patientStep.classList.add('solicitud-step-active');
+                }
+                if (specialtyStep) {
+                    specialtyStep.classList.toggle('solicitud-step-active', hasPatient);
+                }
+                if (professionalStep) {
+                    professionalStep.classList.toggle('solicitud-step-active', hasPatient && hasSpecialty);
+                }
+                if (dateStep) {
+                    dateStep.classList.toggle('solicitud-step-active', hasPatient && hasProfessional);
+                }
+            }
+
+            if (patient) {
+                patient.addEventListener('change', updateSteps);
+            }
+            specialty.addEventListener('change', updateSteps);
+            professional.addEventListener('change', updateSteps);
+            date.addEventListener('input', updateSteps);
+            updateSteps();
+        }());
+    </script>
 
     <section class="panel management-panel" aria-labelledby="mis-turnos-title">
         <h2 id="mis-turnos-title" class="section-title"><asp:Literal ID="TituloListado" runat="server">Turnos</asp:Literal></h2>

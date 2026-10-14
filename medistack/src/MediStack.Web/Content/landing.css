@@ -1,0 +1,925 @@
+/* ==========================================================================
+   MediStack Solutions - Landing Page Stylesheet
+   Enfoque: Salud Digital Inclusiva, Accesibilidad Universal (WCAG 2.1 AA)
+   ========================================================================== */
+
+/* Variables locales para la landing */
+:root {
+    --landing-primary: #2152ff;
+    --landing-primary-dark: #163ecc;
+    --landing-accent: #21d4fd;
+    --landing-purple: #7928ca;
+    --landing-ink: #0f172a;
+    --landing-muted: #475569;
+    --landing-surface: #ffffff;
+    --landing-surface-alt: #f8fafc;
+    --landing-border: #e2e8f0;
+    --landing-border-light: #f1f5f9;
+    --landing-shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
+    --landing-shadow-md: 0 10px 30px rgba(33, 82, 255, 0.08);
+    --landing-shadow-lg: 0 20px 45px rgba(15, 23, 42, 0.08);
+    --landing-radius: 1.25rem;
+    --landing-radius-sm: 0.75rem;
+}
+
+/* Contenedor principal de la landing */
+.landing-page {
+    display: flex;
+    flex-direction: column;
+    gap: 4.5rem;
+    padding-bottom: 3rem;
+}
+
+/* --------------------------------------------------------------------------
+   Hero Section
+   -------------------------------------------------------------------------- */
+.landing-hero {
+    position: relative;
+    padding: 2.5rem 0 1.5rem;
+}
+
+.hero-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: center;
+    gap: 3rem;
+}
+
+.hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1rem;
+    background: rgba(33, 82, 255, 0.08);
+    color: var(--landing-primary-dark);
+    border: 1px solid rgba(33, 82, 255, 0.18);
+    border-radius: 9999px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-bottom: 1.25rem;
+}
+
+.hero-badge-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+.hero-title {
+    font-size: clamp(2.3rem, 4.5vw, 3.6rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: var(--landing-ink);
+    margin: 0 0 1.25rem 0;
+}
+
+.hero-title .gradient-text {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-lead {
+    font-size: 1.12rem;
+    line-height: 1.65;
+    color: var(--landing-muted);
+    margin: 0 0 2rem 0;
+    max-width: 640px;
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 5;
+}
+
+.btn-hero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.6rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: var(--landing-radius-sm);
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    min-height: 48px;
+    cursor: pointer;
+    position: relative;
+    z-index: 6;
+}
+
+.btn-hero svg {
+    pointer-events: none;
+}
+
+.btn-hero-primary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #2152ff 0%, #1a42e0 100%);
+    box-shadow: 0 8px 22px rgba(33, 82, 255, 0.28);
+    border: none;
+}
+
+.btn-hero-primary:hover {
+    color: #ffffff;
+    background: linear-gradient(135deg, #1a42e0 0%, #123bc1 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(33, 82, 255, 0.35);
+}
+
+.btn-hero-secondary {
+    color: var(--landing-ink);
+    background: #ffffff;
+    border: 2px solid var(--landing-border);
+    box-shadow: var(--landing-shadow-sm);
+}
+
+.btn-hero-secondary:hover {
+    color: var(--landing-primary-dark);
+    border-color: var(--landing-primary);
+    background: #f8fafc;
+    transform: translateY(-2px);
+}
+
+/* Panel de sesión activa en Hero */
+.hero-auth-box {
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    background: #ffffff;
+    border: 1px solid rgba(33, 82, 255, 0.2);
+    border-left: 5px solid var(--landing-primary);
+    border-radius: var(--landing-radius-sm);
+    box-shadow: var(--landing-shadow-md);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.hero-auth-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.hero-auth-greeting {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--landing-ink);
+    margin: 0;
+}
+
+.hero-auth-role {
+    font-size: 0.88rem;
+    color: var(--landing-muted);
+    margin: 0.2rem 0 0 0;
+}
+
+/* Tarjeta conceptual de accesibilidad y métricas (Hero Visual) */
+.hero-visual-card {
+    background: #ffffff;
+    border: 1px solid var(--landing-border);
+    border-radius: var(--landing-radius);
+    padding: 2rem;
+    box-shadow: var(--landing-shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-visual-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #2152ff, #21d4fd, #7928ca);
+}
+
+.visual-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.visual-card-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--landing-ink);
+    margin: 0;
+}
+
+.visual-badge-wcag {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.visual-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.metric-item {
+    background: var(--landing-surface-alt);
+    padding: 1rem;
+    border-radius: var(--landing-radius-sm);
+    border: 1px solid var(--landing-border-light);
+}
+
+.metric-item-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--landing-primary);
+    line-height: 1.2;
+}
+
+.metric-item-label {
+    font-size: 0.82rem;
+    color: var(--landing-muted);
+    margin-top: 0.25rem;
+    font-weight: 600;
+}
+
+.visual-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.visual-feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.9rem;
+    color: var(--landing-ink);
+    font-weight: 600;
+}
+
+.feature-check-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: #10b981;
+}
+
+/* --------------------------------------------------------------------------
+   Encabezados de sección comunes
+   -------------------------------------------------------------------------- */
+.section-header {
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto 3rem auto;
+}
+
+.section-eyebrow {
+    color: var(--landing-primary);
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 0.5rem 0;
+}
+
+.section-title {
+    font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+    font-weight: 800;
+    color: var(--landing-ink);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin: 0 0 1rem 0;
+}
+
+.section-subtitle {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--landing-muted);
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Sección: Inclusión y Accesibilidad Universal
+   -------------------------------------------------------------------------- */
+.inclusion-section {
+    background: linear-gradient(180deg, rgba(33, 82, 255, 0.03) 0%, rgba(33, 212, 253, 0.05) 100%);
+    border: 1px solid var(--landing-border);
+    border-radius: var(--landing-radius);
+    padding: 3.5rem 2rem;
+}
+
+.accessibility-callout {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    background: #ffffff;
+    border: 2px dashed #93c5fd;
+    border-radius: var(--landing-radius-sm);
+    padding: 1.25rem 1.75rem;
+    margin-bottom: 2.5rem;
+    box-shadow: var(--landing-shadow-sm);
+}
+
+.callout-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    color: var(--landing-primary);
+}
+
+.callout-text h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--landing-ink);
+}
+
+.callout-text p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--landing-muted);
+}
+
+.accessibility-pillars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.75rem;
+}
+
+.pillar-card {
+    background: #ffffff;
+    border: 1px solid var(--landing-border);
+    border-radius: var(--landing-radius-sm);
+    padding: 1.75rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.pillar-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--landing-shadow-md);
+    border-color: #93c5fd;
+}
+
+.pillar-icon-box {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    background: rgba(33, 82, 255, 0.08);
+    color: var(--landing-primary);
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+}
+
+.pillar-icon-box svg {
+    width: 28px;
+    height: 28px;
+}
+
+.pillar-card h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--landing-ink);
+    margin: 0 0 0.75rem 0;
+}
+
+.pillar-card p {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--landing-muted);
+    margin: 0 0 1rem 0;
+    flex-grow: 1;
+}
+
+.pillar-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.pillar-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    background: var(--landing-surface-alt);
+    border: 1px solid var(--landing-border);
+    border-radius: 6px;
+    color: #334155;
+}
+
+/* --------------------------------------------------------------------------
+   Sección: Empresa de Software (MediStack Solutions)
+   -------------------------------------------------------------------------- */
+.company-card {
+    background: #ffffff;
+    border: 1px solid var(--landing-border);
+    border-radius: var(--landing-radius);
+    padding: 2.75rem;
+    box-shadow: var(--landing-shadow-md);
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 3rem;
+    align-items: center;
+}
+
+.company-content h3 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--landing-ink);
+    margin: 0 0 1rem 0;
+    letter-spacing: -0.02em;
+}
+
+.company-content p {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--landing-muted);
+    margin: 0 0 1.25rem 0;
+}
+
+.company-highlights {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.highlight-box {
+    padding: 1.25rem;
+    background: var(--landing-surface-alt);
+    border: 1px solid var(--landing-border-light);
+    border-radius: var(--landing-radius-sm);
+}
+
+.highlight-box-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--landing-ink);
+    margin: 0 0 0.35rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.highlight-box-title svg {
+    width: 18px;
+    height: 18px;
+    color: var(--landing-primary);
+}
+
+.highlight-box p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--landing-muted);
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Sección: Módulos de la Suite Clínica
+   -------------------------------------------------------------------------- */
+.modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.module-card {
+    background: #ffffff;
+    border: 1px solid var(--landing-border);
+    border-radius: var(--landing-radius);
+    padding: 2.25rem;
+    box-shadow: var(--landing-shadow-sm);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.module-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--landing-shadow-lg);
+}
+
+.module-number {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.75rem;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #e2e8f0;
+    line-height: 1;
+}
+
+.module-icon-wrap {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.module-icon-wrap.paciente {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.module-icon-wrap.profesional {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.module-icon-wrap.admin {
+    background: #faf5ff;
+    color: #9333ea;
+}
+
+.module-icon-wrap svg {
+    width: 26px;
+    height: 26px;
+}
+
+.module-card h3 {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--landing-ink);
+    margin: 0 0 0.75rem 0;
+}
+
+.module-card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--landing-muted);
+    margin: 0 0 1.5rem 0;
+    flex-grow: 1;
+}
+
+.module-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    border-top: 1px solid var(--landing-border);
+    padding-top: 1.25rem;
+}
+
+.module-feature-list li {
+    font-size: 0.88rem;
+    color: var(--landing-ink);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.module-feature-list li::before {
+    content: "•";
+    color: var(--landing-primary);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* --------------------------------------------------------------------------
+   Sección: Stack y Compromiso Técnico
+   -------------------------------------------------------------------------- */
+.tech-banner {
+    background: #ffffff;
+    border: 1px solid var(--landing-border);
+    border-radius: var(--landing-radius);
+    padding: 2.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.tech-banner-info {
+    max-width: 540px;
+}
+
+.tech-banner-info h3 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--landing-ink);
+    margin: 0 0 0.5rem 0;
+}
+
+.tech-banner-info p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--landing-muted);
+    margin: 0;
+}
+
+.tech-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    max-width: 440px;
+}
+
+.tech-tag {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--landing-primary-dark);
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Sección: Banner Final (Call to Action)
+   -------------------------------------------------------------------------- */
+.landing-cta-banner {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0284c7 100%);
+    border-radius: var(--landing-radius);
+    padding: 3.5rem 2.5rem;
+    color: #ffffff;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 20px 40px rgba(30, 58, 138, 0.25);
+}
+
+.landing-cta-banner h2 {
+    font-size: clamp(2rem, 3.8vw, 2.75rem);
+    font-weight: 800;
+    margin: 0 0 1rem 0;
+    letter-spacing: -0.02em;
+}
+
+.landing-cta-banner p {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    max-width: 680px;
+    margin: 0 0 2rem 0;
+    opacity: 0.92;
+}
+
+.cta-banner-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    position: relative;
+    z-index: 5;
+}
+
+.btn-cta-white {
+    background: #ffffff;
+    color: #1e3a8a;
+    font-weight: 800;
+    border: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    position: relative;
+    z-index: 6;
+}
+
+.btn-cta-white:hover {
+    background: #f8fafc;
+    color: #172554;
+    transform: translateY(-2px);
+}
+
+.btn-cta-outline {
+    background: transparent;
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    z-index: 6;
+}
+
+.btn-cta-outline:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #ffffff;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   Navegación Anónima en Header
+   -------------------------------------------------------------------------- */
+.anon-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.anon-login-link {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--landing-ink);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.anon-login-link:hover {
+    color: var(--landing-primary);
+}
+
+.button-sm {
+    min-height: 40px;
+    padding: 0.45rem 1rem;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+/* --------------------------------------------------------------------------
+   SOPORTE PARA ACCESIBILIDAD: ALTO CONTRASTE (WCAG 2.1 AAA)
+   -------------------------------------------------------------------------- */
+html[data-ms-contraste="alto"] .hero-badge {
+    background: #000000 !important;
+    color: #ffff00 !important;
+    border: 2px solid #ffff00 !important;
+}
+
+html[data-ms-contraste="alto"] .hero-title .gradient-text {
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: unset !important;
+    color: #003b73 !important;
+}
+
+html[data-ms-contraste="alto"] .hero-visual-card,
+html[data-ms-contraste="alto"] .inclusion-section,
+html[data-ms-contraste="alto"] .pillar-card,
+html[data-ms-contraste="alto"] .company-card,
+html[data-ms-contraste="alto"] .module-card,
+html[data-ms-contraste="alto"] .tech-banner,
+html[data-ms-contraste="alto"] .accessibility-callout,
+html[data-ms-contraste="alto"] .metric-item,
+html[data-ms-contraste="alto"] .highlight-box {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+    box-shadow: none !important;
+}
+
+html[data-ms-contraste="alto"] .hero-visual-card::before {
+    background: #000000 !important;
+}
+
+html[data-ms-contraste="alto"] .pillar-icon-box,
+html[data-ms-contraste="alto"] .module-icon-wrap {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+}
+
+html[data-ms-contraste="alto"] .btn-hero-primary,
+html[data-ms-contraste="alto"] .btn-cta-white {
+    background: #003b73 !important;
+    color: #ffffff !important;
+    border: 2px solid #003b73 !important;
+    box-shadow: none !important;
+}
+
+html[data-ms-contraste="alto"] .btn-hero-secondary,
+html[data-ms-contraste="alto"] .btn-cta-outline {
+    background: #ffffff !important;
+    color: #003b73 !important;
+    border: 2px solid #003b73 !important;
+    box-shadow: none !important;
+}
+
+html[data-ms-contraste="alto"] .landing-cta-banner {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 3px solid #ffffff !important;
+    box-shadow: none !important;
+}
+
+html[data-ms-contraste="alto"] .header-espacio-link,
+html[data-ms-contraste="alto"] .anon-login-link {
+    color: #003b73 !important;
+    text-decoration: underline !important;
+}
+
+html[data-ms-contraste="alto"] .hero-auth-box {
+    background: #ffffff !important;
+    border: 3px solid #000000 !important;
+    border-left: 8px solid #000000 !important;
+    box-shadow: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   SOPORTE PARA ESCALADO TIPOGRÁFICO (150% y 200%)
+   -------------------------------------------------------------------------- */
+html[data-ms-tamano="grande"] .hero-grid,
+html[data-ms-tamano="muy-grande"] .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+html[data-ms-tamano="grande"] .company-card,
+html[data-ms-tamano="muy-grande"] .company-card {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 1.5rem;
+}
+
+html[data-ms-tamano="grande"] .company-highlights,
+html[data-ms-tamano="muy-grande"] .company-highlights {
+    grid-template-columns: 1fr;
+}
+
+html[data-ms-tamano="muy-grande"] .hero-title {
+    font-size: 2rem !important;
+}
+
+html[data-ms-tamano="muy-grande"] .section-title {
+    font-size: 1.6rem !important;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+    .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+
+    .company-card {
+        grid-template-columns: 1fr;
+        padding: 2rem;
+    }
+
+    .landing-page {
+        gap: 3.5rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-hero {
+        width: 100%;
+    }
+
+    .company-highlights {
+        grid-template-columns: 1fr;
+    }
+
+    .accessibility-callout {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cta-banner-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .cta-banner-actions a {
+        width: 100%;
+    }
+
+    .hero-auth-box {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hero-auth-box a {
+        width: 100%;
+    }
+}

@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Configuration;
 using System.Web.Hosting;
+using System.Web.Security;
 using System.Web.UI;
 using MediStack.Negocio;
 
@@ -12,10 +13,18 @@ namespace MediStack.Web.Account
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (!IsPostBack && Context.User.Identity.IsAuthenticated)
+            if (!IsPostBack)
             {
-                Response.Redirect(ResolveUrl("~/Dashboard.aspx"), false);
-                Context.ApplicationInstance.CompleteRequest();
+                if (Context.User.Identity.IsAuthenticated && Session["UsuarioId"] != null)
+                {
+                    Response.Redirect(ResolveUrl("~/Dashboard.aspx"), false);
+                    Context.ApplicationInstance.CompleteRequest();
+                }
+                else if (Context.User.Identity.IsAuthenticated)
+                {
+                    FormsAuthentication.SignOut();
+                    Session.Clear();
+                }
             }
         }
 

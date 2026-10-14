@@ -58,22 +58,30 @@
             </details>
         </div>
         <header class="site-header">
-            <a class="brand" href="<%: ResolveUrl("~/Dashboard.aspx") %>" aria-label="MediStack, inicio">
+            <a class="brand" href="<%: ResolveUrl("~/Default.aspx") %>" aria-label="MediStack, inicio">
                 <img class="brand-logo" height="44" style="height:44px;width:auto" src="<%: ResolveUrl("~/Content/MediStack-logo-violeta.png") %>" alt="MediStack" />
             </a>
             <nav class="user-nav" aria-label="Cuenta">
                 <asp:PlaceHolder ID="UsuarioActual" runat="server" Visible="false">
+                    <a class="header-espacio-link" href="<%: ResolveUrl("~/Dashboard.aspx") %>">Ver tu espacio</a>
                     <span class="user-summary">
                         <asp:Literal ID="NombreActual" runat="server" />
                         <span class="user-role"><asp:Literal ID="RolActual" runat="server" /></span>
                     </span>
                     <a class="logout-link" href="<%: ResolveUrl("~/Salir.aspx") %>">Cerrar sesión</a>
                 </asp:PlaceHolder>
+                <asp:PlaceHolder ID="UsuarioAnonimo" runat="server" Visible="false">
+                    <div class="anon-nav">
+                        <a class="anon-login-link" href="<%: ResolveUrl("~/Account/Login.aspx") %>">Ingresar</a>
+                        <a class="button button-primary button-sm" href="<%: ResolveUrl("~/Account/Registro.aspx") %>">Crear cuenta</a>
+                    </div>
+                </asp:PlaceHolder>
             </nav>
         </header>
         <asp:Panel ID="NavegacionAdministrativa" runat="server" CssClass="admin-nav" Visible="false">
             <nav class="admin-nav-inner" aria-label="Gestión de la clínica">
-                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Inicio</a>
+                <a href="<%: ResolveUrl("~/Default.aspx") %>">Inicio</a>
+                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Ver tu espacio</a>
                 <a href="<%: ResolveUrl("~/Pacientes.aspx") %>">Pacientes</a>
                 <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Turnos</a>
                 <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Cobros</a>
@@ -88,7 +96,8 @@
         </asp:Panel>
         <asp:Panel ID="NavegacionPaciente" runat="server" CssClass="admin-nav" Visible="false">
             <nav class="admin-nav-inner" aria-label="Mi cuenta de paciente">
-                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Inicio</a>
+                <a href="<%: ResolveUrl("~/Default.aspx") %>">Inicio</a>
+                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Ver tu espacio</a>
                 <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Mis turnos</a>
                 <a href="<%: ResolveUrl("~/Turnos.aspx") %>#solicitar-turno-title">Solicitar turno</a>
                 <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente de turnos</a>
@@ -98,7 +107,8 @@
         </asp:Panel>
         <asp:Panel ID="NavegacionProfesional" runat="server" CssClass="admin-nav" Visible="false">
             <nav class="admin-nav-inner" aria-label="Mi actividad profesional">
-                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Inicio</a>
+                <a href="<%: ResolveUrl("~/Default.aspx") %>">Inicio</a>
+                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Ver tu espacio</a>
                 <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Mi agenda</a>
                 <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Turnos</a>
                 <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Cobros</a>

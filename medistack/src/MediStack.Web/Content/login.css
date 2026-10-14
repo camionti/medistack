@@ -99,6 +99,42 @@ body:has(.login-page) .main-container {
     transition: border-color .2s ease, box-shadow .2s ease;
 }
 
+.password-input-wrapper {
+    position: relative;
+}
+
+.login-card .password-input-wrapper .form-control {
+    padding-right: 52px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    color: #64748b;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.password-toggle:hover {
+    color: #2152ff;
+    background: #eff6ff;
+}
+
+.password-toggle-icon {
+    width: 20px;
+    height: 20px;
+}
+
 .login-card .form-control:hover {
     border-color: #cbd5e1;
 }
