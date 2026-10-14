@@ -434,10 +434,6 @@ input:focus-visible,
     gap: 1rem;
 }
 
-.solicitud-steps {
-    counter-reset: solicitud-step;
-}
-
 .solicitud-step {
     position: relative;
     min-width: 0;
@@ -447,18 +443,6 @@ input:focus-visible,
     background: #f8faff;
     opacity: .58;
     transition: border-color .2s ease, box-shadow .2s ease, opacity .2s ease, background .2s ease;
-}
-
-.solicitud-step::before {
-    content: "Paso " counter(solicitud-step);
-    counter-increment: solicitud-step;
-    display: block;
-    margin-bottom: .35rem;
-    color: var(--color-muted);
-    font-size: .75rem;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
 }
 
 .solicitud-step-active {

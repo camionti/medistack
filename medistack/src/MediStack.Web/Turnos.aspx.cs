@@ -88,6 +88,20 @@ namespace MediStack.Web
             });
         }
 
+        protected void Paciente_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            EjecutarConManejoDeErrores("No se pudo cambiar el paciente", () =>
+            {
+                LimpiarMensaje();
+                Especialidad.ClearSelection();
+                CargarProfesionales();
+                FechaDisponibilidad.Text = string.Empty;
+                Motivo.Text = string.Empty;
+                LimpiarDisponibilidad();
+                ConfigurarPasosSolicitud();
+            });
+        }
+
         protected void Profesional_SelectedIndexChanged(object sender, EventArgs e)
         {
             EjecutarConManejoDeErrores("No se pudo consultar la disponibilidad", () =>
@@ -410,11 +424,13 @@ namespace MediStack.Web
                 return;
             }
 
-            bool tieneEspecialidad = Especialidad.SelectedValue.Length > 0;
-            bool tieneProfesional = Profesional.SelectedValue.Length > 0;
+            bool tienePaciente = !EsAdministrativo || Paciente.SelectedValue.Length > 0;
+            bool tieneEspecialidad = tienePaciente && Especialidad.SelectedValue.Length > 0;
+            bool tieneProfesional = tieneEspecialidad && Profesional.SelectedValue.Length > 0;
             bool tieneFecha = !string.IsNullOrWhiteSpace(FechaDisponibilidad.Text);
 
-            Especialidad.Enabled = true;
+            Paciente.Enabled = EsAdministrativo;
+            Especialidad.Enabled = tienePaciente;
             Profesional.Enabled = tieneEspecialidad;
             FechaDisponibilidad.Enabled = tieneProfesional;
             Motivo.Enabled = tieneFecha;
