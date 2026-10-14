@@ -1,4 +1,5 @@
 using System;
+using System.Web.Security;
 using System.Web.UI;
 
 namespace MediStack.Web
@@ -7,28 +8,31 @@ namespace MediStack.Web
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (!IsPostBack)
+            if (Context.User.Identity.IsAuthenticated && Session["UsuarioId"] == null)
             {
-                bool estaAutenticado = Context.User.Identity.IsAuthenticated && Session["UsuarioId"] != null;
+                FormsAuthentication.SignOut();
+                Session.Clear();
+            }
 
-                PanelUsuarioAutenticado.Visible = estaAutenticado;
-                PanelUsuarioAnonimo.Visible = !estaAutenticado;
-                PanelCtaAutenticado.Visible = estaAutenticado;
-                PanelCtaAnonimo.Visible = !estaAutenticado;
+            bool estaAutenticado = Context.User.Identity.IsAuthenticated && Session["UsuarioId"] != null;
 
-                if (estaAutenticado)
+            PanelUsuarioAutenticado.Visible = estaAutenticado;
+            PanelUsuarioAnonimo.Visible = !estaAutenticado;
+            PanelCtaAutenticado.Visible = estaAutenticado;
+            PanelCtaAnonimo.Visible = !estaAutenticado;
+
+            if (estaAutenticado)
+            {
+                string nombre = Convert.ToString(Session["NombreCompleto"]);
+                string rol = Convert.ToString(Session["RolNombre"]);
+
+                if (string.IsNullOrWhiteSpace(nombre))
                 {
-                    string nombre = Convert.ToString(Session["NombreCompleto"]);
-                    string rol = Convert.ToString(Session["RolNombre"]);
-
-                    if (string.IsNullOrWhiteSpace(nombre))
-                    {
-                        nombre = Context.User.Identity.Name;
-                    }
-
-                    NombreUsuarioLiteral.Text = Server.HtmlEncode(nombre);
-                    RolUsuarioLiteral.Text = Server.HtmlEncode(rol ?? string.Empty);
+                    nombre = Context.User.Identity.Name;
                 }
+
+                NombreUsuarioLiteral.Text = Server.HtmlEncode(nombre);
+                RolUsuarioLiteral.Text = Server.HtmlEncode(rol ?? string.Empty);
             }
         }
     }

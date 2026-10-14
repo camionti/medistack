@@ -103,6 +103,8 @@
     align-items: center;
     gap: 1rem;
     margin-bottom: 2rem;
+    position: relative;
+    z-index: 5;
 }
 
 .btn-hero {
@@ -117,6 +119,13 @@
     text-decoration: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     min-height: 48px;
+    cursor: pointer;
+    position: relative;
+    z-index: 6;
+}
+
+.btn-hero svg {
+    pointer-events: none;
 }
 
 .btn-hero-primary {
@@ -682,6 +691,8 @@
     flex-wrap: wrap;
     gap: 1rem;
     justify-content: center;
+    position: relative;
+    z-index: 5;
 }
 
 .btn-cta-white {
@@ -690,6 +701,9 @@
     font-weight: 800;
     border: none;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    position: relative;
+    z-index: 6;
 }
 
 .btn-cta-white:hover {
@@ -703,6 +717,9 @@
     color: #ffffff;
     border: 2px solid rgba(255, 255, 255, 0.6);
     font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    z-index: 6;
 }
 
 .btn-cta-outline:hover {

@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Web.Hosting;
+using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using MediStack.Dominio;
@@ -16,11 +17,16 @@ namespace MediStack.Web.Account
         {
             if (IsPostBack) return;
 
-            if (Context.User.Identity.IsAuthenticated)
+            if (Context.User.Identity.IsAuthenticated && Session["UsuarioId"] != null)
             {
-                Response.Redirect(ResolveUrl("~/Default.aspx"), false);
+                Response.Redirect(ResolveUrl("~/Dashboard.aspx"), false);
                 Context.ApplicationInstance.CompleteRequest();
                 return;
+            }
+            else if (Context.User.Identity.IsAuthenticated)
+            {
+                FormsAuthentication.SignOut();
+                Session.Clear();
             }
 
             CargarObrasSociales();

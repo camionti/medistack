@@ -1,4 +1,5 @@
 using System;
+using System.Web.Security;
 using System.Web.UI;
 using MediStack.Negocio;
 
@@ -8,9 +9,17 @@ namespace MediStack.Web.Account
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (!IsPostBack && Context.User.Identity.IsAuthenticated)
+            if (!IsPostBack)
             {
-                Redirigir("~/Default.aspx");
+                if (Context.User.Identity.IsAuthenticated && Session["UsuarioId"] != null)
+                {
+                    Redirigir("~/Dashboard.aspx");
+                }
+                else if (Context.User.Identity.IsAuthenticated)
+                {
+                    FormsAuthentication.SignOut();
+                    Session.Clear();
+                }
             }
         }
 
