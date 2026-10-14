@@ -92,17 +92,35 @@ namespace MediStack.Datos
             };
         }
 
-        public bool ExisteEmail(string email)
+        public bool ExisteEmail(string email, Guid? excluirUsuarioId = null)
         {
-            string query = "SELECT 1 FROM dbo.Usuarios WHERE Email = @Email";
-            var dt = Consultar(query, new SqlParameter("@Email", email));
+            const string query = @"
+        SELECT 1 FROM dbo.Usuarios
+        WHERE Email = @Email
+          AND (@ExcluirId IS NULL OR UsuarioId <> @ExcluirId);";
+            var dt = Consultar(query,
+                ParametroTexto("@Email", email, 256),
+                new SqlParameter("@ExcluirId", SqlDbType.UniqueIdentifier)
+                {
+                    Value = excluirUsuarioId.HasValue && excluirUsuarioId.Value != Guid.Empty
+                        ? (object)excluirUsuarioId.Value : DBNull.Value
+                });
             return dt.Rows.Count > 0;
         }
 
-        public bool ExisteNombreUsuario(string nombreUsuario)
+        public bool ExisteNombreUsuario(string nombreUsuario, Guid? excluirUsuarioId = null)
         {
-            string query = "SELECT 1 FROM dbo.Usuarios WHERE NombreUsuario = @Usuario";
-            var dt = Consultar(query, ParametroTexto("@Usuario", nombreUsuario, 50));
+            const string query = @"
+        SELECT 1 FROM dbo.Usuarios
+        WHERE NombreUsuario = @Usuario
+          AND (@ExcluirId IS NULL OR UsuarioId <> @ExcluirId);";
+            var dt = Consultar(query,
+                ParametroTexto("@Usuario", nombreUsuario, 50),
+                new SqlParameter("@ExcluirId", SqlDbType.UniqueIdentifier)
+                {
+                    Value = excluirUsuarioId.HasValue && excluirUsuarioId.Value != Guid.Empty
+                        ? (object)excluirUsuarioId.Value : DBNull.Value
+                });
             return dt.Rows.Count > 0;
         }
         public bool ExisteDni(string dni)
