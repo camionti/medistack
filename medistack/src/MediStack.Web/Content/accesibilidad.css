@@ -366,3 +366,134 @@ html[data-ms-contraste="alto"] .ms-visual-reset {
         padding: 18px;
     }
 }
+
+.ms-visual-panel {
+    width: min(500px, calc(100vw - 24px));
+}
+.ms-visual-section {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+    padding: 16px;
+    background: #f7f9ff;
+    border: 1px solid #d8e2f3;
+    border-radius: 14px;
+}
+.ms-visual-section-title {
+    margin: 0;
+    color: #172554;
+    font-size: .95rem;
+    font-weight: 800;
+}
+.ms-visual-section .ms-visual-check {
+    min-height: 44px;
+}
+.ms-visual-label-line {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.ms-visual-label-line label {
+    margin: 0;
+}
+.ms-visual-label-line output {
+    color: #1e40af;
+    font-weight: 800;
+    font-size: .95rem;
+    font-variant-numeric: tabular-nums;
+}
+.ms-visual-range {
+    display: block;
+    width: 100%;
+    min-height: 36px;
+    margin: 0;
+    accent-color: #174adf;
+    cursor: pointer;
+}
+html[data-ms-tamano] {
+    font-size: var(--ms-tamano-texto, 100%) !important;
+}
+html[data-ms-fuente="serif"] body,
+html[data-ms-fuente="serif"] body :is(input, select, textarea, button) {
+    font-family: Georgia, "Times New Roman", serif !important;
+}
+html[data-ms-fuente="sans"] body,
+html[data-ms-fuente="sans"] body :is(input, select, textarea, button) {
+    font-family: Arial, "Segoe UI", sans-serif !important;
+}
+html[data-ms-interlineado="si"] main :is(p, li, dd, dt, .form-note),
+html[data-ms-interlineado="si"] .landing-page :is(p, li) {
+    line-height: var(--ms-interlineado, 1.5) !important;
+}
+html[data-ms-letras="si"] main :is(p, li, dd, dt, label, a, td, th),
+html[data-ms-letras="si"] .landing-page :is(p, li) {
+    letter-spacing: var(--ms-letras, 0px) !important;
+}
+html[data-ms-ancho="estrecho"] main p:not(.ms-visual-subtitle):not(.ms-visual-status) {
+    max-width: 42ch;
+}
+html[data-ms-ancho="amplio"] main p:not(.ms-visual-subtitle):not(.ms-visual-status) {
+    max-width: 75ch;
+}
+html[data-ms-negrita="si"] body :is(p, li, td, th, label, a, button, input, select, textarea, dd, dt) {
+    font-weight: 700 !important;
+}
+html[data-ms-enlaces="si"] body a:not(.brand) {
+    text-decoration: underline !important;
+    text-decoration-thickness: .12em !important;
+    text-underline-offset: .2em;
+}
+html[data-ms-enlaces="si"] body :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 4px solid #ad1d1d !important;
+    outline-offset: 4px !important;
+    box-shadow: 0 0 0 2px #fff !important;
+}
+html[data-ms-contraste="alto"] .ms-visual-section {
+    color: #111;
+    background: #fff;
+    border: 2px solid #111;
+}
+html[data-ms-contraste="alto"] .ms-visual-section-title,
+html[data-ms-contraste="alto"] .ms-visual-label-line output {
+    color: #111;
+}
+html[data-ms-contraste="alto"][data-ms-enlaces="si"] body :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline-color: #111 !important;
+    box-shadow: 0 0 0 3px #ffd600 !important;
+}
+html[data-ms-movimiento="reducido"] *,
+html[data-ms-movimiento="reducido"] *::before,
+html[data-ms-movimiento="reducido"] *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    html *, html *::before, html *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+@media (max-width: 600px) {
+    .ms-visual-panel {
+        width: min(500px, calc(100vw - 24px));
+        padding: 16px;
+    }
+    .ms-visual-section {
+        padding: 12px;
+    }
+}
+@media (forced-colors: active) {
+    .ms-visual-section {
+        border: 1px solid CanvasText;
+    }
+    .ms-visual-section-title {
+        color: CanvasText;
+    }
+}

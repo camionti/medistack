@@ -14,8 +14,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="<%: ResolveUrl("~/Content/site.css") %>?v=<%: System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Content/site.css")).Ticks %>" rel="stylesheet" />
     <asp:ContentPlaceHolder ID="HeadContent" runat="server" />
-    <link href="<%: ResolveUrl("~/Content/accesibilidad.css") %>?v=1" rel="stylesheet" />
-    <script src="<%: ResolveUrl("~/Scripts/accesibilidad.js") %>?v=1"></script>
+    <link href="<%: ResolveUrl("~/Content/accesibilidad.css") %>?v=3" rel="stylesheet" />
+    <script src="<%: ResolveUrl("~/Scripts/accesibilidad.js") %>?v=3"></script>
 </head>
 <body>
     <form id="MainForm" runat="server">
@@ -32,25 +32,72 @@
                     <div class="ms-visual-top">
                         <div>
                             <h2 id="ms-ajustes-titulo" class="ms-visual-title">Accesibilidad visual</h2>
-                            <p class="ms-visual-subtitle">Personalizá cómo se ve MediStack.</p>
+                            <p class="ms-visual-subtitle">Ajustá la lectura, el texto y la navegación.</p>
                         </div>
                         <button type="button" id="ms-ajustes-cerrar" class="ms-visual-close" aria-label="Cerrar ajustes">&#215;</button>
                     </div>
                     <fieldset id="ms-ajustes-opciones" class="ms-visual-options" disabled>
-                        <legend class="ms-visual-legend">Preferencias visuales</legend>
-                        <div class="ms-visual-group">
-                            <label for="ms-tamano-texto">Tamaño del texto</label>
-                            <select id="ms-tamano-texto" class="form-control">
-                                <option value="normal">100 %</option>
-                                <option value="grande">150 %</option>
-                                <option value="muy-grande">200 %</option>
-                            </select>
-                        </div>
-                        <label class="ms-visual-check" for="ms-alto-contraste">
-                            <input type="checkbox" id="ms-alto-contraste" />
-                            Alto contraste
-                        </label>
-                        <button type="button" id="ms-restablecer" class="button button-light ms-visual-reset">Restablecer apariencia</button>
+                        <legend class="ms-visual-legend">Preferencias de accesibilidad</legend>
+                        <section class="ms-visual-section" aria-labelledby="ms-lectura-titulo">
+                            <h3 id="ms-lectura-titulo" class="ms-visual-section-title">Lectura y tipografía</h3>
+                            <div class="ms-visual-group">
+                                <div class="ms-visual-label-line">
+                                    <label for="ms-tamano-texto">Tamaño del texto</label>
+                                    <output id="ms-tamano-valor" for="ms-tamano-texto">100 %</output>
+                                </div>
+                                <input id="ms-tamano-texto" class="ms-visual-range" type="range" min="100" max="200" step="10" value="100" />
+                            </div>
+                            <div class="ms-visual-group">
+                                <label for="ms-fuente">Tipo de letra</label>
+                                <select id="ms-fuente" class="form-control">
+                                    <option value="original">Original</option>
+                                    <option value="sans">Sin serifas</option>
+                                    <option value="serif">Con serifas</option>
+                                </select>
+                            </div>
+                            <div class="ms-visual-group">
+                                <div class="ms-visual-label-line">
+                                    <label for="ms-interlineado">Altura de línea</label>
+                                    <output id="ms-interlineado-valor" for="ms-interlineado">1,5</output>
+                                </div>
+                                <input id="ms-interlineado" class="ms-visual-range" type="range" min="1.5" max="2" step="0.1" value="1.5" />
+                            </div>
+                            <div class="ms-visual-group">
+                                <div class="ms-visual-label-line">
+                                    <label for="ms-espaciado-letras">Espaciado entre letras</label>
+                                    <output id="ms-letras-valor" for="ms-espaciado-letras">0 px</output>
+                                </div>
+                                <input id="ms-espaciado-letras" class="ms-visual-range" type="range" min="0" max="2" step="0.5" value="0" />
+                            </div>
+                            <div class="ms-visual-group">
+                                <label for="ms-ancho-parrafo">Ancho de lectura</label>
+                                <select id="ms-ancho-parrafo" class="form-control">
+                                    <option value="normal">Original</option>
+                                    <option value="estrecho">Estrecho</option>
+                                    <option value="amplio">Amplio</option>
+                                </select>
+                            </div>
+                            <label class="ms-visual-check" for="ms-texto-negrita">
+                                <input type="checkbox" id="ms-texto-negrita" />
+                                Texto más destacado
+                            </label>
+                        </section>
+                        <section class="ms-visual-section" aria-labelledby="ms-apariencia-titulo">
+                            <h3 id="ms-apariencia-titulo" class="ms-visual-section-title">Apariencia y navegación</h3>
+                            <label class="ms-visual-check" for="ms-alto-contraste">
+                                <input type="checkbox" id="ms-alto-contraste" />
+                                Alto contraste
+                            </label>
+                            <label class="ms-visual-check" for="ms-resaltar-enlaces">
+                                <input type="checkbox" id="ms-resaltar-enlaces" />
+                                Destacar enlaces y foco
+                            </label>
+                            <label class="ms-visual-check" for="ms-reducir-movimiento">
+                                <input type="checkbox" id="ms-reducir-movimiento" />
+                                Reducir animaciones
+                            </label>
+                        </section>
+                        <button type="button" id="ms-restablecer" class="button button-light ms-visual-reset">Restablecer todos los ajustes</button>
                     </fieldset>
                     <p id="ms-ajustes-estado" class="ms-visual-status" role="status" aria-live="polite" aria-atomic="true">Cargando ajustes de visualización.</p>
                     <noscript><p>Activá JavaScript para usar estos ajustes. También podés ampliar la página desde el navegador.</p></noscript>
