@@ -8,11 +8,6 @@ namespace MediStack.Datos
 {
     public sealed class TurnosDatos
     {
-        // Regla UNICA de cobertura, usada por el listado de profesionales y por el calculo de la seña.
-        // Un paciente esta cubierto para un profesional y especialidad si su obra social tiene un
-        // convenio activo y vigente en @FechaCobertura con ese profesional y especialidad, con un
-        // porcentaje de cobertura mayor a 0. La consulta que la usa debe tener el alias "pe"
-        // (dbo.ProfesionalesEspecialidades) y los parametros @PacienteId y @FechaCobertura.
         private const string SqlTieneCobertura = @"
             EXISTS
             (
@@ -85,8 +80,6 @@ namespace MediStack.Datos
                 ParametroInt32("@EspecialidadId", especialidadId));
         }
 
-        // Profesionales de la especialidad vistos por un paciente: primero los que su obra social
-        // cubre, despues los que no. La cobertura se evalua a la fecha de hoy.
         public DataTable ObtenerProfesionalesPorEspecialidadParaPaciente(int especialidadId, Guid pacienteId)
         {
             return Consultar(@"
@@ -173,8 +166,6 @@ namespace MediStack.Datos
                 });
         }
 
-        // Revision del dia: turnos cuya hora ya paso y siguen sin resolver (ni atendidos, ausentes ni cancelados).
-        // Incluye los de hoy y los de dias anteriores que quedaron pendientes.
         public DataTable ObtenerTurnosSinResolver()
         {
             return Consultar(@"
@@ -243,7 +234,6 @@ namespace MediStack.Datos
             };
         }
 
-        // Datos de la seña de un turno para el checkout. null si el turno no existe.
         public SenaParaPagar ObtenerSenaDeTurno(int turnoId)
         {
             DataTable datos = Consultar(@"
@@ -276,7 +266,6 @@ namespace MediStack.Datos
             };
         }
 
-        // Devuelve el Id del turno creado y el monto de la seña pendiente (0 si no requiere seña).
         public ReservaTurno SolicitarTurno(SolicitudTurno solicitud)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
@@ -286,11 +275,9 @@ namespace MediStack.Datos
                 {
                     try
                     {
-                        // Limpieza perezosa: antes de validar el horario, se liberan las reservas vencidas.
                         LiberarReservasVencidas(conexion, transaccion);
                         ValidarHorarioYDisponibilidad(conexion, transaccion, solicitud, null);
 
-                        // Seña: solo para reservas online de pacientes sin cobertura para este turno.
                         decimal montoSena = 0m;
                         string estadoSena = "NoRequerida";
                         DateTime? vencimientoSena = null;
@@ -326,7 +313,6 @@ namespace MediStack.Datos
                 {
                     try
                     {
-                        // Limpieza perezosa: el horario destino puede estar ocupado por una reserva vencida.
                         LiberarReservasVencidas(conexion, transaccion);
 
                         TurnoDetalle original = ObtenerTurnoBloqueado(conexion, transaccion, turnoId);
@@ -345,7 +331,6 @@ namespace MediStack.Datos
                             throw new InvalidOperationException("Solo se pueden reprogramar turnos futuros solicitados o confirmados.");
                         }
 
-                        // Regla de 24 hs: solo aplica al paciente; el administrativo puede reprogramar siempre.
                         if (pacienteAutorizado.HasValue && !ReglasTurno.PacienteDentroDelPlazo(original.FechaHora))
                         {
                             throw new InvalidOperationException("Los turnos solo se pueden reprogramar con al menos "
@@ -359,9 +344,71 @@ namespace MediStack.Datos
                             throw new InvalidOperationException("Selecciona un horario diferente para reprogramar el turno.");
                         }
 
+                        decimal montoSenaOriginal;
+                        string estadoSenaOriginal;
+                        DateTime? vencimientoSenaOriginal;
+                        DateTime? fechaHoraSenaOriginal;
+                        ObtenerDatosSenaTurno(
+                            conexion, transaccion, turnoId,
+                            out montoSenaOriginal, out estadoSenaOriginal,
+                            out vencimientoSenaOriginal, out fechaHoraSenaOriginal);
+
                         ValidarHorarioYDisponibilidad(conexion, transaccion, destino, turnoId);
-                        CancelarTurnoEnTransaccion(conexion, transaccion, turnoId);
-                        InsertarTurno(conexion, transaccion, destino);
+
+                        decimal nuevoMontoSena = 0m;
+                        string nuevoEstadoSena = "NoRequerida";
+                        DateTime? nuevoVencimientoSena = null;
+                        DateTime? nuevaFechaHoraSena = null;
+                        string nuevoEstadoTurno = "Solicitado";
+
+                        if (estadoSenaOriginal == "Pagada")
+                        {
+                            nuevoMontoSena = montoSenaOriginal;
+                            nuevoEstadoSena = "Pagada";
+                            nuevaFechaHoraSena = fechaHoraSenaOriginal;
+                            nuevoEstadoTurno = "Confirmado";
+                        }
+                        else if (estadoSenaOriginal == "Pendiente" || destino.EsReservaOnline)
+                        {
+                            nuevoMontoSena = CalcularSenaRequerida(conexion, transaccion, destino);
+                            if (nuevoMontoSena > 0)
+                            {
+                                nuevoEstadoSena = "Pendiente";
+                                nuevoVencimientoSena = vencimientoSenaOriginal ?? ReglasTurno.CalcularVencimientoSena(DateTime.Now);
+                            }
+                        }
+
+                        using (SqlCommand cmdCancelar = new SqlCommand(@"
+                            UPDATE dbo.Turnos
+                            SET Estado = N'Cancelado',
+                                EstadoSena = N'NoRequerida',
+                                VencimientoSena = NULL
+                            WHERE TurnoId = @TurnoId;",
+                            conexion, transaccion))
+                        {
+                            cmdCancelar.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
+                            cmdCancelar.ExecuteNonQuery();
+                        }
+
+                        int nuevoTurnoId = InsertarTurno(
+                            conexion, transaccion, destino,
+                            nuevoMontoSena, nuevoEstadoSena, nuevoVencimientoSena,
+                            nuevoEstadoTurno, nuevaFechaHoraSena);
+
+                        if (estadoSenaOriginal == "Pagada")
+                        {
+                            using (SqlCommand cmdCobro = new SqlCommand(@"
+                                UPDATE dbo.Cobros
+                                SET TurnoId = @NuevoTurnoId
+                                WHERE TurnoId = @TurnoId AND TipoCobro = N'Sena';",
+                                conexion, transaccion))
+                            {
+                                cmdCobro.Parameters.Add("@NuevoTurnoId", SqlDbType.Int).Value = nuevoTurnoId;
+                                cmdCobro.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
+                                cmdCobro.ExecuteNonQuery();
+                            }
+                        }
+
                         transaccion.Commit();
                     }
                     catch (InvalidOperationException)
@@ -408,7 +455,6 @@ namespace MediStack.Datos
                             throw new InvalidOperationException("Solo se pueden cancelar turnos futuros solicitados o confirmados.");
                         }
 
-                        // Regla de 24 hs: solo aplica al paciente; el administrativo puede cancelar siempre.
                         if (pacienteAutorizado.HasValue && !ReglasTurno.PacienteDentroDelPlazo(turno.FechaHora))
                         {
                             throw new InvalidOperationException("Los turnos solo se pueden cancelar con al menos "
@@ -600,15 +646,45 @@ namespace MediStack.Datos
             }
         }
 
+        private static void ObtenerDatosSenaTurno(
+            SqlConnection conexion, SqlTransaction transaccion, int turnoId,
+            out decimal montoSena, out string estadoSena,
+            out DateTime? vencimientoSena, out DateTime? fechaHoraSena)
+        {
+            montoSena = 0m;
+            estadoSena = "NoRequerida";
+            vencimientoSena = null;
+            fechaHoraSena = null;
+
+            using (SqlCommand comando = new SqlCommand(@"
+                SELECT MontoSena, EstadoSena, VencimientoSena, FechaHoraSena
+                FROM dbo.Turnos
+                WHERE TurnoId = @TurnoId;",
+                conexion, transaccion))
+            {
+                comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
+                using (SqlDataReader lector = comando.ExecuteReader())
+                {
+                    if (lector.Read())
+                    {
+                        montoSena = lector.GetDecimal(0);
+                        estadoSena = lector.GetString(1);
+                        vencimientoSena = lector.IsDBNull(2) ? (DateTime?)null : lector.GetDateTime(2);
+                        fechaHoraSena = lector.IsDBNull(3) ? (DateTime?)null : lector.GetDateTime(3);
+                    }
+                }
+            }
+        }
+
         private static void CancelarTurnoEnTransaccion(
             SqlConnection conexion, SqlTransaction transaccion, int turnoId)
         {
-            // Si el turno tenia una seña sin pagar, ya no se va a cobrar: pasa a 'NoRequerida'.
-            // Sin esto, la seña de un turno cancelado quedaba 'Pendiente' para siempre.
             using (SqlCommand comando = new SqlCommand(@"
                 UPDATE dbo.Turnos
                 SET Estado = N'Cancelado',
-                    EstadoSena = CASE WHEN EstadoSena = N'Pendiente' THEN N'NoRequerida' ELSE EstadoSena END
+                    EstadoSena = CASE WHEN EstadoSena = N'Pendiente' THEN N'NoRequerida'
+                                      WHEN EstadoSena = N'Pagada' THEN N'Reembolsada'
+                                      ELSE EstadoSena END
                 WHERE TurnoId = @TurnoId;",
                 conexion, transaccion))
             {
@@ -617,8 +693,6 @@ namespace MediStack.Datos
             }
         }
 
-        // Reintegro de la seña: si el turno cancelado tenia la seña pagada, queda 'Reembolsada'
-        // (el importe conserva su Cobro como historial; la devolucion del dinero la gestiona la clinica).
         private static void ReintegrarSenaPagada(
             SqlConnection conexion, SqlTransaction transaccion, int turnoId)
         {
@@ -633,8 +707,6 @@ namespace MediStack.Datos
             }
         }
 
-        // Limpieza perezosa (version publica): la usa Negocio antes de mostrar la disponibilidad
-        // o los turnos de un paciente. Abre su propia conexion y se confirma sola.
         public void LiberarReservasVencidas()
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
@@ -644,10 +716,6 @@ namespace MediStack.Datos
             }
         }
 
-        // Cancela las reservas online cuya seña sigue pendiente y ya vencio, para liberar el horario.
-        // No hay ningun proceso programado: se ejecuta justo antes de cada operacion que depende de
-        // la agenda ("limpieza perezosa"). El indice IX_Turnos_SenaPendienteVencimiento la hace rapida.
-        // La seña pasa a 'Vencida' (no se pago a tiempo); MontoSena y VencimientoSena quedan como historial.
         private static void LiberarReservasVencidas(SqlConnection conexion, SqlTransaction transaccion)
         {
             using (SqlCommand comando = new SqlCommand(@"
@@ -660,15 +728,11 @@ namespace MediStack.Datos
                   AND Estado = N'Solicitado';",
                 conexion, transaccion))
             {
-                // Se libera recien cuando paso el vencimiento + el margen para pagos de ultimo momento.
                 comando.Parameters.Add("@MargenMinutos", SqlDbType.Int).Value = ReglasTurno.MinutosMargenPagoSena;
                 comando.ExecuteNonQuery();
             }
         }
 
-        // Calcula la seña de una reserva online: si el paciente NO tiene cobertura vigente para este
-        // profesional y especialidad (sin obra social, o sin convenio vigente), paga un porcentaje
-        // del valor de la consulta. Usa el mismo criterio de convenio vigente que CobrosDatos.
         private static decimal CalcularSenaRequerida(
             SqlConnection conexion, SqlTransaction transaccion, SolicitudTurno solicitud)
         {
@@ -684,7 +748,6 @@ namespace MediStack.Datos
                 comando.Parameters.Add("@PacienteId", SqlDbType.UniqueIdentifier).Value = solicitud.PacienteId;
                 comando.Parameters.Add("@ProfesionalId", SqlDbType.UniqueIdentifier).Value = solicitud.ProfesionalId;
                 comando.Parameters.Add("@EspecialidadId", SqlDbType.Int).Value = solicitud.EspecialidadId;
-                // Para la seña, la cobertura se evalua a la fecha DEL TURNO (no a la de hoy).
                 comando.Parameters.Add("@FechaCobertura", SqlDbType.Date).Value = solicitud.FechaHora.Date;
 
                 using (SqlDataReader lector = comando.ExecuteReader())
@@ -701,27 +764,30 @@ namespace MediStack.Datos
             }
         }
 
-        // Inserta el turno y devuelve su Id (SCOPE_IDENTITY: el Id generado por ESTE insert).
         private static int InsertarTurno(
             SqlConnection conexion, SqlTransaction transaccion, SolicitudTurno solicitud,
-            decimal montoSena = 0m, string estadoSena = "NoRequerida", DateTime? vencimientoSena = null)
+            decimal montoSena = 0m, string estadoSena = "NoRequerida", DateTime? vencimientoSena = null,
+            string estado = "Solicitado", DateTime? fechaHoraSena = null)
         {
             using (SqlCommand comando = new SqlCommand(@"
                 INSERT INTO dbo.Turnos
                     (PacienteId, ProfesionalId, EspecialidadId, FechaHora, Estado, Motivo,
-                     MontoSena, EstadoSena, VencimientoSena)
+                     MontoSena, EstadoSena, VencimientoSena, FechaHoraSena)
                 VALUES
-                    (@PacienteId, @ProfesionalId, @EspecialidadId, @FechaHora, N'Solicitado', @Motivo,
-                     @MontoSena, @EstadoSena, @VencimientoSena);
+                    (@PacienteId, @ProfesionalId, @EspecialidadId, @FechaHora, @Estado, @Motivo,
+                     @MontoSena, @EstadoSena, @VencimientoSena, @FechaHoraSena);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);",
                 conexion, transaccion))
             {
+                comando.Parameters.Add("@Estado", SqlDbType.NVarChar, 20).Value = estado;
                 comando.Parameters.Add("@MontoSena", SqlDbType.Decimal).Value = montoSena;
                 comando.Parameters["@MontoSena"].Precision = 12;
                 comando.Parameters["@MontoSena"].Scale = 2;
                 comando.Parameters.Add("@EstadoSena", SqlDbType.NVarChar, 20).Value = estadoSena;
                 comando.Parameters.Add("@VencimientoSena", SqlDbType.DateTime2).Value =
                     vencimientoSena.HasValue ? (object)vencimientoSena.Value : DBNull.Value;
+                comando.Parameters.Add("@FechaHoraSena", SqlDbType.DateTime2).Value =
+                    fechaHoraSena.HasValue ? (object)fechaHoraSena.Value : DBNull.Value;
                 comando.Parameters.Add("@PacienteId", SqlDbType.UniqueIdentifier).Value = solicitud.PacienteId;
                 comando.Parameters.Add("@ProfesionalId", SqlDbType.UniqueIdentifier).Value = solicitud.ProfesionalId;
                 comando.Parameters.Add("@EspecialidadId", SqlDbType.Int).Value = solicitud.EspecialidadId;
