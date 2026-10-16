@@ -901,6 +901,25 @@ namespace MediStack.Datos
             }
         }
 
+        public bool TieneTurnoVigenteEspecialidad(Guid pacienteId, int especialidadId, int? turnoExcluido)
+        {
+            DataTable tabla = Consultar(@"
+                SELECT TOP (1) 1
+                FROM dbo.Turnos
+                WHERE PacienteId = @PacienteId
+                  AND EspecialidadId = @EspecialidadId
+                  AND Estado IN (N'Solicitado', N'Confirmado')
+                  AND (@TurnoExcluido IS NULL OR TurnoId <> @TurnoExcluido);",
+                ParametroGuid("@PacienteId", pacienteId),
+                ParametroInt32("@EspecialidadId", especialidadId),
+                new SqlParameter("@TurnoExcluido", SqlDbType.Int)
+                {
+                    Value = turnoExcluido.HasValue ? (object)turnoExcluido.Value : DBNull.Value
+                });
+
+            return tabla.Rows.Count > 0;
+        }
+
         private DataTable Consultar(string sql, params SqlParameter[] parametros)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))

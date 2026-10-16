@@ -86,6 +86,28 @@ namespace MediStack.Web
                 {
                     MostrarError("No hay profesionales activos que atiendan esta especialidad.");
                 }
+                else if (!EsReprogramacion && Especialidad.SelectedValue.Length > 0)
+                {
+                    int espId;
+                    if (int.TryParse(Especialidad.SelectedValue, out espId) && espId > 0)
+                    {
+                        try
+                        {
+                            Guid pacId = ObtenerPacienteSeleccionado();
+                            if (_negocio.TieneTurnoVigenteEspecialidad(pacId, espId, null))
+                            {
+                                string aviso = EsPaciente
+                                    ? "Atención: Ya tenés un turno vigente para esta especialidad. Recordá que podés reprogramarlo o cancelarlo desde la sección 'Mis turnos'."
+                                    : "Atención: El paciente ya cuenta con un turno vigente para esta especialidad.";
+                                MostrarError(aviso);
+                            }
+                        }
+                        catch
+                        {
+                            // Si todavía no se seleccionó paciente (ej. administrativo), no validar aún
+                        }
+                    }
+                }
             });
         }
 
@@ -122,6 +144,7 @@ namespace MediStack.Web
 
         protected void ConsultarDisponibilidad_Click(object sender, EventArgs e)
         {
+            LimpiarMensaje();
             EjecutarConManejoDeErrores("No se pudo consultar la disponibilidad", CargarDisponibilidad);
         }
 
@@ -156,8 +179,8 @@ namespace MediStack.Web
                 DataKey horario = DisponibilidadGrid.DataKeys[indice];
                 if (!Convert.ToBoolean(horario.Values["Disponible"]))
                 {
-                    MostrarError("Ese horario ya no está disponible. Consulta nuevamente la agenda.");
                     CargarDisponibilidad();
+                    MostrarError("Ese horario ya no está disponible. Consulta nuevamente la agenda.");
                     return;
                 }
 
@@ -169,6 +192,16 @@ namespace MediStack.Web
                 if (!EsPropioPaciente(pacienteId) && !EsAdministrativo)
                 {
                     MostrarError("No tienes permiso para solicitar un turno para otro paciente.");
+                    return;
+                }
+
+                if (!EsReprogramacion && _negocio.TieneTurnoVigenteEspecialidad(pacienteId, especialidadId, null))
+                {
+                    CargarDisponibilidad();
+                    string mensajeTurnoVigente = EsPaciente
+                        ? "Ya tenés un turno vigente para esta especialidad. Recordá que solo podés tener un turno por especialidad a la vez; podés reprogramar o cancelar tu turno actual desde la sección 'Mis turnos'."
+                        : "El paciente ya cuenta con un turno vigente para esta especialidad.";
+                    MostrarError(mensajeTurnoVigente);
                     return;
                 }
 
@@ -231,13 +264,13 @@ namespace MediStack.Web
             }
             catch (InvalidOperationException ex)
             {
-                MostrarError(ex.Message);
                 CargarDisponibilidad();
+                MostrarError(ex.Message);
             }
             catch (SqlException ex)
             {
-                MostrarError("No se pudo guardar el turno (error SQL " + ex.Number + "). Actualiza la disponibilidad e intenta nuevamente.");
                 CargarDisponibilidad();
+                MostrarError("No se pudo guardar el turno (error SQL " + ex.Number + "). Actualiza la disponibilidad e intenta nuevamente.");
             }
         }
 
@@ -663,7 +696,6 @@ namespace MediStack.Web
                 profesionalId, especialidadId, fecha, turnoExcluido);
             DisponibilidadGrid.DataBind();
             MostrarDuracionSeleccionada();
-            LimpiarMensaje();
             if (DisponibilidadGrid.Rows.Count == 0)
             {
                 MostrarError(ExplicarSinHorarios(profesionalId, especialidadId, fecha));

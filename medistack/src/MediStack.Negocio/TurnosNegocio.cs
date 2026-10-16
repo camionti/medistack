@@ -346,10 +346,20 @@ namespace MediStack.Negocio
             return _datos.ObtenerTurno(turnoId);
         }
 
+        public bool TieneTurnoVigenteEspecialidad(Guid pacienteId, int especialidadId, int? turnoExcluido = null)
+        {
+            if (pacienteId == Guid.Empty || especialidadId <= 0)
+            {
+                return false;
+            }
+
+            return _datos.TieneTurnoVigenteEspecialidad(pacienteId, especialidadId, turnoExcluido);
+        }
+
         // Devuelve el Id del turno creado y la seña pendiente (0 si el turno no requiere seña).
         public ReservaTurno SolicitarTurno(SolicitudTurno solicitud)
         {
-            ValidarSolicitud(solicitud);
+            ValidarSolicitud(solicitud, null);
             ReservaTurno reserva = null;
             EjecutarSeguro(() => reserva = _datos.SolicitarTurno(solicitud));
             return reserva;
@@ -362,7 +372,7 @@ namespace MediStack.Negocio
                 throw new InvalidOperationException("Selecciona un turno valido para reprogramar.");
             }
 
-            ValidarSolicitud(destino);
+            ValidarSolicitud(destino, turnoId);
             EjecutarSeguro(() => _datos.ReprogramarTurno(turnoId, pacienteAutorizado, destino));
         }
 
@@ -397,7 +407,7 @@ namespace MediStack.Negocio
             }
         }
 
-        private static void ValidarSolicitud(SolicitudTurno solicitud)
+        private void ValidarSolicitud(SolicitudTurno solicitud, int? turnoExcluido)
         {
             if (solicitud == null || solicitud.PacienteId == Guid.Empty
                 || solicitud.ProfesionalId == Guid.Empty || solicitud.EspecialidadId <= 0)
@@ -414,6 +424,14 @@ namespace MediStack.Negocio
             if (solicitud.Motivo.Length > 500)
             {
                 throw new InvalidOperationException("El motivo no puede superar los 500 caracteres.");
+            }
+
+            if (_datos.TieneTurnoVigenteEspecialidad(solicitud.PacienteId, solicitud.EspecialidadId, turnoExcluido))
+            {
+                string mensaje = solicitud.EsReservaOnline
+                    ? "Ya tenés un turno vigente para esta especialidad. Recordá que solo podés tener un turno por especialidad a la vez; podés reprogramar o cancelar tu turno actual desde la sección 'Mis turnos'."
+                    : "El paciente ya cuenta con un turno vigente para esta especialidad.";
+                throw new InvalidOperationException(mensaje);
             }
         }
 
