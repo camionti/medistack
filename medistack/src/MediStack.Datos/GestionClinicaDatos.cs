@@ -229,13 +229,17 @@ namespace MediStack.Datos
         public bool PuedeProfesionalVerFichaPaciente(Guid pacienteId, Guid profesionalId)
         {
             DataTable resultado = Consultar(@"
-                SELECT TOP (1) 1 AS PuedeVer
-                FROM dbo.Turnos
-                WHERE PacienteId = @PacienteId
-                  AND ProfesionalId = @ProfesionalId
-                  AND Estado <> N'Cancelado';",
+        DECLARE @Hoy DATE = CONVERT(date, SYSDATETIME());
+        SELECT TOP (1) 1 AS PuedeVer
+        FROM dbo.Turnos
+        WHERE PacienteId = @PacienteId
+        AND ProfesionalId = @ProfesionalId
+        AND Estado <> N'Cancelado'
+        AND FechaHora >= @Hoy
+        AND FechaHora < DATEADD(day, 1, @Hoy);",
                 ParametroGuid("@PacienteId", pacienteId),
                 ParametroGuid("@ProfesionalId", profesionalId));
+
             return resultado.Rows.Count > 0;
         }
 
