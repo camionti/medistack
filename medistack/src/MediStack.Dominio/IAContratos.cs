@@ -42,5 +42,6 @@ namespace MediStack.Dominio
     {
         public string Nombre { get; set; }
         public string ArgumentosJson { get; set; }
+        public string Firma { get; set; }
     }
 }

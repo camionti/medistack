@@ -23,6 +23,9 @@
         </div>
         <asp:HiddenField ID="CanalEntrada" runat="server" Value="Texto" />
         <div class="form-actions">
+            <p id="ms-estado" class="form-note" role="status" aria-live="polite" hidden>
+    El asistente está pensando… puede tardar unos segundos.
+</p> 
             <asp:Button ID="Enviar" runat="server" Text="Enviar mensaje" CssClass="button button-primary"
                 OnClick="Enviar_Click" />
             <button type="button" id="ms-dictar" class="button button-secondary" hidden>Dictar por voz</button>
@@ -52,5 +55,27 @@
                 r.start();
             });
         })();
+    </script>
+
+    <script>
+(function () {
+    var form = document.forms[0]; 
+    var estado = document.getElementById('ms-estado');
+    var texto = document.getElementById('<%= Consulta.ClientID %>'); 
+        var enviar = document.getElementById('<%= Enviar.ClientID %>');
+        if (!form || !estado || !texto || !enviar) { return; } 
+
+        form.addEventListener('submit', function (e) {
+            if (!e.submitter || e.submitter.id !== enviar.id) { return; } 
+
+            setTimeout(function () {
+                estado.hidden = false;
+                texto.readOnly = true; 
+                var botones = form.querySelectorAll('.management-panel input[type=submit], .management-panel button');
+                for (var i = 0; i < botones.length; i++) { botones[i].disabled = true; } 
+                enviar.value = 'Enviando…'; 
+            }, 0);
+        });
+    })();
     </script>
 </asp:Content>

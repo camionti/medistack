@@ -103,14 +103,12 @@ namespace MediStack.Negocio
         {
             if (_apiKey.Length == 0)
             {
-                throw new InvalidOperationException(
-                    "Falta configurar Gemini.ApiKey en secrets.config.");
+                throw new InvalidOperationException("Falta configurar Gemini.ApiKey en secrets.config.");
             }
 
             if (_modelo.Length == 0)
             {
-                throw new InvalidOperationException(
-                    "Falta configurar Gemini.Modelo en secrets.config.");
+                throw new InvalidOperationException("Falta configurar Gemini.Modelo en secrets.config.");
             }
         }
 
@@ -159,26 +157,28 @@ namespace MediStack.Negocio
                     object argumentos = string.IsNullOrWhiteSpace(mensaje.Llamada.ArgumentosJson)
                         ? new Dictionary<string, object>()
                         : serializador.DeserializeObject(mensaje.Llamada.ArgumentosJson);
+
+                    Dictionary<string, object> parteLlamada = new Dictionary<string, object>
+                    {
+                        {
+                            "functionCall",
+                            new Dictionary<string, object>
+                            {
+                                { "name", mensaje.Llamada.Nombre },
+                                { "args", argumentos }
+                            }
+                        }
+                    };
+
+                    if (!string.IsNullOrEmpty(mensaje.Llamada.Firma))
+                    {
+                        parteLlamada["thoughtSignature"] = mensaje.Llamada.Firma;
+                    }
+
                     contenidos.Add(new Dictionary<string, object>
                     {
                         { "role", "model" },
-                        {
-                            "parts",
-                            new List<Dictionary<string, object>>
-                            {
-                                new Dictionary<string, object>
-                                {
-                                    {
-                                        "functionCall",
-                                        new Dictionary<string, object>
-                                        {
-                                            { "name", mensaje.Llamada.Nombre },
-                                            { "args", argumentos }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        { "parts", new List<Dictionary<string, object>> { parteLlamada } }
                     });
                     continue;
                 }
@@ -297,11 +297,16 @@ namespace MediStack.Negocio
                     if (datos != null && datos.TryGetValue("name", out nombre))
                     {
                         datos.TryGetValue("args", out argumentos);
+
+                        object firmaObjeto;
+                        parte.TryGetValue("thoughtSignature", out firmaObjeto);
+
                         llamada = new LlamadaHerramientaIA
                         {
                             Nombre = Convert.ToString(nombre),
                             ArgumentosJson = new JavaScriptSerializer().Serialize(
-                                argumentos ?? new Dictionary<string, object>())
+                                argumentos ?? new Dictionary<string, object>()),
+                            Firma = firmaObjeto == null ? null : Convert.ToString(firmaObjeto)
                         };
                     }
                 }
@@ -344,28 +349,32 @@ namespace MediStack.Negocio
             HttpWebResponse respuesta = ex.Response as HttpWebResponse;
             if (respuesta != null)
             {
-                if ((int)respuesta.StatusCode == 401 || (int)respuesta.StatusCode == 403)
-                {
+                int codigo = (int)respuesta.StatusCode;
+                if (codigo == 401 || codigo == 403)
                     return new InvalidOperationException("Gemini rechazo la API key configurada.");
-                }
-
-                if ((int)respuesta.StatusCode == 429)
-                {
+                if (codigo == 429)
                     return new InvalidOperationException("Gemini informo que se alcanzo el limite de solicitudes.");
-                }
-
-                if ((int)respuesta.StatusCode >= 500)
-                {
+                if (codigo >= 500)
                     return new InvalidOperationException("Gemini no esta disponible en este momento.");
+
+                string detalle = string.Empty;
+                try
+                {
+                    using (StreamReader lector = new StreamReader(respuesta.GetResponseStream(), Encoding.UTF8))
+                    {
+                        detalle = lector.ReadToEnd();
+                    }
                 }
+                catch { }
+
+                System.Diagnostics.Trace.WriteLine("Gemini HTTP " + codigo + ": " + detalle);
+                return new InvalidOperationException("Gemini respondio con error " + codigo + ".");
             }
 
             if (ex.Status == WebExceptionStatus.Timeout)
-            {
                 return new InvalidOperationException("Gemini no respondio dentro del tiempo permitido.");
-            }
 
-            return new InvalidOperationException("No se pudo comunicarse con Gemini.");
+            return new InvalidOperationException("No se pudo comunicarse con Gemini (" + ex.Status + ").");
         }
     }
 }
