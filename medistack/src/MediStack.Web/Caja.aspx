@@ -72,7 +72,53 @@
                 </Columns>
             </asp:GridView>
         </div>
-        <p class="form-note">No se muestran egresos porque el esquema no tiene una entidad para registrarlos.</p>
+        <p class="form-note">Los egresos en efectivo se registran en la sección siguiente.</p>
+    </section>
+
+    <section class="panel management-panel" aria-labelledby="egresos-title">
+        <h2 id="egresos-title" class="section-title">Egresos de caja</h2>
+        <p class="form-note">Gastos menores pagados en efectivo desde el cajón. Se descuentan del efectivo esperado al cerrar la caja.</p>
+        <asp:Panel ID="EgresoPanel" runat="server" Visible="false">
+            <div class="search-row">
+                <div class="form-group">
+                    <asp:Label ID="EgresoConceptoLabel" runat="server" AssociatedControlID="EgresoConcepto" Text="Concepto" />
+                    <asp:TextBox ID="EgresoConcepto" runat="server" CssClass="form-control" MaxLength="200" />
+                </div>
+                <div class="form-group">
+                    <asp:Label ID="EgresoMontoLabel" runat="server" AssociatedControlID="EgresoMonto" Text="Monto" />
+                    <asp:TextBox ID="EgresoMonto" runat="server" CssClass="form-control"
+                        TextMode="Number" min="0.01" max="9999999999.99" step="0.01" inputmode="decimal" />
+                </div>
+                <div class="form-group">
+                    <asp:Label ID="EgresoCategoriaLabel" runat="server" AssociatedControlID="EgresoCategoria" Text="Categoría" />
+                    <asp:DropDownList ID="EgresoCategoria" runat="server" CssClass="form-control">
+                        <asp:ListItem Value="Insumos" Text="Insumos" />
+                        <asp:ListItem Value="Viaticos" Text="Viáticos" />
+                        <asp:ListItem Value="Mantenimiento" Text="Mantenimiento" />
+                        <asp:ListItem Value="Otros" Text="Otros" />
+                    </asp:DropDownList>
+                </div>
+                <div class="form-group">
+                    <asp:Label ID="EgresoComprobanteLabel" runat="server" AssociatedControlID="EgresoComprobante" Text="Comprobante (opcional)" />
+                    <asp:TextBox ID="EgresoComprobante" runat="server" CssClass="form-control" MaxLength="100" />
+                </div>
+                <asp:Button ID="RegistrarEgresoBoton" runat="server" Text="Registrar egreso"
+                    CssClass="button button-secondary" OnClick="RegistrarEgreso_Click" />
+            </div>
+        </asp:Panel>
+        <div class="table-wrap">
+            <asp:GridView ID="EgresosGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
+                GridLines="None" EmptyDataText="No hay egresos para el período seleccionado.">
+                <Columns>
+                    <asp:BoundField DataField="Fecha" HeaderText="Fecha" DataFormatString="{0:dd/MM/yyyy}" />
+                    <asp:BoundField DataField="Concepto" HeaderText="Concepto" />
+                    <asp:BoundField DataField="Categoria" HeaderText="Categoría" />
+                    <asp:BoundField DataField="Monto" HeaderText="Monto" DataFormatString="{0:C2}" />
+                    <asp:BoundField DataField="Comprobante" HeaderText="Comprobante" />
+                    <asp:BoundField DataField="Administrativo" HeaderText="Registrado por" />
+                </Columns>
+            </asp:GridView>
+        </div>
     </section>
 
     <section class="panel management-panel" aria-labelledby="cierres-title">
@@ -89,11 +135,12 @@
                     <asp:BoundField DataField="TotalTarjeta" HeaderText="Tarjeta" DataFormatString="{0:C2}" />
                     <asp:BoundField DataField="TotalTransferencia" HeaderText="Transferencia" DataFormatString="{0:C2}" />
                     <asp:BoundField DataField="TotalGeneral" HeaderText="Total" DataFormatString="{0:C2}" />
+                    <asp:BoundField DataField="TotalEgresos" HeaderText="Egresos" DataFormatString="{0:C2}" />
                     <asp:BoundField DataField="EfectivoContado" HeaderText="Efectivo contado" DataFormatString="{0:C2}" />
                     <asp:BoundField DataField="Diferencia" HeaderText="Diferencia" DataFormatString="{0:C2}" />
                 </Columns>
             </asp:GridView>
         </div>
-        <p class="form-note">La base implementa un cierre diario único. La caja se considera abierta hasta que se registra ese cierre; no existen operaciones independientes de apertura ni movimientos de egreso.</p>
+        <p class="form-note">La base implementa un cierre diario único. La caja se considera abierta hasta que se registra ese cierre. La diferencia se calcula como efectivo contado − (efectivo cobrado − egresos).</p>
     </section>
 </asp:Content>

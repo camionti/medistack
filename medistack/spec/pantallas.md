@@ -12,4 +12,6 @@
 
 *Reportes*: Reportes y estadísticas.
 
-El asistente y la auditoría de Inteligencia Artificial quedan postergados; no forman parte de las pantallas de esta etapa.
+*Asistente de IA*: Asistente conversacional por rol (paciente, profesional y administrativo), con entrada por voz y confirmación explícita para operaciones que modifican turnos. La auditoría de consultas está en Reportes.
+
+Pantallas incorporadas: `RevisionDia.aspx` (turnos sin resolver), `Liquidaciones.aspx` (liquidación de honorarios), `Reportes.aspx` (reportes y auditoría de IA) y la sección de egresos en `Caja.aspx`.

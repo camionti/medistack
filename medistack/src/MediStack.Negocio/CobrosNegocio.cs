@@ -132,6 +132,51 @@ namespace MediStack.Negocio
             return _datos.ObtenerCierreCaja(fecha.Date);
         }
 
+        public DataTable ObtenerEgresos(DateTime desde, DateTime hasta)
+        {
+            ValidarPeriodo(desde, hasta);
+            return _datos.ObtenerEgresos(desde, hasta);
+        }
+
+        public decimal ObtenerTotalEgresos(DateTime fecha)
+        {
+            return _datos.ObtenerTotalEgresos(fecha);
+        }
+
+        public void RegistrarEgreso(
+            Guid administrativoId, string concepto, decimal monto, string categoria, string comprobante)
+        {
+            string[] categorias = { "Insumos", "Viaticos", "Mantenimiento", "Otros" };
+            concepto = (concepto ?? string.Empty).Trim();
+            comprobante = (comprobante ?? string.Empty).Trim();
+            if (administrativoId == Guid.Empty)
+            {
+                throw new InvalidOperationException("No se pudo validar al usuario administrativo.");
+            }
+
+            if (concepto.Length == 0 || concepto.Length > 200)
+            {
+                throw new InvalidOperationException("Informa el concepto del egreso (hasta 200 caracteres).");
+            }
+
+            if (monto <= 0 || monto > 9999999999.99m || decimal.Round(monto, 2) != monto)
+            {
+                throw new InvalidOperationException("El monto del egreso debe ser mayor a cero y tener como máximo dos decimales.");
+            }
+
+            if (Array.IndexOf(categorias, categoria) < 0)
+            {
+                throw new InvalidOperationException("Selecciona una categoría de egreso válida.");
+            }
+
+            if (comprobante.Length > 100)
+            {
+                throw new InvalidOperationException("El comprobante no puede superar 100 caracteres.");
+            }
+
+            EjecutarSeguro(() => _datos.RegistrarEgreso(administrativoId, concepto, monto, categoria, comprobante));
+        }
+
         public void CerrarCaja(DateTime fecha, Guid administrativoId, decimal efectivoContado)
         {
             if (fecha.Date != DateTime.Today)

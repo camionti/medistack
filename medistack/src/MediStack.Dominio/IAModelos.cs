@@ -17,5 +17,8 @@ namespace MediStack.Dominio
         public string Texto { get; set; }
         public string FuncionEjecutada { get; set; }
         public bool RequiereConfirmacion { get; set; }
+        public int GastoTokens { get; set; }
+        public int? AccionPendienteTurnoId { get; set; }
+        public string AccionPendienteDescripcion { get; set; }
     }
 }

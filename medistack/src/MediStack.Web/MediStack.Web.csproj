@@ -81,6 +81,9 @@
     <Content Include="MercadoPagoWebhook.ashx" />
     <Content Include="Cobros.aspx" />
     <Content Include="Caja.aspx" />
+    <Content Include="RevisionDia.aspx" />
+    <Content Include="Liquidaciones.aspx" />
+    <Content Include="Reportes.aspx" />
     <Content Include="Profesionales.aspx" />
     <Content Include="Especialidades.aspx" />
     <Content Include="ObrasSociales.aspx" />
@@ -205,6 +208,27 @@
     </Compile>
     <Compile Include="Caja.aspx.designer.cs">
       <DependentUpon>Caja.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="RevisionDia.aspx.cs">
+      <DependentUpon>RevisionDia.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="RevisionDia.aspx.designer.cs">
+      <DependentUpon>RevisionDia.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Liquidaciones.aspx.cs">
+      <DependentUpon>Liquidaciones.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Liquidaciones.aspx.designer.cs">
+      <DependentUpon>Liquidaciones.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Reportes.aspx.cs">
+      <DependentUpon>Reportes.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes.aspx.designer.cs">
+      <DependentUpon>Reportes.aspx</DependentUpon>
     </Compile>
     <Compile Include="Pacientes.aspx.designer.cs">
       <DependentUpon>Pacientes.aspx</DependentUpon>

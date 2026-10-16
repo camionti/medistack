@@ -26,6 +26,8 @@
 
 *LiquidacionHonorarios*: profesionalId, periodoDesde, periodoHasta, totalLiquidado.
 
-*InteraccionIA*: elemento del diseño futuro, postergado y sin clase ni uso en la aplicación actual.
+*InteraccionIA*: usuarioId, canal (Texto/Voz), consulta, funcionEjecutada, respuesta, gastoTokens y fecha. La registra `AgenteIAPacienteNegocio` en cada consulta al asistente y se audita en Reportes.
+
+*Egreso*: id, fecha, concepto, monto, categoria (Insumos/Viaticos/Mantenimiento/Otros), comprobante y administrativoId. Gasto en efectivo del cajón; `CierreCaja` guarda `TotalEgresos` y calcula `Diferencia = EfectivoContado − (TotalEfectivo − TotalEgresos)`.
 
 *Rol*: RolId, Nombre, Descripcion. 

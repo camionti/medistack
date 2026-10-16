@@ -36,6 +36,25 @@ namespace MediStack.Negocio
                 { "contents", CrearContenidos(solicitud.Mensajes) }
             };
 
+            if (!string.IsNullOrWhiteSpace(solicitud.Instrucciones))
+            {
+                cuerpo["systemInstruction"] = new Dictionary<string, object>
+                {
+                    {
+                        "parts",
+                        new List<Dictionary<string, object>>
+                        {
+                            new Dictionary<string, object> { { "text", solicitud.Instrucciones } }
+                        }
+                    }
+                };
+            }
+
+            if (solicitud.Herramientas != null && solicitud.Herramientas.Count > 0)
+            {
+                cuerpo["tools"] = CrearHerramientas(solicitud.Herramientas);
+            }
+
             string respuestaJson = Enviar(cuerpo);
             JavaScriptSerializer serializador = new JavaScriptSerializer();
             Dictionary<string, object> respuesta = serializador.DeserializeObject(respuestaJson)
@@ -45,11 +64,38 @@ namespace MediStack.Negocio
                 throw new InvalidOperationException("Gemini devolvio una respuesta invalida.");
             }
 
-            string texto = ExtraerTexto(respuesta);
+            LlamadaHerramientaIA llamada;
+            string texto = ExtraerTexto(respuesta, out llamada);
             return new RespuestaIA
             {
                 Contenido = texto,
+                Herramienta = llamada,
                 GastoTokens = ExtraerTokens(respuesta)
+            };
+        }
+
+        private static IList<Dictionary<string, object>> CrearHerramientas(IList<DefinicionHerramientaIA> herramientas)
+        {
+            JavaScriptSerializer serializador = new JavaScriptSerializer();
+            List<Dictionary<string, object>> declaraciones = new List<Dictionary<string, object>>();
+            foreach (DefinicionHerramientaIA herramienta in herramientas)
+            {
+                Dictionary<string, object> declaracion = new Dictionary<string, object>
+                {
+                    { "name", herramienta.Nombre },
+                    { "description", herramienta.Descripcion }
+                };
+                if (!string.IsNullOrWhiteSpace(herramienta.EsquemaEntradaJson))
+                {
+                    declaracion["parameters"] = serializador.DeserializeObject(herramienta.EsquemaEntradaJson);
+                }
+
+                declaraciones.Add(declaracion);
+            }
+
+            return new List<Dictionary<string, object>>
+            {
+                new Dictionary<string, object> { { "functionDeclarations", declaraciones } }
             };
         }
 
@@ -105,8 +151,70 @@ namespace MediStack.Negocio
         private static IList<Dictionary<string, object>> CrearContenidos(IList<MensajeIA> mensajes)
         {
             List<Dictionary<string, object>> contenidos = new List<Dictionary<string, object>>();
+            JavaScriptSerializer serializador = new JavaScriptSerializer();
             foreach (MensajeIA mensaje in mensajes)
             {
+                if (mensaje != null && mensaje.Llamada != null)
+                {
+                    object argumentos = string.IsNullOrWhiteSpace(mensaje.Llamada.ArgumentosJson)
+                        ? new Dictionary<string, object>()
+                        : serializador.DeserializeObject(mensaje.Llamada.ArgumentosJson);
+                    contenidos.Add(new Dictionary<string, object>
+                    {
+                        { "role", "model" },
+                        {
+                            "parts",
+                            new List<Dictionary<string, object>>
+                            {
+                                new Dictionary<string, object>
+                                {
+                                    {
+                                        "functionCall",
+                                        new Dictionary<string, object>
+                                        {
+                                            { "name", mensaje.Llamada.Nombre },
+                                            { "args", argumentos }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    continue;
+                }
+
+                if (mensaje != null && mensaje.ResultadoJson != null)
+                {
+                    contenidos.Add(new Dictionary<string, object>
+                    {
+                        { "role", "user" },
+                        {
+                            "parts",
+                            new List<Dictionary<string, object>>
+                            {
+                                new Dictionary<string, object>
+                                {
+                                    {
+                                        "functionResponse",
+                                        new Dictionary<string, object>
+                                        {
+                                            { "name", mensaje.NombreResultado },
+                                            {
+                                                "response",
+                                                new Dictionary<string, object>
+                                                {
+                                                    { "resultado", serializador.DeserializeObject(mensaje.ResultadoJson) }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    continue;
+                }
+
                 if (mensaje == null || string.IsNullOrWhiteSpace(mensaje.Contenido))
                 {
                     continue;
@@ -136,8 +244,9 @@ namespace MediStack.Negocio
             return contenidos;
         }
 
-        private static string ExtraerTexto(Dictionary<string, object> respuesta)
+        private static string ExtraerTexto(Dictionary<string, object> respuesta, out LlamadaHerramientaIA llamada)
         {
+            llamada = null;
             object candidatosObjeto;
             if (!respuesta.TryGetValue("candidates", out candidatosObjeto))
             {
@@ -175,10 +284,32 @@ namespace MediStack.Negocio
             {
                 Dictionary<string, object> parte = parteObjeto as Dictionary<string, object>;
                 object textoParte;
+                object llamadaObjeto;
                 if (parte != null && parte.TryGetValue("text", out textoParte))
                 {
                     texto.Append(Convert.ToString(textoParte));
                 }
+                else if (parte != null && llamada == null && parte.TryGetValue("functionCall", out llamadaObjeto))
+                {
+                    Dictionary<string, object> datos = llamadaObjeto as Dictionary<string, object>;
+                    object nombre;
+                    object argumentos;
+                    if (datos != null && datos.TryGetValue("name", out nombre))
+                    {
+                        datos.TryGetValue("args", out argumentos);
+                        llamada = new LlamadaHerramientaIA
+                        {
+                            Nombre = Convert.ToString(nombre),
+                            ArgumentosJson = new JavaScriptSerializer().Serialize(
+                                argumentos ?? new Dictionary<string, object>())
+                        };
+                    }
+                }
+            }
+
+            if (texto.Length == 0 && llamada != null)
+            {
+                return string.Empty;
             }
 
             if (texto.Length == 0)

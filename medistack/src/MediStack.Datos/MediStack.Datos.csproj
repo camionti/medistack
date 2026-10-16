@@ -43,6 +43,8 @@
     <Compile Include="TurnosDatos.cs" />
     <Compile Include="CobrosDatos.cs" />
     <Compile Include="InteraccionesIADatos.cs" />
+    <Compile Include="HonorariosDatos.cs" />
+    <Compile Include="ReportesDatos.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

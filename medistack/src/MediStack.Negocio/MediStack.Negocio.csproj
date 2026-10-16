@@ -52,6 +52,8 @@
     <Compile Include="AgendaNegocio.cs" />
     <Compile Include="TurnosNegocio.cs" />
     <Compile Include="CobrosNegocio.cs" />
+    <Compile Include="HonorariosNegocio.cs" />
+    <Compile Include="ReportesNegocio.cs" />
     <Compile Include="AgenteIAPacienteNegocio.cs" />
     <Compile Include="IProveedorIA.cs" />
     <Compile Include="GeminiProveedorIA.cs" />

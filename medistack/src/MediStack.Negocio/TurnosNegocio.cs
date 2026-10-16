@@ -218,6 +218,12 @@ namespace MediStack.Negocio
             return _datos.ObtenerTurnos(pacienteId, profesionalId, desde, hasta);
         }
 
+        public DataTable ObtenerTurnosSinResolver()
+        {
+            _datos.LiberarReservasVencidas();
+            return _datos.ObtenerTurnosSinResolver();
+        }
+
         public TurnoDetalle ObtenerTurno(int turnoId)
         {
             if (turnoId <= 0)

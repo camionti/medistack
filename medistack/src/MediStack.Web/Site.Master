@@ -23,9 +23,12 @@
         <div class="ms-visual-bar">
             <details id="ms-ajustes-visuales">
                 <summary id="ms-ajustes-resumen" class="ms-visual-summary" aria-label="Abrir ajustes de accesibilidad" title="Ajustes de accesibilidad">
-                    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="24" cy="8" r="4.5" fill="currentColor" />
-                        <path d="M10 18H38M24 18V40M24 27L14 43M24 27L34 43" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="7.2" r="1.2" fill="currentColor" />
+                        <path d="M7 10.6c3.3 1 6.7 1 10 0" />
+                        <path d="M12 11v3.2" />
+                        <path d="m9.6 18 2.4-3.8 2.4 3.8" />
                     </svg>
                 </summary>
                 <div class="ms-visual-panel" role="region" aria-labelledby="ms-ajustes-titulo">
@@ -133,6 +136,10 @@
                 <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Turnos</a>
                 <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Cobros</a>
                 <a href="<%: ResolveUrl("~/Caja.aspx") %>">Caja</a>
+                <a href="<%: ResolveUrl("~/RevisionDia.aspx") %>">Revisión del día</a>
+                <a href="<%: ResolveUrl("~/Liquidaciones.aspx") %>">Honorarios</a>
+                <a href="<%: ResolveUrl("~/Reportes.aspx") %>">Reportes</a>
+                <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente</a>
                 <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Agendas</a>
                 <a href="<%: ResolveUrl("~/Profesionales.aspx") %>">Profesionales</a>
                 <a href="<%: ResolveUrl("~/Especialidades.aspx") %>">Especialidades</a>
@@ -159,6 +166,7 @@
                 <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Mi agenda</a>
                 <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Turnos</a>
                 <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Cobros</a>
+                <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente</a>
             </nav>
         </asp:Panel>
         <main id="main-content" class="main-container" tabindex="-1">

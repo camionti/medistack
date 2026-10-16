@@ -173,6 +173,24 @@ namespace MediStack.Datos
                 });
         }
 
+        // Revision del dia: turnos cuya hora ya paso y siguen sin resolver (ni atendidos, ausentes ni cancelados).
+        // Incluye los de hoy y los de dias anteriores que quedaron pendientes.
+        public DataTable ObtenerTurnosSinResolver()
+        {
+            return Consultar(@"
+                SELECT t.TurnoId, t.FechaHora, t.Estado, t.Motivo,
+                       paciente.Nombre + N' ' + paciente.Apellido AS Paciente,
+                       profesional.Nombre + N' ' + profesional.Apellido AS Profesional,
+                       e.Nombre AS Especialidad
+                FROM dbo.Turnos t
+                INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = t.PacienteId
+                INNER JOIN dbo.Usuarios profesional ON profesional.UsuarioId = t.ProfesionalId
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                WHERE t.Estado IN (N'Solicitado', N'Confirmado')
+                  AND t.FechaHora <= SYSDATETIME()
+                ORDER BY t.FechaHora, t.TurnoId;");
+        }
+
         public DataTable ObtenerTurnos(Guid? pacienteId, Guid? profesionalId, DateTime? desde, DateTime? hasta)
         {
             return Consultar(@"
@@ -398,6 +416,7 @@ namespace MediStack.Datos
                         }
 
                         CancelarTurnoEnTransaccion(conexion, transaccion, turnoId);
+                        ReintegrarSenaPagada(conexion, transaccion, turnoId);
                         transaccion.Commit();
                     }
                     catch
@@ -450,7 +469,9 @@ namespace MediStack.Datos
                             UPDATE dbo.Turnos
                             SET Estado = @Estado,
                                 EstadoSena = CASE WHEN @Estado = N'Cancelado' AND EstadoSena = N'Pendiente'
-                                                  THEN N'NoRequerida' ELSE EstadoSena END
+                                                  THEN N'NoRequerida'
+                                                  WHEN @Estado = N'Cancelado' AND EstadoSena = N'Pagada'
+                                                  THEN N'Reembolsada' ELSE EstadoSena END
                             WHERE TurnoId = @TurnoId;",
                             conexion, transaccion))
                         {
@@ -589,6 +610,22 @@ namespace MediStack.Datos
                 SET Estado = N'Cancelado',
                     EstadoSena = CASE WHEN EstadoSena = N'Pendiente' THEN N'NoRequerida' ELSE EstadoSena END
                 WHERE TurnoId = @TurnoId;",
+                conexion, transaccion))
+            {
+                comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
+                comando.ExecuteNonQuery();
+            }
+        }
+
+        // Reintegro de la seña: si el turno cancelado tenia la seña pagada, queda 'Reembolsada'
+        // (el importe conserva su Cobro como historial; la devolucion del dinero la gestiona la clinica).
+        private static void ReintegrarSenaPagada(
+            SqlConnection conexion, SqlTransaction transaccion, int turnoId)
+        {
+            using (SqlCommand comando = new SqlCommand(@"
+                UPDATE dbo.Turnos
+                SET EstadoSena = N'Reembolsada'
+                WHERE TurnoId = @TurnoId AND EstadoSena = N'Pagada';",
                 conexion, transaccion))
             {
                 comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;

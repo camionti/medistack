@@ -43,6 +43,7 @@
                     <p>Accede a las fichas vinculadas con tus atenciones.</p>
                     <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Consultar turnos y pacientes</a>
                     <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Consultar cobros asociados</a>
+                    <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Hablar con el asistente</a>
                 </article>
             </div>
         </section>
@@ -67,6 +68,8 @@
                     <p>Registra pagos, consulta ingresos y controla los cierres diarios.</p>
                     <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Administrar cobros</a>
                     <a href="<%: ResolveUrl("~/Caja.aspx") %>">Consultar y cerrar caja</a>
+                    <a href="<%: ResolveUrl("~/RevisionDia.aspx") %>">Revisión del día (ausentes)</a>
+                    <a href="<%: ResolveUrl("~/Liquidaciones.aspx") %>">Liquidar honorarios</a>
                 </article>
                 <article class="panel dashboard-card">
                     <span class="card-number" aria-hidden="true">03</span>
@@ -75,6 +78,8 @@
                     <a href="<%: ResolveUrl("~/ObrasSociales.aspx") %>">Obras sociales</a>
                     <a href="<%: ResolveUrl("~/Coberturas.aspx") %>">Coberturas</a>
                     <a href="<%: ResolveUrl("~/Convenios.aspx") %>">Convenios</a>
+                    <a href="<%: ResolveUrl("~/Reportes.aspx") %>">Reportes y estadísticas</a>
+                    <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente de IA</a>
                 </article>
             </div>
         </section>

@@ -53,6 +53,36 @@ namespace MediStack.Web
             }
         }
 
+        protected void RegistrarEgreso_Click(object sender, EventArgs e)
+        {
+            decimal monto;
+            if (!decimal.TryParse(EgresoMonto.Text, NumberStyles.Number,
+                    CultureInfo.InvariantCulture, out monto))
+            {
+                MostrarError("Informa el monto del egreso con hasta dos decimales.");
+                return;
+            }
+
+            try
+            {
+                _negocio.RegistrarEgreso(ObtenerUsuarioActual(), EgresoConcepto.Text, monto,
+                    EgresoCategoria.SelectedValue, EgresoComprobante.Text);
+                MostrarExito("El egreso se registró correctamente.");
+                EgresoConcepto.Text = string.Empty;
+                EgresoMonto.Text = string.Empty;
+                EgresoComprobante.Text = string.Empty;
+                CargarCaja();
+            }
+            catch (InvalidOperationException ex)
+            {
+                MostrarError(ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                MostrarError("No se pudo registrar el egreso (error SQL " + ex.Number + ").");
+            }
+        }
+
         private void CargarCaja()
         {
             DateTime desde;
@@ -71,6 +101,8 @@ namespace MediStack.Web
             TotalesGrid.DataBind();
             MovimientosGrid.DataSource = _negocio.ObtenerMovimientosCaja(desde, hasta);
             MovimientosGrid.DataBind();
+            EgresosGrid.DataSource = _negocio.ObtenerEgresos(desde, hasta);
+            EgresosGrid.DataBind();
             CierresGrid.DataSource = _negocio.ObtenerCierresCaja(desde, hasta);
             CierresGrid.DataBind();
 
@@ -81,6 +113,13 @@ namespace MediStack.Web
             {
                 EstadoHoy.Text = "<span class=\"status-tag status-available\">Abierta</span>";
                 CerrarPanel.Visible = true;
+                EgresoPanel.Visible = true;
+                decimal egresosHoy = _negocio.ObtenerTotalEgresos(DateTime.Today);
+                if (egresosHoy > 0)
+                {
+                    EstadoHoy.Text += " · Egresos de hoy: " + HttpUtility.HtmlEncode(
+                        egresosHoy.ToString("C2", CultureInfo.GetCultureInfo("es-AR")));
+                }
             }
             else
             {
@@ -91,6 +130,7 @@ namespace MediStack.Web
                     + " · Diferencia de efectivo: " + HttpUtility.HtmlEncode(Convert.ToDecimal(fila["Diferencia"])
                         .ToString("C2", CultureInfo.GetCultureInfo("es-AR")));
                 CerrarPanel.Visible = false;
+                EgresoPanel.Visible = false;
             }
         }
 

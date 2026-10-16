@@ -7,11 +7,19 @@ namespace MediStack.Dominio
     {
         public string Rol { get; set; }
         public string Contenido { get; set; }
+
+        // Turno del asistente que pidio ejecutar una funcion (rol "assistant").
+        public LlamadaHerramientaIA Llamada { get; set; }
+
+        // Resultado de una funcion ejecutada por el sistema, devuelto al modelo (rol "tool").
+        public string NombreResultado { get; set; }
+        public string ResultadoJson { get; set; }
     }
 
     public sealed class SolicitudIA
     {
         public Guid UsuarioId { get; set; }
+        public string Instrucciones { get; set; }
         public IList<MensajeIA> Mensajes { get; set; }
         public IList<DefinicionHerramientaIA> Herramientas { get; set; }
     }

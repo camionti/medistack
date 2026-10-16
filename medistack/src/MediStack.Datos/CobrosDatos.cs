@@ -407,6 +407,7 @@ namespace MediStack.Datos
                 SELECT c.CierreCajaId, c.Fecha, c.FechaHoraCierre,
                        c.TotalEfectivo, c.TotalTarjeta, c.TotalTransferencia,
                        c.TotalGeneral, c.CantidadCobros, c.EfectivoContado, c.Diferencia,
+                       c.TotalEgresos,
                        u.Nombre + N' ' + u.Apellido AS Administrativo
                 FROM dbo.CierresCaja c
                 INNER JOIN dbo.Usuarios u ON u.UsuarioId = c.AdministrativoId
@@ -420,10 +421,73 @@ namespace MediStack.Datos
         {
             return Consultar(@"
                 SELECT CierreCajaId, Fecha, TotalEfectivo, TotalTarjeta, TotalTransferencia,
-                       TotalGeneral, CantidadCobros, EfectivoContado, Diferencia, FechaHoraCierre
+                       TotalGeneral, CantidadCobros, EfectivoContado, Diferencia, FechaHoraCierre,
+                       TotalEgresos
                 FROM dbo.CierresCaja
                 WHERE Fecha = @Fecha;",
                 new SqlParameter("@Fecha", SqlDbType.Date) { Value = fecha.Date });
+        }
+
+        public DataTable ObtenerEgresos(DateTime desde, DateTime hasta)
+        {
+            return Consultar(@"
+                SELECT e.EgresoId, e.Fecha, e.FechaHoraRegistro, e.Concepto, e.Monto, e.Categoria,
+                       e.Comprobante, u.Nombre + N' ' + u.Apellido AS Administrativo
+                FROM dbo.Egresos e
+                INNER JOIN dbo.Usuarios u ON u.UsuarioId = e.AdministrativoId
+                WHERE e.Fecha >= @Desde AND e.Fecha <= @Hasta
+                ORDER BY e.Fecha DESC, e.EgresoId DESC;",
+                new SqlParameter("@Desde", SqlDbType.Date) { Value = desde.Date },
+                new SqlParameter("@Hasta", SqlDbType.Date) { Value = hasta.Date });
+        }
+
+        public decimal ObtenerTotalEgresos(DateTime fecha)
+        {
+            DataTable tabla = Consultar(
+                "SELECT COALESCE(SUM(Monto), 0) FROM dbo.Egresos WHERE Fecha = @Fecha;",
+                new SqlParameter("@Fecha", SqlDbType.Date) { Value = fecha.Date });
+            return Convert.ToDecimal(tabla.Rows[0][0]);
+        }
+
+        public void RegistrarEgreso(
+            Guid administrativoId, string concepto, decimal monto, string categoria, string comprobante)
+        {
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            {
+                conexion.Open();
+                using (SqlTransaction transaccion = conexion.BeginTransaction(IsolationLevel.Serializable))
+                {
+                    try
+                    {
+                        ValidarCobrador(conexion, transaccion, administrativoId);
+                        ValidarCajaAbierta(conexion, transaccion, DateTime.Today);
+                        using (SqlCommand comando = new SqlCommand(@"
+                            INSERT INTO dbo.Egresos (Fecha, Concepto, Monto, Categoria, Comprobante, AdministrativoId)
+                            VALUES (CONVERT(date, SYSDATETIME()), @Concepto, @Monto, @Categoria, @Comprobante,
+                                    @AdministrativoId);",
+                            conexion, transaccion))
+                        {
+                            comando.Parameters.Add("@Concepto", SqlDbType.NVarChar, 200).Value = concepto;
+                            SqlParameter pMonto = comando.Parameters.Add("@Monto", SqlDbType.Decimal);
+                            pMonto.Precision = 12;
+                            pMonto.Scale = 2;
+                            pMonto.Value = monto;
+                            comando.Parameters.Add("@Categoria", SqlDbType.NVarChar, 30).Value = categoria;
+                            comando.Parameters.Add("@Comprobante", SqlDbType.NVarChar, 100).Value =
+                                string.IsNullOrWhiteSpace(comprobante) ? (object)DBNull.Value : comprobante;
+                            comando.Parameters.Add("@AdministrativoId", SqlDbType.UniqueIdentifier).Value = administrativoId;
+                            comando.ExecuteNonQuery();
+                        }
+
+                        transaccion.Commit();
+                    }
+                    catch
+                    {
+                        transaccion.Rollback();
+                        throw;
+                    }
+                }
+            }
         }
 
         public void CerrarCaja(DateTime fecha, Guid administrativoId, decimal efectivoContado)
@@ -451,6 +515,12 @@ namespace MediStack.Datos
                             DECLARE @TotalTransferencia DECIMAL(12,2);
                             DECLARE @TotalGeneral DECIMAL(12,2);
                             DECLARE @CantidadCobros INT;
+                            DECLARE @TotalEgresos DECIMAL(12,2);
+
+                            -- Egresos del dia: salen del efectivo del cajon y se descuentan del esperado.
+                            SELECT @TotalEgresos = COALESCE(SUM(Monto), 0)
+                            FROM dbo.Egresos WITH (UPDLOCK, HOLDLOCK)
+                            WHERE Fecha = @Fecha;
 
                             SELECT @CantidadCobros = COUNT(*),
                                    @TotalEfectivo = COALESCE(SUM(CASE WHEN MedioPago = N'Efectivo' THEN MontoCobrado ELSE 0 END), 0),
@@ -466,11 +536,12 @@ namespace MediStack.Datos
                             INSERT INTO dbo.CierresCaja
                                 (Fecha, AdministrativoId, TotalEfectivo, TotalTarjeta,
                                  TotalTransferencia, TotalGeneral, CantidadCobros,
-                                 EfectivoContado, Diferencia)
+                                 EfectivoContado, Diferencia, TotalEgresos)
                             VALUES
                                 (@Fecha, @AdministrativoId, @TotalEfectivo, @TotalTarjeta,
                                  @TotalTransferencia, @TotalGeneral, @CantidadCobros,
-                                 @EfectivoContado, @EfectivoContado - @TotalEfectivo);",
+                                 @EfectivoContado, @EfectivoContado - (@TotalEfectivo - @TotalEgresos),
+                                 @TotalEgresos);",
                             conexion, transaccion))
                         {
                             comando.Parameters.Add("@Fecha", SqlDbType.Date).Value = fecha.Date;
