@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Web.Hosting;
 using MediStack.Datos;
 using MediStack.Dominio;
 
@@ -11,6 +13,116 @@ namespace MediStack.Negocio
     public sealed class TurnosNegocio
     {
         private readonly TurnosDatos _datos = new TurnosDatos();
+        private readonly EmailNegocio _emailNegocio = new EmailNegocio();
+
+        public NotificacionTurno ObtenerDatosNotificacion(int turnoId)
+        {
+            if (turnoId <= 0)
+            {
+                return null;
+            }
+
+            return _datos.ObtenerDatosNotificacion(turnoId);
+        }
+
+        public bool EnviarConfirmacionTurno(int turnoId, string baseUrl)
+        {
+            return EnviarConfirmacionTurnoAsyncCore(turnoId, baseUrl).GetAwaiter().GetResult();
+        }
+
+        public async Task<bool> EnviarConfirmacionTurnoAsyncCore(int turnoId, string baseUrl)
+        {
+            if (turnoId <= 0)
+            {
+                return false;
+            }
+
+            NotificacionTurno datos = _datos.ObtenerDatosNotificacion(turnoId);
+            if (datos == null || string.IsNullOrWhiteSpace(datos.PacienteEmail))
+            {
+                return false;
+            }
+
+            ArmarUrlsNotificacion(datos, baseUrl);
+            return await _emailNegocio.EnviarConfirmacionTurnoAsync(datos);
+        }
+
+        public void EnviarConfirmacionTurnoAsync(int turnoId, string baseUrl)
+        {
+            if (HostingEnvironment.IsHosted)
+            {
+                HostingEnvironment.QueueBackgroundWorkItem(async ct =>
+                {
+                    try
+                    {
+                        await EnviarConfirmacionTurnoAsyncCore(turnoId, baseUrl);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.TraceError("Error al enviar confirmación de turno por email: " + ex);
+                    }
+                });
+            }
+            else
+            {
+                System.Threading.ThreadPool.QueueUserWorkItem(async state =>
+                {
+                    try
+                    {
+                        await EnviarConfirmacionTurnoAsyncCore(turnoId, baseUrl);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.TraceError("Error al enviar confirmación de turno por email: " + ex);
+                    }
+                });
+            }
+        }
+
+        public int ProcesarRecordatorios48hs(string baseUrl)
+        {
+            return ProcesarRecordatorios48hsAsync(baseUrl).GetAwaiter().GetResult();
+        }
+
+        public async Task<int> ProcesarRecordatorios48hsAsync(string baseUrl)
+        {
+            DateTime limite48hs = DateTime.Now.AddHours(48);
+            IList<NotificacionTurno> pendientes = _datos.ObtenerTurnosParaRecordatorio48hs(limite48hs);
+            int enviados = 0;
+
+            foreach (NotificacionTurno turno in pendientes)
+            {
+                try
+                {
+                    ArmarUrlsNotificacion(turno, baseUrl);
+                    bool ok = await _emailNegocio.EnviarRecordatorioTurnoAsync(turno);
+                    _datos.MarcarRecordatorio48hsEnviado(turno.TurnoId);
+                    if (ok)
+                    {
+                        enviados++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError(
+                        "Error enviando recordatorio para turno #" + turno.TurnoId + ": " + ex);
+                }
+            }
+
+            return enviados;
+        }
+
+        private static void ArmarUrlsNotificacion(NotificacionTurno datos, string baseUrl)
+        {
+            string baseLimpia = (baseUrl ?? string.Empty).TrimEnd('/');
+            if (string.IsNullOrEmpty(baseLimpia))
+            {
+                baseLimpia = "http://localhost:59999";
+            }
+
+            datos.UrlVerTurno = baseLimpia + "/Turnos.aspx?turnoId=" + datos.TurnoId;
+            datos.UrlCancelarTurno = baseLimpia + "/Turnos.aspx?accion=cancelar&turnoId=" + datos.TurnoId;
+        }
 
         public DataTable ObtenerPacientesActivos()
         {

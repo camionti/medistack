@@ -105,4 +105,20 @@ namespace MediStack.Dominio
         public string Estado { get; set; }
         public string Motivo { get; set; }
     }
+
+    public sealed class NotificacionTurno
+    {
+        public int TurnoId { get; set; }
+        public Guid PacienteId { get; set; }
+        public string PacienteNombre { get; set; }
+        public string PacienteEmail { get; set; }
+        public string ProfesionalNombre { get; set; }
+        public string Especialidad { get; set; }
+        public DateTime FechaHora { get; set; }
+        public string Estado { get; set; }
+        public decimal MontoSena { get; set; }
+        public string EstadoSena { get; set; }
+        public string UrlVerTurno { get; set; }
+        public string UrlCancelarTurno { get; set; }
+    }
 }

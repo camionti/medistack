@@ -82,6 +82,12 @@ namespace MediStack.Negocio
                         || acreditacion == ResultadoAcreditacionSena.YaAcreditada
                         ? EstadoProcesamientoPago.Acreditado
                         : EstadoProcesamientoPago.RequiereRevision;
+
+                    if (acreditacion == ResultadoAcreditacionSena.Acreditada)
+                    {
+                        string baseUrl = System.Configuration.ConfigurationManager.AppSettings["Sitio.UrlBase"] ?? "http://localhost:59999";
+                        new TurnosNegocio().EnviarConfirmacionTurnoAsync(pago.TurnoId.Value, baseUrl);
+                    }
                     break;
 
                 case "pending":

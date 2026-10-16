@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
@@ -795,6 +796,108 @@ namespace MediStack.Datos
                 comando.Parameters.Add("@Motivo", SqlDbType.NVarChar, 500).Value =
                     string.IsNullOrWhiteSpace(solicitud.Motivo) ? (object)DBNull.Value : solicitud.Motivo.Trim();
                 return Convert.ToInt32(comando.ExecuteScalar());
+            }
+        }
+
+        public NotificacionTurno ObtenerDatosNotificacion(int turnoId)
+        {
+            DataTable tabla = Consultar(@"
+                SELECT t.TurnoId, t.PacienteId,
+                       up.Nombre + N' ' + up.Apellido AS PacienteNombre,
+                       up.Email AS PacienteEmail,
+                       ud.Nombre + N' ' + ud.Apellido AS ProfesionalNombre,
+                       e.Nombre AS Especialidad,
+                       t.FechaHora,
+                       t.Estado,
+                       t.MontoSena,
+                       t.EstadoSena
+                FROM dbo.Turnos t
+                INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
+                INNER JOIN dbo.Usuarios up ON up.UsuarioId = p.PacienteId
+                INNER JOIN dbo.Profesionales d ON d.ProfesionalId = t.ProfesionalId
+                INNER JOIN dbo.Usuarios ud ON ud.UsuarioId = d.ProfesionalId
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                WHERE t.TurnoId = @TurnoId;",
+                ParametroInt32("@TurnoId", turnoId));
+
+            if (tabla.Rows.Count == 0)
+            {
+                return null;
+            }
+
+            DataRow fila = tabla.Rows[0];
+            return new NotificacionTurno
+            {
+                TurnoId = Convert.ToInt32(fila["TurnoId"]),
+                PacienteId = (Guid)fila["PacienteId"],
+                PacienteNombre = Convert.ToString(fila["PacienteNombre"]),
+                PacienteEmail = Convert.ToString(fila["PacienteEmail"]),
+                ProfesionalNombre = Convert.ToString(fila["ProfesionalNombre"]),
+                Especialidad = Convert.ToString(fila["Especialidad"]),
+                FechaHora = Convert.ToDateTime(fila["FechaHora"]),
+                Estado = Convert.ToString(fila["Estado"]),
+                MontoSena = Convert.ToDecimal(fila["MontoSena"]),
+                EstadoSena = Convert.ToString(fila["EstadoSena"])
+            };
+        }
+
+        public IList<NotificacionTurno> ObtenerTurnosParaRecordatorio48hs(DateTime fechaLimite)
+        {
+            DataTable tabla = Consultar(@"
+                SELECT t.TurnoId, t.PacienteId,
+                       up.Nombre + N' ' + up.Apellido AS PacienteNombre,
+                       up.Email AS PacienteEmail,
+                       ud.Nombre + N' ' + ud.Apellido AS ProfesionalNombre,
+                       e.Nombre AS Especialidad,
+                       t.FechaHora,
+                       t.Estado,
+                       t.MontoSena,
+                       t.EstadoSena
+                FROM dbo.Turnos t
+                INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
+                INNER JOIN dbo.Usuarios up ON up.UsuarioId = p.PacienteId
+                INNER JOIN dbo.Profesionales d ON d.ProfesionalId = t.ProfesionalId
+                INNER JOIN dbo.Usuarios ud ON ud.UsuarioId = d.ProfesionalId
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                WHERE t.Estado IN (N'Solicitado', N'Confirmado')
+                  AND t.Recordatorio48hsEnviado = 0
+                  AND t.FechaHora > SYSDATETIME()
+                  AND t.FechaHora <= @FechaLimite
+                ORDER BY t.FechaHora ASC;",
+                new SqlParameter("@FechaLimite", SqlDbType.DateTime2) { Value = fechaLimite });
+
+            List<NotificacionTurno> lista = new List<NotificacionTurno>();
+            foreach (DataRow fila in tabla.Rows)
+            {
+                lista.Add(new NotificacionTurno
+                {
+                    TurnoId = Convert.ToInt32(fila["TurnoId"]),
+                    PacienteId = (Guid)fila["PacienteId"],
+                    PacienteNombre = Convert.ToString(fila["PacienteNombre"]),
+                    PacienteEmail = Convert.ToString(fila["PacienteEmail"]),
+                    ProfesionalNombre = Convert.ToString(fila["ProfesionalNombre"]),
+                    Especialidad = Convert.ToString(fila["Especialidad"]),
+                    FechaHora = Convert.ToDateTime(fila["FechaHora"]),
+                    Estado = Convert.ToString(fila["Estado"]),
+                    MontoSena = Convert.ToDecimal(fila["MontoSena"]),
+                    EstadoSena = Convert.ToString(fila["EstadoSena"])
+                });
+            }
+
+            return lista;
+        }
+
+        public void MarcarRecordatorio48hsEnviado(int turnoId)
+        {
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            using (SqlCommand comando = new SqlCommand(@"
+                UPDATE dbo.Turnos
+                SET Recordatorio48hsEnviado = 1
+                WHERE TurnoId = @TurnoId;", conexion))
+            {
+                comando.Parameters.Add(ParametroInt32("@TurnoId", turnoId));
+                conexion.Open();
+                comando.ExecuteNonQuery();
             }
         }
 

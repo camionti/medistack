@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
@@ -61,6 +61,7 @@ namespace MediStack.Web
                             .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     }
                     CargarTurnos();
+                    VerificarAccionUrl();
                 });
             }
 
@@ -218,6 +219,7 @@ namespace MediStack.Web
                     else
                     {
                         MostrarExito("La solicitud de turno se registro correctamente. El horario reservado ya no figura como disponible.");
+                        _negocio.EnviarConfirmacionTurnoAsync(reserva.TurnoId, ConfiguracionSitio.ObtenerUrlBase());
                     }
                     Motivo.Text = string.Empty;
                     CargarTurnos();
@@ -274,6 +276,7 @@ namespace MediStack.Web
 
                     _negocio.CambiarEstado(turnoId, "Confirmado", true, null);
                     MostrarExito("El turno fue confirmado.");
+                    _negocio.EnviarConfirmacionTurnoAsync(turnoId, ConfiguracionSitio.ObtenerUrlBase());
                 }
                 else if (e.CommandName == "Atendido" || e.CommandName == "Ausente")
                 {
@@ -311,6 +314,83 @@ namespace MediStack.Web
             LimpiarMensaje();
             Motivo.Text = string.Empty;
             LimpiarDisponibilidad();
+        }
+
+        private void VerificarAccionUrl()
+        {
+            string accion = (Request.QueryString["accion"] ?? string.Empty).ToLowerInvariant();
+            int turnoId;
+            if (!int.TryParse(Request.QueryString["turnoId"], out turnoId) || turnoId <= 0)
+            {
+                return;
+            }
+
+            if (accion == "cancelar")
+            {
+                TurnoDetalle turno = _negocio.ObtenerTurno(turnoId);
+                if (turno == null)
+                {
+                    MostrarError("El turno indicado no existe o fue retirado.");
+                    return;
+                }
+
+                if (EsPaciente && turno.PacienteId != ObtenerUsuarioActual())
+                {
+                    MostrarError("Solo podés gestionar turnos que pertenezcan a tu propia cuenta.");
+                    return;
+                }
+
+                if (turno.Estado == "Cancelado")
+                {
+                    MostrarError("Este turno ya se encuentra cancelado.");
+                    return;
+                }
+
+                if (turno.Estado == "Atendido" || turno.Estado == "Ausente")
+                {
+                    MostrarError("No es posible cancelar un turno que ya figura como " + turno.Estado.ToLower() + ".");
+                    return;
+                }
+
+                ViewState["TurnoACancelarUrl"] = turnoId;
+                ConfirmarCancelacionDetalle.Text = string.Format(
+                    "Estás por cancelar el turno #{0} programado para el <b>{1:dd/MM/yyyy 'a las' HH:mm} hs</b>.",
+                    turnoId, turno.FechaHora);
+                ConfirmarCancelacionUrlPanel.Visible = true;
+            }
+        }
+
+        protected void BotonConfirmarCancelacionUrl_Click(object sender, EventArgs e)
+        {
+            int turnoId = ViewState["TurnoACancelarUrl"] != null ? (int)ViewState["TurnoACancelarUrl"] : 0;
+            if (turnoId <= 0)
+            {
+                ConfirmarCancelacionUrlPanel.Visible = false;
+                return;
+            }
+
+            try
+            {
+                _negocio.CancelarTurno(turnoId, EsPaciente ? (Guid?)ObtenerUsuarioActual() : null);
+                ConfirmarCancelacionUrlPanel.Visible = false;
+                ViewState.Remove("TurnoACancelarUrl");
+                MostrarExito("El turno #" + turnoId + " fue cancelado correctamente. El horario vuelve a estar disponible.");
+                CargarTurnos();
+            }
+            catch (InvalidOperationException ex)
+            {
+                MostrarError(ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                MostrarError("No se pudo cancelar el turno (error SQL " + ex.Number + ").");
+            }
+        }
+
+        protected void BotonDescartarCancelacionUrl_Click(object sender, EventArgs e)
+        {
+            ConfirmarCancelacionUrlPanel.Visible = false;
+            ViewState.Remove("TurnoACancelarUrl");
         }
 
         protected string EstadoHorario(object disponible, object estado)

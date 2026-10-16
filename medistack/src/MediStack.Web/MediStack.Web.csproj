@@ -94,6 +94,7 @@
     <Content Include="AsistentePaciente.aspx" />
     <Content Include="Salir.aspx" />
     <Content Include="Site.Master" />
+    <Content Include="Global.asax" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -153,6 +154,11 @@
       <DependentUpon>RecuperarCuenta.aspx</DependentUpon>
     </Compile>
     <Compile Include="SesionUsuario.cs" />
+    <Compile Include="ConfiguracionSitio.cs" />
+    <Compile Include="RecordatorioTurnosServicio.cs" />
+    <Compile Include="Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
     <Compile Include="Pacientes.aspx.cs">
       <DependentUpon>Pacientes.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
