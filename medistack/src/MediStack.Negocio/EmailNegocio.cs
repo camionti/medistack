@@ -1,10 +1,13 @@
-﻿using System;
+using System;
 using System.Configuration;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Net.Mail;
-using MediStack.Dominio;
 using System.Text;
+using System.Threading.Tasks;
+using MediStack.Dominio;
+
 namespace MediStack.Negocio
 {
     public class EmailNegocio
@@ -102,6 +105,98 @@ namespace MediStack.Negocio
                 ArmarPlantilla("Restablecer contraseña", contenido));
         }
 
+        public bool EnviarConfirmacionTurno(NotificacionTurno datos)
+        {
+            return EnviarConfirmacionTurnoAsync(datos).GetAwaiter().GetResult();
+        }
+
+        public async Task<bool> EnviarConfirmacionTurnoAsync(NotificacionTurno datos)
+        {
+            if (datos == null || string.IsNullOrWhiteSpace(datos.PacienteEmail))
+            {
+                return false;
+            }
+
+            string contenido = ArmarCuerpoCorreoTurno(
+                "¡Tu turno fue registrado con éxito!",
+                "Confirmación de turno",
+                "Te confirmamos que registramos la reserva de tu consulta médica en MediStack. A continuación encontrás todos los detalles de tu cita:",
+                datos);
+
+            return await EnviarCorreoAsync(datos.PacienteEmail, "Confirmación de turno - MediStack",
+                ArmarPlantilla("Confirmación de turno", contenido));
+        }
+
+        public bool EnviarRecordatorioTurno(NotificacionTurno datos)
+        {
+            return EnviarRecordatorioTurnoAsync(datos).GetAwaiter().GetResult();
+        }
+
+        public async Task<bool> EnviarRecordatorioTurnoAsync(NotificacionTurno datos)
+        {
+            if (datos == null || string.IsNullOrWhiteSpace(datos.PacienteEmail))
+            {
+                return false;
+            }
+
+            string contenido = ArmarCuerpoCorreoTurno(
+                "Recordatorio: Tenés un turno en 48 horas",
+                "Recordatorio de consulta médica",
+                "Te recordamos que en 48 horas tenés programada una consulta médica en MediStack. A continuación te compartimos los detalles de tu cita:",
+                datos);
+
+            return await EnviarCorreoAsync(datos.PacienteEmail, "Recordatorio de tu turno en 48 hs - MediStack",
+                ArmarPlantilla("Recordatorio de turno", contenido));
+        }
+
+        private static string FormatearFechaTurno(DateTime fechaHora)
+        {
+            CultureInfo es = CultureInfo.GetCultureInfo("es-AR");
+            return fechaHora.ToString("dddd d 'de' MMMM 'de' yyyy 'a las' HH:mm 'hs'", es);
+        }
+
+        private static string ArmarCuerpoCorreoTurno(
+            string encabezado, string subtitulo, string introduccion, NotificacionTurno datos)
+        {
+            string paciente = WebUtility.HtmlEncode(datos.PacienteNombre);
+            string profesional = WebUtility.HtmlEncode(datos.ProfesionalNombre);
+            string especialidad = WebUtility.HtmlEncode(datos.Especialidad);
+            string fechaHora = WebUtility.HtmlEncode(FormatearFechaTurno(datos.FechaHora));
+            string estado = WebUtility.HtmlEncode(datos.Estado);
+            string urlVer = WebUtility.HtmlEncode(datos.UrlVerTurno ?? "#");
+            string urlCancelar = WebUtility.HtmlEncode(datos.UrlCancelarTurno ?? "#");
+
+            return "<h2 style=\"margin:0 0 6px;font-size:20px;color:#0f172a\">" + WebUtility.HtmlEncode(encabezado) + "</h2>"
+                 + "<p style=\"margin:0 0 16px;color:#64748b;font-size:13px\">" + WebUtility.HtmlEncode(subtitulo) + "</p>"
+                 + "<p style=\"margin:0 0 16px;color:#334155;font-size:15px;line-height:1.55\">Hola <b>" + paciente + "</b>,<br/>"
+                 + WebUtility.HtmlEncode(introduccion) + "</p>"
+                 + "<table style=\"width:100%;border-collapse:collapse;margin:0 0 20px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;font-size:14px\">"
+                 + "<tr><td style=\"padding:12px 16px;border-bottom:1px solid #edf2f7;color:#64748b;width:35%\">Fecha y hora</td>"
+                 + "<td style=\"padding:12px 16px;border-bottom:1px solid #edf2f7;font-weight:700;color:#1e293b\">" + fechaHora + "</td></tr>"
+                 + "<tr><td style=\"padding:12px 16px;border-bottom:1px solid #edf2f7;color:#64748b\">Especialidad</td>"
+                 + "<td style=\"padding:12px 16px;border-bottom:1px solid #edf2f7;font-weight:600;color:#1e293b\">" + especialidad + "</td></tr>"
+                 + "<tr><td style=\"padding:12px 16px;border-bottom:1px solid #edf2f7;color:#64748b\">Profesional</td>"
+                 + "<td style=\"padding:12px 16px;border-bottom:1px solid #edf2f7;font-weight:600;color:#1e293b\">" + profesional + "</td></tr>"
+                 + "<tr><td style=\"padding:12px 16px;border-bottom:1px solid #edf2f7;color:#64748b\">Estado</td>"
+                 + "<td style=\"padding:12px 16px;border-bottom:1px solid #edf2f7;font-weight:600;color:#2152ff\">" + estado + "</td></tr>"
+                 + "<tr><td style=\"padding:12px 16px;color:#64748b\">Ubicación</td>"
+                 + "<td style=\"padding:12px 16px;color:#1e293b\">Clínica MediStack - Consultorios Centrales</td></tr>"
+                 + "</table>"
+                 + "<div style=\"background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px 16px;margin:0 0 24px\">"
+                 + "<p style=\"margin:0;font-size:13px;line-height:1.5;color:#92400e\">"
+                 + "<b>Importante:</b> En caso de no poder asistir a tu consulta, por favor cancelá el turno con anticipación desde el botón a continuación para liberar el horario a otro paciente que lo necesite.</p>"
+                 + "</div>"
+                 + "<table style=\"width:100%;border-collapse:collapse;margin:0 0 20px\">"
+                 + "<tr><td style=\"text-align:center;padding-bottom:12px\">"
+                 + "<a href=\"" + urlVer + "\" style=\"display:inline-block;padding:12px 28px;background:#2152ff;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;border-radius:8px;min-width:180px\">Ver detalle de mi turno</a>"
+                 + "</td></tr>"
+                 + "<tr><td style=\"text-align:center\">"
+                 + "<a href=\"" + urlCancelar + "\" style=\"display:inline-block;padding:10px 22px;background:#ffffff;border:1px solid #dc2626;color:#dc2626;text-decoration:none;font-weight:600;font-size:13px;border-radius:8px\">Cancelar turno</a>"
+                 + "</td></tr>"
+                 + "</table>"
+                 + "<p style=\"margin:0;color:#64748b;font-size:12px;text-align:center\">Si los botones no funcionan en tu cliente de correo, podés gestionar tus citas ingresando a tu cuenta en MediStack.</p>";
+        }
+
         private static string ArmarPlantilla(string titulo, string contenido)
         {
             return "<div style=\"background:#f4f6fb;padding:24px 12px;font-family:'Segoe UI',Arial,sans-serif;color:#1e293b\">"
@@ -117,6 +212,11 @@ namespace MediStack.Negocio
         }
 
         private bool EnviarCorreo(string destino, string asunto, string cuerpoHtml)
+        {
+            return EnviarCorreoAsync(destino, asunto, cuerpoHtml).GetAwaiter().GetResult();
+        }
+
+        private async Task<bool> EnviarCorreoAsync(string destino, string asunto, string cuerpoHtml)
         {
             try
             {
@@ -146,7 +246,7 @@ namespace MediStack.Negocio
                     {
                         smtp.EnableSsl = true;
                         smtp.Credentials = new NetworkCredential(usuario, clave);
-                        smtp.Send(mensaje);
+                        await smtp.SendMailAsync(mensaje);
                     }
                 }
                 return true;

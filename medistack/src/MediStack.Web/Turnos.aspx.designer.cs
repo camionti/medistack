@@ -3,6 +3,10 @@ namespace MediStack.Web
     public partial class TurnosPagina
     {
         protected global::System.Web.UI.WebControls.Label Mensaje;
+        protected global::System.Web.UI.WebControls.Panel ConfirmarCancelacionUrlPanel;
+        protected global::System.Web.UI.WebControls.Literal ConfirmarCancelacionDetalle;
+        protected global::System.Web.UI.WebControls.Button BotonConfirmarCancelacionUrl;
+        protected global::System.Web.UI.WebControls.Button BotonDescartarCancelacionUrl;
         protected global::System.Web.UI.WebControls.Panel SolicitudPanel;
         protected global::System.Web.UI.WebControls.Literal TituloSolicitud;
         protected global::System.Web.UI.WebControls.Button CancelarReprogramacion;

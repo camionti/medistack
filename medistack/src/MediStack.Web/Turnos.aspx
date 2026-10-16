@@ -7,6 +7,18 @@
     </section>
     <asp:Label ID="Mensaje" runat="server" Visible="false" role="status" />
 
+    <asp:Panel ID="ConfirmarCancelacionUrlPanel" runat="server" Visible="false" CssClass="panel" style="margin-bottom: 24px; border-left: 4px solid #dc2626; background: #fff;">
+        <h2 class="section-title" style="color: #dc2626; margin-top: 0;">Confirmación de cancelación de turno</h2>
+        <p><asp:Literal ID="ConfirmarCancelacionDetalle" runat="server" /></p>
+        <p class="form-note">Si cancelás con al menos 24 hs de anticipación y habías pagado una seña, quedará registrada como reembolsada.</p>
+        <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center;">
+            <asp:Button ID="BotonConfirmarCancelacionUrl" runat="server" Text="Sí, cancelar este turno"
+                CssClass="button button-danger" OnClick="BotonConfirmarCancelacionUrl_Click" CausesValidation="false" />
+            <asp:Button ID="BotonDescartarCancelacionUrl" runat="server" Text="Mantener turno"
+                CssClass="button button-light" OnClick="BotonDescartarCancelacionUrl_Click" CausesValidation="false" />
+        </div>
+    </asp:Panel>
+
     <asp:Panel ID="SolicitudPanel" runat="server" Visible="false">
         <section class="panel management-panel" aria-labelledby="solicitar-turno-title">
             <div class="section-heading-row">
