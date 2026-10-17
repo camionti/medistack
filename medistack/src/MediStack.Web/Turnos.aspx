@@ -43,13 +43,13 @@
                         AutoPostBack="true" OnSelectedIndexChanged="Especialidad_SelectedIndexChanged" />
                     <span class="form-note solicitud-step-hint">Elegí el motivo principal de tu consulta.</span>
                 </div>
-                <div class="form-group solicitud-step" data-step="2">
+                <div class="form-group solicitud-step" data-step="2" style="display:none;">
                     <asp:Label ID="ProfesionalLabel" runat="server" AssociatedControlID="Profesional" Text="Profesional" />
                     <asp:DropDownList ID="Profesional" runat="server" CssClass="form-control"
                         AutoPostBack="true" OnSelectedIndexChanged="Profesional_SelectedIndexChanged" />
                     <span class="form-note solicitud-step-hint">Se habilita al elegir una especialidad.</span>
                 </div>
-                <div class="form-group solicitud-step" data-step="3">
+                <div class="form-group solicitud-step" data-step="3" style="display:none;">
                     <asp:Label ID="FechaDisponibilidadLabel" runat="server" AssociatedControlID="FechaDisponibilidad" Text="Fecha del turno" />
                     <asp:TextBox ID="FechaDisponibilidad" runat="server" CssClass="form-control" TextMode="Date" />
                     <span class="form-note solicitud-step-hint">Se habilita al elegir un profesional.</span>
@@ -60,9 +60,75 @@
                 </div>
             </div>
             <p class="form-note"><asp:Literal ID="DuracionEspecialidad" runat="server" /></p>
+            <asp:Panel ID="ExploradorDisponibilidadPanel" runat="server" CssClass="availability-explorer">
+                <h3 class="section-subtitle">Profesionales con disponibilidad</h3>
+                <p class="form-note">Elegí un profesional para ver sus próximas fechas libres. Los resultados se actualizan con la disponibilidad real de los próximos 60 días.</p>
+                <div class="table-wrap">
+                    <asp:GridView ID="ProfesionalesDisponibilidadGrid" runat="server" AutoGenerateColumns="false"
+                        CssClass="data-table" GridLines="None"
+                        DataKeyNames="ProfesionalId,TieneDisponibilidad"
+                        EmptyDataText="Seleccioná una especialidad para buscar profesionales."
+                        OnRowCommand="ProfesionalesDisponibilidadGrid_RowCommand">
+                        <Columns>
+                            <asp:BoundField DataField="Nombre" HeaderText="Profesional" />
+                            <asp:TemplateField HeaderText="Próxima fecha">
+                                <ItemTemplate>
+                                    <%# FechaResumen(Eval("ProximaFecha")) %>
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:BoundField DataField="CantidadFechas" HeaderText="Fechas disponibles" />
+                            <asp:TemplateField HeaderText="Cobertura / seña">
+                                <ItemTemplate><%# CoberturaResumen(Eval("TieneCobertura"), Eval("MontoSena")) %></ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Estado">
+                                <ItemTemplate>
+                                    <span class='<%# Convert.ToBoolean(Eval("TieneDisponibilidad")) ? "status-tag status-available" : "status-tag status-occupied" %>'>
+                                        <%#: Convert.ToBoolean(Eval("TieneDisponibilidad")) ? "Hay disponibilidad" : Eval("MotivoSinDisponibilidad") %>
+                                    </span>
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Acción">
+                                <ItemTemplate>
+                                    <asp:LinkButton ID="ElegirProfesional" runat="server" Text="Ver fechas"
+                                        CommandName="ElegirProfesional" CommandArgument="<%# Container.DataItemIndex %>"
+                                        CausesValidation="false" Enabled='<%# Convert.ToBoolean(Eval("TieneDisponibilidad")) %>' />
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                        </Columns>
+                    </asp:GridView>
+                </div>
+            </asp:Panel>
+            <asp:Panel ID="FechasDisponiblesPanel" runat="server" CssClass="availability-explorer" Visible="false">
+                <div class="section-heading-row">
+                    <h3 class="section-subtitle">Fechas disponibles</h3>
+                    <asp:Button ID="VolverProfesionales" runat="server" Text="Volver a profesionales"
+                        CssClass="button button-light" CausesValidation="false"
+                        OnClick="VolverProfesionales_Click" formnovalidate="formnovalidate" />
+                </div>
+                <p class="form-note"><asp:Literal ID="ProfesionalSeleccionadoResumen" runat="server" /></p>
+                <div class="table-wrap">
+                    <asp:GridView ID="FechasDisponiblesGrid" runat="server" AutoGenerateColumns="false"
+                        CssClass="data-table" GridLines="None" DataKeyNames="Fecha,CantidadHorarios"
+                        EmptyDataText="Este profesional no tiene fechas libres en la ventana consultada."
+                        OnRowCommand="FechasDisponiblesGrid_RowCommand">
+                        <Columns>
+                            <asp:BoundField DataField="Fecha" HeaderText="Fecha" DataFormatString="{0:dddd dd/MM/yyyy}" />
+                            <asp:BoundField DataField="CantidadHorarios" HeaderText="Horarios libres" />
+                            <asp:TemplateField HeaderText="Acción">
+                                <ItemTemplate>
+                                    <asp:LinkButton ID="ElegirFecha" runat="server" Text="Ver horarios"
+                                        CommandName="ElegirFecha" CommandArgument="<%# Container.DataItemIndex %>"
+                                        CausesValidation="false" />
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                        </Columns>
+                    </asp:GridView>
+                </div>
+            </asp:Panel>
             <div class="form-actions">
                 <asp:Button ID="ConsultarDisponibilidad" runat="server" Text="Ver horarios disponibles"
-                    CssClass="button button-secondary" CausesValidation="false" OnClick="ConsultarDisponibilidad_Click" formnovalidate="formnovalidate" />
+                    CssClass="button button-secondary" CausesValidation="false" OnClick="ConsultarDisponibilidad_Click"
+                    formnovalidate="formnovalidate" style="display:none;" />
             </div>
             <div class="table-wrap">
                 <asp:GridView ID="DisponibilidadGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
@@ -97,6 +163,18 @@
                     </Columns>
                 </asp:GridView>
             </div>
+            <asp:Panel ID="ConfirmacionSolicitudPanel" runat="server" CssClass="confirmation-panel" Visible="false">
+                <h3 class="section-subtitle">Confirmá el turno</h3>
+                <p><asp:Literal ID="ResumenSolicitud" runat="server" /></p>
+                <div class="form-actions">
+                    <asp:Button ID="ConfirmarSolicitud" runat="server" Text="Confirmar y solicitar turno"
+                        CssClass="button button-primary" CausesValidation="false"
+                        OnClick="ConfirmarSolicitud_Click" formnovalidate="formnovalidate" />
+                    <asp:Button ID="CancelarSolicitud" runat="server" Text="Elegir otro horario"
+                        CssClass="button button-light" CausesValidation="false"
+                        OnClick="CancelarSolicitud_Click" formnovalidate="formnovalidate" />
+                </div>
+            </asp:Panel>
         </section>
     </asp:Panel>
 

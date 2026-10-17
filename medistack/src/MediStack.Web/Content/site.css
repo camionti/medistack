@@ -884,6 +884,20 @@ body.is-resizing-sidebar * {
     margin-top: 1.25rem;
 }
 
+.availability-explorer,
+.confirmation-panel {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: .75rem;
+    background: rgba(255, 255, 255, .72);
+}
+
+.section-subtitle {
+    margin: 0 0 .5rem;
+    font-size: 1.05rem;
+}
+
 .management-panel > .section-title,
 .section-heading-row .section-title {
     margin-bottom: 1rem;
@@ -1387,4 +1401,3 @@ body.is-resizing-sidebar * {
     right: 24px !important;
     left: auto !important;
 }
-

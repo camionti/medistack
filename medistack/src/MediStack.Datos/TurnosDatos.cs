@@ -167,6 +167,51 @@ namespace MediStack.Datos
                 });
         }
 
+        public DataTable ObtenerHorariosDisponibilidadVentana(
+            Guid profesionalId, int especialidadId, DateTime desde, DateTime hasta)
+        {
+            return Consultar(@"
+                SELECT h.DiaSemana, h.HoraInicio, h.HoraFin,
+                       e.DuracionEstandarMinutos, e.Nombre AS Especialidad
+                FROM dbo.HorariosAtencion h
+                INNER JOIN dbo.Profesionales p ON p.ProfesionalId = h.ProfesionalId
+                INNER JOIN dbo.Usuarios u ON u.UsuarioId = p.ProfesionalId
+                INNER JOIN dbo.ProfesionalesEspecialidades pe
+                    ON pe.ProfesionalId = h.ProfesionalId AND pe.EspecialidadId = h.EspecialidadId
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = h.EspecialidadId
+                WHERE h.ProfesionalId = @ProfesionalId AND h.EspecialidadId = @EspecialidadId
+                  AND h.Activo = 1 AND pe.Activa = 1
+                  AND p.Activo = 1 AND u.Activo = 1 AND e.Activa = 1
+                  AND @Desde <= @Hasta
+                ORDER BY h.DiaSemana, h.HoraInicio;",
+                ParametroGuid("@ProfesionalId", profesionalId),
+                ParametroInt32("@EspecialidadId", especialidadId),
+                new SqlParameter("@Desde", SqlDbType.Date) { Value = desde.Date },
+                new SqlParameter("@Hasta", SqlDbType.Date) { Value = hasta.Date });
+        }
+
+        public DataTable ObtenerTurnosEnVentana(
+            Guid profesionalId, int especialidadId, DateTime desde, DateTime hasta, int? turnoExcluido)
+        {
+            return Consultar(@"
+                SELECT t.TurnoId, t.FechaHora, t.Estado, e.DuracionEstandarMinutos
+                FROM dbo.Turnos t
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                WHERE t.ProfesionalId = @ProfesionalId AND t.EspecialidadId = @EspecialidadId
+                  AND t.FechaHora >= @Desde AND t.FechaHora < DATEADD(day, 1, @Hasta)
+                  AND t.Estado IN (N'Solicitado', N'Confirmado')
+                  AND (@TurnoExcluido IS NULL OR t.TurnoId <> @TurnoExcluido)
+                ORDER BY t.FechaHora, t.TurnoId;",
+                ParametroGuid("@ProfesionalId", profesionalId),
+                ParametroInt32("@EspecialidadId", especialidadId),
+                new SqlParameter("@Desde", SqlDbType.Date) { Value = desde.Date },
+                new SqlParameter("@Hasta", SqlDbType.Date) { Value = hasta.Date },
+                new SqlParameter("@TurnoExcluido", SqlDbType.Int)
+                {
+                    Value = turnoExcluido.HasValue ? (object)turnoExcluido.Value : DBNull.Value
+                });
+        }
+
         public DataTable ObtenerTurnosSinResolver()
         {
             return Consultar(@"

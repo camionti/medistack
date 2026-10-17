@@ -23,7 +23,17 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.TextBox Motivo;
         protected global::System.Web.UI.WebControls.Literal DuracionEspecialidad;
         protected global::System.Web.UI.WebControls.Button ConsultarDisponibilidad;
+        protected global::System.Web.UI.WebControls.Panel ExploradorDisponibilidadPanel;
+        protected global::System.Web.UI.WebControls.GridView ProfesionalesDisponibilidadGrid;
+        protected global::System.Web.UI.WebControls.Panel FechasDisponiblesPanel;
+        protected global::System.Web.UI.WebControls.Button VolverProfesionales;
+        protected global::System.Web.UI.WebControls.Literal ProfesionalSeleccionadoResumen;
+        protected global::System.Web.UI.WebControls.GridView FechasDisponiblesGrid;
         protected global::System.Web.UI.WebControls.GridView DisponibilidadGrid;
+        protected global::System.Web.UI.WebControls.Panel ConfirmacionSolicitudPanel;
+        protected global::System.Web.UI.WebControls.Literal ResumenSolicitud;
+        protected global::System.Web.UI.WebControls.Button ConfirmarSolicitud;
+        protected global::System.Web.UI.WebControls.Button CancelarSolicitud;
         protected global::System.Web.UI.WebControls.Literal TituloListado;
         protected global::System.Web.UI.WebControls.Label DesdeLabel;
         protected global::System.Web.UI.WebControls.TextBox Desde;

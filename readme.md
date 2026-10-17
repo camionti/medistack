@@ -66,6 +66,7 @@ Validación realizada: compilación y precompilación de Web Forms; pruebas con 
 Implementada sobre el esquema existente de `MediStackDB`, sin migraciones:
 
 - Solicitud de turnos para pacientes y para personal administrativo, con selección de paciente, profesional y especialidad según el rol.
+- Exploración de disponibilidad por especialidad: profesionales ordenados por disponibilidad real, próximas fechas libres dentro de 60 días, cantidad de fechas, cobertura/seña y horarios disponibles por fecha, con navegación reversible y confirmación previa.
 - Disponibilidad calculada con la agenda activa, duración estándar de la especialidad y turnos solicitados/confirmados; muestra duración, estado y ocupante solo a los roles autorizados.
 - Validación transaccional para impedir horarios fuera de agenda, superposiciones y más de un turno vigente del paciente por especialidad.
 - Consulta de turnos limitada al paciente o profesional autenticado; el personal administrativo puede consultar y gestionar los turnos de la clínica.
