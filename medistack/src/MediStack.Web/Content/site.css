@@ -893,6 +893,44 @@ body.is-resizing-sidebar * {
     background: rgba(255, 255, 255, .72);
 }
 
+.solicitud-wizard {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.solicitud-progress {
+    display: flex;
+    gap: .5rem;
+    overflow-x: auto;
+    padding-bottom: .25rem;
+}
+
+.solicitud-progress-step {
+    flex: 1 0 auto;
+    padding: .55rem .75rem;
+    color: var(--color-muted);
+    background: #eef1ff;
+    border-radius: 2rem;
+    font-size: .82rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.solicitud-progress-active {
+    color: var(--color-white);
+    background: linear-gradient(135deg, #2152ff, #21d4fd);
+}
+
+.solicitud-hidden-control {
+    display: none;
+}
+
+.solicitud-wizard-stage,
+.confirmation-panel {
+    min-height: 260px;
+}
+
 .section-subtitle {
     margin: 0 0 .5rem;
     font-size: 1.05rem;

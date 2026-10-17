@@ -79,6 +79,10 @@ namespace MediStack.Web
                 LimpiarDisponibilidad();
                 FechasDisponiblesPanel.Visible = false;
                 CargarResumenProfesionales();
+                if (!EsReprogramacion)
+                {
+                    ExploradorDisponibilidadPanel.Visible = false;
+                }
                 if (EsReprogramacion && Profesional.Items.Count == 2)
                 {
                     Profesional.SelectedIndex = 1;
@@ -114,6 +118,25 @@ namespace MediStack.Web
             });
         }
 
+        protected void AvanzarEspecialidad_Click(object sender, EventArgs e)
+        {
+            LimpiarMensaje();
+            if (string.IsNullOrWhiteSpace(Especialidad.SelectedValue))
+            {
+                MostrarError("Seleccioná una especialidad para avanzar.");
+                return;
+            }
+
+            EjecutarConManejoDeErrores("No se pudo cargar la disponibilidad", () =>
+            {
+                CargarResumenProfesionales();
+                ExploradorDisponibilidadPanel.Visible = true;
+                FechasDisponiblesPanel.Visible = false;
+                HorariosPanel.Visible = false;
+                ConfirmacionSolicitudPanel.Visible = false;
+            });
+        }
+
         protected void Paciente_SelectedIndexChanged(object sender, EventArgs e)
         {
             EjecutarConManejoDeErrores("No se pudo cambiar el paciente", () =>
@@ -126,6 +149,7 @@ namespace MediStack.Web
                 LimpiarDisponibilidad();
                 FechasDisponiblesPanel.Visible = false;
                 CargarResumenProfesionales();
+                ExploradorDisponibilidadPanel.Visible = false;
                 ConfigurarPasosSolicitud();
             });
         }
@@ -181,7 +205,9 @@ namespace MediStack.Web
                 Profesional.ClearSelection();
                 Profesional.SelectedValue = profesionalId.ToString();
                 CargarFechasProfesional(profesionalId);
+                ExploradorDisponibilidadPanel.Visible = false;
                 FechasDisponiblesPanel.Visible = true;
+                HorariosPanel.Visible = false;
                 DisponibilidadGrid.DataSource = null;
                 DisponibilidadGrid.DataBind();
                 ConfirmacionSolicitudPanel.Visible = false;
@@ -214,14 +240,33 @@ namespace MediStack.Web
             DateTime fecha = Convert.ToDateTime(datos.Values["Fecha"]);
             FechaDisponibilidad.Text = fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             CargarDisponibilidad();
+            FechasDisponiblesPanel.Visible = false;
+            HorariosPanel.Visible = true;
             ConfirmacionSolicitudPanel.Visible = false;
         }
 
         protected void VolverProfesionales_Click(object sender, EventArgs e)
         {
             FechasDisponiblesPanel.Visible = false;
+            ExploradorDisponibilidadPanel.Visible = true;
+            HorariosPanel.Visible = false;
             LimpiarDisponibilidad();
             LimpiarSeleccionHorario();
+        }
+
+        protected void VolverFechas_Click(object sender, EventArgs e)
+        {
+            HorariosPanel.Visible = false;
+            FechasDisponiblesPanel.Visible = true;
+            ConfirmacionSolicitudPanel.Visible = false;
+            LimpiarSeleccionHorario();
+        }
+
+        protected void VolverHorarios_Click(object sender, EventArgs e)
+        {
+            ConfirmacionSolicitudPanel.Visible = false;
+            HorariosPanel.Visible = true;
+            MotivoPanel.Visible = false;
         }
 
         protected void ConsultarDisponibilidad_Click(object sender, EventArgs e)
@@ -299,6 +344,8 @@ namespace MediStack.Web
                     + " el " + fechaHora.ToString("dddd dd/MM/yyyy 'a las' HH:mm", CultureInfo.GetCultureInfo("es-AR"))
                     + " hs. Duración: " + Convert.ToInt32(horario.Values["DuracionMinutos"]) + " minutos.");
                 ConfirmacionSolicitudPanel.Visible = true;
+                HorariosPanel.Visible = false;
+                MotivoPanel.Visible = true;
                 MostrarExito("Revisá los datos y confirmá el horario.");
             }
             catch (InvalidOperationException ex)
@@ -755,6 +802,7 @@ namespace MediStack.Web
                 especialidadId, pacienteId, desde, hasta, TurnoExcluido(), EsPaciente);
             ProfesionalesDisponibilidadGrid.DataSource = resumen;
             ProfesionalesDisponibilidadGrid.DataBind();
+            ExploradorDisponibilidadPanel.Visible = true;
         }
 
         private void CargarFechasProfesional(Guid profesionalId)
@@ -898,6 +946,7 @@ namespace MediStack.Web
             DisponibilidadGrid.DataSource = _negocio.ObtenerDisponibilidad(
                 profesionalId, especialidadId, fecha, turnoExcluido);
             DisponibilidadGrid.DataBind();
+            HorariosPanel.Visible = true;
             MostrarDuracionSeleccionada();
             if (DisponibilidadGrid.Rows.Count == 0)
             {
@@ -1047,6 +1096,7 @@ namespace MediStack.Web
             ViewState.Remove("SolicitudEspecialidadId");
             ViewState.Remove("SolicitudFechaHora");
             ConfirmacionSolicitudPanel.Visible = false;
+            MotivoPanel.Visible = false;
             ResumenSolicitud.Text = string.Empty;
         }
 

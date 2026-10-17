@@ -21,7 +21,9 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.TextBox FechaDisponibilidad;
         protected global::System.Web.UI.WebControls.Label MotivoLabel;
         protected global::System.Web.UI.WebControls.TextBox Motivo;
+        protected global::System.Web.UI.WebControls.Panel MotivoPanel;
         protected global::System.Web.UI.WebControls.Literal DuracionEspecialidad;
+        protected global::System.Web.UI.WebControls.Button AvanzarEspecialidad;
         protected global::System.Web.UI.WebControls.Button ConsultarDisponibilidad;
         protected global::System.Web.UI.WebControls.Panel ExploradorDisponibilidadPanel;
         protected global::System.Web.UI.WebControls.GridView ProfesionalesDisponibilidadGrid;
@@ -29,9 +31,12 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.Button VolverProfesionales;
         protected global::System.Web.UI.WebControls.Literal ProfesionalSeleccionadoResumen;
         protected global::System.Web.UI.WebControls.GridView FechasDisponiblesGrid;
+        protected global::System.Web.UI.WebControls.Panel HorariosPanel;
+        protected global::System.Web.UI.WebControls.Button VolverFechas;
         protected global::System.Web.UI.WebControls.GridView DisponibilidadGrid;
         protected global::System.Web.UI.WebControls.Panel ConfirmacionSolicitudPanel;
         protected global::System.Web.UI.WebControls.Literal ResumenSolicitud;
+        protected global::System.Web.UI.WebControls.Button VolverHorarios;
         protected global::System.Web.UI.WebControls.Button ConfirmarSolicitud;
         protected global::System.Web.UI.WebControls.Button CancelarSolicitud;
         protected global::System.Web.UI.WebControls.Literal TituloListado;

@@ -30,7 +30,13 @@
                     CssClass="button button-light" CausesValidation="false" Visible="false"
                     OnClick="CancelarReprogramacion_Click" formnovalidate="formnovalidate" />
             </div>
-            <div class="form-grid solicitud-steps" data-solicitud-steps="true">
+            <div class="solicitud-wizard" data-solicitud-steps="true">
+                <div class="solicitud-progress" aria-label="Etapas de solicitud">
+                    <span class="solicitud-progress-step solicitud-progress-active" data-stage="1">1. Especialidad</span>
+                    <span class="solicitud-progress-step" data-stage="2">2. Fecha</span>
+                    <span class="solicitud-progress-step" data-stage="3">3. Horario</span>
+                    <span class="solicitud-progress-step" data-stage="4">4. Confirmación</span>
+                </div>
                 <asp:Panel ID="PacienteSelectorPanel" runat="server" CssClass="form-group solicitud-step solicitud-step-active" Visible="false">
                     <asp:Label ID="PacienteLabel" runat="server" AssociatedControlID="Paciente" Text="Paciente" />
                     <asp:DropDownList ID="Paciente" runat="server" CssClass="form-control"
@@ -42,25 +48,29 @@
                     <asp:DropDownList ID="Especialidad" runat="server" CssClass="form-control"
                         AutoPostBack="true" OnSelectedIndexChanged="Especialidad_SelectedIndexChanged" />
                     <span class="form-note solicitud-step-hint">Elegí el motivo principal de tu consulta.</span>
+                    <div class="form-actions">
+                        <asp:Button ID="AvanzarEspecialidad" runat="server" Text="Avanzar"
+                            CssClass="button button-primary" CausesValidation="false"
+                            OnClick="AvanzarEspecialidad_Click" formnovalidate="formnovalidate" />
+                    </div>
                 </div>
-                <div class="form-group solicitud-step" data-step="2" style="display:none;">
+                <div class="form-group solicitud-step solicitud-hidden-control" data-step="2">
                     <asp:Label ID="ProfesionalLabel" runat="server" AssociatedControlID="Profesional" Text="Profesional" />
                     <asp:DropDownList ID="Profesional" runat="server" CssClass="form-control"
                         AutoPostBack="true" OnSelectedIndexChanged="Profesional_SelectedIndexChanged" />
                     <span class="form-note solicitud-step-hint">Se habilita al elegir una especialidad.</span>
                 </div>
-                <div class="form-group solicitud-step" data-step="3" style="display:none;">
+                <div class="form-group solicitud-step solicitud-hidden-control" data-step="3">
                     <asp:Label ID="FechaDisponibilidadLabel" runat="server" AssociatedControlID="FechaDisponibilidad" Text="Fecha del turno" />
                     <asp:TextBox ID="FechaDisponibilidad" runat="server" CssClass="form-control" TextMode="Date" />
                     <span class="form-note solicitud-step-hint">Se habilita al elegir un profesional.</span>
                 </div>
-                <div class="form-group form-group-full solicitud-motivo">
-                    <asp:Label ID="MotivoLabel" runat="server" AssociatedControlID="Motivo" Text="Motivo de consulta (opcional)" />
-                    <asp:TextBox ID="Motivo" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="2" MaxLength="500" />
-                </div>
             </div>
             <p class="form-note"><asp:Literal ID="DuracionEspecialidad" runat="server" /></p>
-            <asp:Panel ID="ExploradorDisponibilidadPanel" runat="server" CssClass="availability-explorer">
+            <asp:Button ID="ConsultarDisponibilidad" runat="server" Text="Ver horarios disponibles"
+                CssClass="button button-secondary" CausesValidation="false" OnClick="ConsultarDisponibilidad_Click"
+                formnovalidate="formnovalidate" style="display:none;" />
+            <asp:Panel ID="ExploradorDisponibilidadPanel" runat="server" CssClass="availability-explorer solicitud-wizard-stage" Visible="false">
                 <h3 class="section-subtitle">Profesionales con disponibilidad</h3>
                 <p class="form-note">Elegí un profesional para ver sus próximas fechas libres. Los resultados se actualizan con la disponibilidad real de los próximos 60 días.</p>
                 <div class="table-wrap">
@@ -98,7 +108,7 @@
                     </asp:GridView>
                 </div>
             </asp:Panel>
-            <asp:Panel ID="FechasDisponiblesPanel" runat="server" CssClass="availability-explorer" Visible="false">
+            <asp:Panel ID="FechasDisponiblesPanel" runat="server" CssClass="availability-explorer solicitud-wizard-stage" Visible="false">
                 <div class="section-heading-row">
                     <h3 class="section-subtitle">Fechas disponibles</h3>
                     <asp:Button ID="VolverProfesionales" runat="server" Text="Volver a profesionales"
@@ -125,12 +135,15 @@
                     </asp:GridView>
                 </div>
             </asp:Panel>
-            <div class="form-actions">
-                <asp:Button ID="ConsultarDisponibilidad" runat="server" Text="Ver horarios disponibles"
-                    CssClass="button button-secondary" CausesValidation="false" OnClick="ConsultarDisponibilidad_Click"
-                    formnovalidate="formnovalidate" style="display:none;" />
-            </div>
-            <div class="table-wrap">
+            <asp:Panel ID="HorariosPanel" runat="server" CssClass="availability-explorer solicitud-wizard-stage" Visible="false">
+                <div class="section-heading-row">
+                    <h3 class="section-subtitle">Horarios disponibles</h3>
+                    <asp:Button ID="VolverFechas" runat="server" Text="Volver a fechas"
+                        CssClass="button button-light" CausesValidation="false"
+                        OnClick="VolverFechas_Click" formnovalidate="formnovalidate" />
+                </div>
+                <p class="form-note">Elegí un horario para continuar con la confirmación.</p>
+                <div class="table-wrap">
                 <asp:GridView ID="DisponibilidadGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
                     GridLines="None" DataKeyNames="ProfesionalId,EspecialidadId,FechaHora,Disponible,DuracionMinutos"
                     EmptyDataText="Seleccioná especialidad, profesional y fecha para ver los horarios."
@@ -162,12 +175,22 @@
                         </asp:TemplateField>
                     </Columns>
                 </asp:GridView>
-            </div>
+                </div>
+            </asp:Panel>
             <asp:Panel ID="ConfirmacionSolicitudPanel" runat="server" CssClass="confirmation-panel" Visible="false">
-                <h3 class="section-subtitle">Confirmá el turno</h3>
+                <div class="section-heading-row">
+                    <h3 class="section-subtitle">Confirmá el turno</h3>
+                    <asp:Button ID="VolverHorarios" runat="server" Text="Volver a horarios"
+                        CssClass="button button-light" CausesValidation="false"
+                        OnClick="VolverHorarios_Click" formnovalidate="formnovalidate" />
+                </div>
                 <p><asp:Literal ID="ResumenSolicitud" runat="server" /></p>
+                <asp:Panel ID="MotivoPanel" runat="server" CssClass="form-group" Visible="false">
+                    <asp:Label ID="MotivoLabel" runat="server" AssociatedControlID="Motivo" Text="Motivo de consulta (opcional)" />
+                    <asp:TextBox ID="Motivo" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="2" MaxLength="500" />
+                </asp:Panel>
                 <div class="form-actions">
-                    <asp:Button ID="ConfirmarSolicitud" runat="server" Text="Confirmar y solicitar turno"
+                    <asp:Button ID="ConfirmarSolicitud" runat="server" Text="Finalizar turno"
                         CssClass="button button-primary" CausesValidation="false"
                         OnClick="ConfirmarSolicitud_Click" formnovalidate="formnovalidate" />
                     <asp:Button ID="CancelarSolicitud" runat="server" Text="Elegir otro horario"
@@ -204,6 +227,11 @@
                 var specialtyStep = specialty.closest('.solicitud-step');
                 var professionalStep = professional.closest('.solicitud-step');
                 var dateStep = date.closest('.solicitud-step');
+                var stages = steps.querySelectorAll('.solicitud-progress-step');
+                var explorer = document.getElementById('<%= ExploradorDisponibilidadPanel.ClientID %>');
+                var dates = document.getElementById('<%= FechasDisponiblesPanel.ClientID %>');
+                var schedules = document.getElementById('<%= HorariosPanel.ClientID %>');
+                var confirmation = document.getElementById('<%= ConfirmacionSolicitudPanel.ClientID %>');
 
                 specialty.disabled = !hasPatient;
                 professional.disabled = !hasPatient || !hasSpecialty;
@@ -223,6 +251,18 @@
                 if (dateStep) {
                     dateStep.classList.toggle('solicitud-step-active', hasPatient && hasProfessional);
                 }
+
+                var activeStage = confirmation && confirmation.offsetParent !== null
+                    ? '4'
+                    : schedules && schedules.offsetParent !== null
+                        ? '3'
+                        : dates && dates.offsetParent !== null
+                            ? '2'
+                            : explorer && explorer.offsetParent !== null
+                                ? '2' : '1';
+                Array.prototype.forEach.call(stages, function (stage) {
+                    stage.classList.toggle('solicitud-progress-active', stage.getAttribute('data-stage') === activeStage);
+                });
             }
 
             if (patient) {
