@@ -83,6 +83,26 @@ namespace MediStack.Dominio
         public decimal MontoSena { get; set; }
     }
 
+    public sealed class ResumenDisponibilidadProfesional
+    {
+        public Guid ProfesionalId { get; set; }
+        public string Nombre { get; set; }
+        public DateTime? ProximaFecha { get; set; }
+        public int CantidadFechas { get; set; }
+        public bool TieneDisponibilidad { get; set; }
+        public bool TieneCobertura { get; set; }
+        public decimal MontoSena { get; set; }
+        public string MotivoSinDisponibilidad { get; set; }
+    }
+
+    public sealed class FechaDisponible
+    {
+        public Guid ProfesionalId { get; set; }
+        public int EspecialidadId { get; set; }
+        public DateTime Fecha { get; set; }
+        public int CantidadHorarios { get; set; }
+    }
+
     // Resultado de reservar un turno: su Id y la seña que quedó pendiente (0 si no requiere).
     public sealed class ReservaTurno
     {

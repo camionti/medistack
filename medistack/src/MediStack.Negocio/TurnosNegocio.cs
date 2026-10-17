@@ -204,6 +204,128 @@ namespace MediStack.Negocio
             return dias;
         }
 
+            public IList<ResumenDisponibilidadProfesional> ObtenerResumenDisponibilidad(
+                int especialidadId, Guid pacienteId, DateTime desde, DateTime hasta, int? turnoExcluido,
+                bool calcularCobertura)
+            {
+                List<ResumenDisponibilidadProfesional> resultados = new List<ResumenDisponibilidadProfesional>();
+                if (especialidadId <= 0 || pacienteId == Guid.Empty)
+                {
+                    return resultados;
+                }
+
+                DateTime inicio = desde.Date < DateTime.Today ? DateTime.Today : desde.Date;
+                DateTime fin = hasta.Date < inicio ? inicio.AddDays(-1) : hasta.Date;
+                DataTable profesionales = calcularCobertura
+                    ? _datos.ObtenerProfesionalesPorEspecialidadParaPaciente(especialidadId, pacienteId)
+                    : _datos.ObtenerProfesionalesPorEspecialidad(especialidadId);
+
+                foreach (DataRow fila in profesionales.Rows)
+                {
+                    Guid profesionalId = (Guid)fila["ProfesionalId"];
+                    IList<FechaDisponible> fechas = ObtenerFechasDisponibles(
+                        profesionalId, especialidadId, inicio, fin, turnoExcluido);
+                    bool tieneCobertura = !calcularCobertura
+                        || Convert.ToInt32(fila["TieneCobertura"]) == 1;
+                    decimal valorConsulta = calcularCobertura
+                        ? Convert.ToDecimal(fila["ValorConsulta"])
+                        : 0m;
+
+                    resultados.Add(new ResumenDisponibilidadProfesional
+                    {
+                        ProfesionalId = profesionalId,
+                        Nombre = Convert.ToString(fila["Nombre"]),
+                        ProximaFecha = fechas.Count == 0 ? (DateTime?)null : fechas[0].Fecha,
+                        CantidadFechas = fechas.Count,
+                        TieneDisponibilidad = fechas.Count > 0,
+                        TieneCobertura = tieneCobertura,
+                        MontoSena = calcularCobertura && !tieneCobertura
+                            ? ReglasTurno.CalcularSena(valorConsulta) : 0m,
+                        MotivoSinDisponibilidad = fechas.Count == 0
+                            ? "Sin horarios libres en los próximos 60 días." : string.Empty
+                    });
+                }
+
+                return resultados
+                    .OrderByDescending(r => r.TieneDisponibilidad)
+                    .ThenBy(r => r.ProximaFecha ?? DateTime.MaxValue)
+                    .ThenByDescending(r => r.TieneCobertura)
+                    .ThenBy(r => r.Nombre)
+                    .ToList();
+            }
+
+            public IList<FechaDisponible> ObtenerFechasDisponibles(
+                Guid profesionalId, int especialidadId, DateTime desde, DateTime hasta, int? turnoExcluido)
+            {
+                List<FechaDisponible> fechas = new List<FechaDisponible>();
+                if (profesionalId == Guid.Empty || especialidadId <= 0 || hasta.Date < desde.Date)
+                {
+                    return fechas;
+                }
+
+                _datos.LiberarReservasVencidas();
+                DateTime inicio = desde.Date < DateTime.Today ? DateTime.Today : desde.Date;
+                DateTime fin = hasta.Date;
+                DataTable horarios = _datos.ObtenerHorariosDisponibilidadVentana(
+                    profesionalId, especialidadId, inicio, fin);
+                DataTable turnos = _datos.ObtenerTurnosEnVentana(
+                    profesionalId, especialidadId, inicio, fin, turnoExcluido);
+
+                for (DateTime fecha = inicio; fecha <= fin; fecha = fecha.AddDays(1))
+                {
+                    int diaSemana = ((int)fecha.DayOfWeek + 6) % 7 + 1;
+                    int cantidad = 0;
+                    foreach (DataRow horario in horarios.Rows)
+                    {
+                        if (Convert.ToInt32(horario["DiaSemana"]) != diaSemana)
+                        {
+                            continue;
+                        }
+
+                        TimeSpan hora = (TimeSpan)horario["HoraInicio"];
+                        TimeSpan finHorario = (TimeSpan)horario["HoraFin"];
+                        short duracion = Convert.ToInt16(horario["DuracionEstandarMinutos"]);
+                        while (hora.Add(TimeSpan.FromMinutes(duracion)) <= finHorario)
+                        {
+                            DateTime inicioTurno = fecha.Date.Add(hora);
+                            DateTime finTurno = inicioTurno.AddMinutes(duracion);
+                            bool ocupado = false;
+                            foreach (DataRow turno in turnos.Rows)
+                            {
+                                DateTime ocupadoDesde = Convert.ToDateTime(turno["FechaHora"]);
+                                DateTime ocupadoHasta = ocupadoDesde.AddMinutes(
+                                    Convert.ToInt32(turno["DuracionEstandarMinutos"]));
+                                if (ocupadoDesde < finTurno && ocupadoHasta > inicioTurno)
+                                {
+                                    ocupado = true;
+                                    break;
+                                }
+                            }
+
+                            if (!ocupado && inicioTurno > DateTime.Now)
+                            {
+                                cantidad++;
+                            }
+
+                            hora = hora.Add(TimeSpan.FromMinutes(duracion));
+                        }
+                    }
+
+                    if (cantidad > 0)
+                    {
+                        fechas.Add(new FechaDisponible
+                        {
+                            ProfesionalId = profesionalId,
+                            EspecialidadId = especialidadId,
+                            Fecha = fecha,
+                            CantidadHorarios = cantidad
+                        });
+                    }
+                }
+
+                return fechas;
+            }
+
         // Primera fecha, desde "desde" y dentro de los próximos 60 días, con al menos un horario libre.
         public DateTime? BuscarProximaFechaDisponible(
             Guid profesionalId, int especialidadId, DateTime desde, int? turnoExcluido = null)
