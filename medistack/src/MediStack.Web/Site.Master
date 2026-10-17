@@ -14,8 +14,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="<%: ResolveUrl("~/Content/site.css") %>?v=<%: System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Content/site.css")).Ticks %>" rel="stylesheet" />
     <asp:ContentPlaceHolder ID="HeadContent" runat="server" />
-    <link href="<%: ResolveUrl("~/Content/accesibilidad.css") %>?v=3" rel="stylesheet" />
-    <script src="<%: ResolveUrl("~/Scripts/accesibilidad.js") %>?v=3"></script>
+    <link href="<%: ResolveUrl("~/Content/accesibilidad.css") %>?v=<%: System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Content/accesibilidad.css")).Ticks %>" rel="stylesheet" />
+    <script src="<%: ResolveUrl("~/Scripts/accesibilidad.js") %>?v=<%: System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Scripts/accesibilidad.js")).Ticks %>"></script>
+    <script src="<%: ResolveUrl("~/Scripts/sidebar.js") %>?v=<%: System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Scripts/sidebar.js")).Ticks %>"></script>
 </head>
 <body>
     <form id="MainForm" runat="server">
@@ -107,74 +108,156 @@
                 </div>
             </details>
         </div>
-        <header class="site-header">
-            <a class="brand" href="<%: ResolveUrl("~/Default.aspx") %>" aria-label="MediStack, inicio">
-                <img class="brand-logo" height="44" style="height:44px;width:auto" src="<%: ResolveUrl("~/Content/MediStack-logo-violeta.png") %>" alt="MediStack" />
-            </a>
-            <nav class="user-nav" aria-label="Cuenta">
-                <asp:PlaceHolder ID="UsuarioActual" runat="server" Visible="false">
-                    <a class="header-espacio-link" href="<%: ResolveUrl("~/Dashboard.aspx") %>">Ver tu espacio</a>
-                    <span class="user-summary">
-                        <asp:Literal ID="NombreActual" runat="server" />
-                        <span class="user-role"><asp:Literal ID="RolActual" runat="server" /></span>
-                    </span>
-                    <a class="logout-link" href="<%: ResolveUrl("~/Salir.aspx") %>">Cerrar sesión</a>
-                </asp:PlaceHolder>
-                <asp:PlaceHolder ID="UsuarioAnonimo" runat="server" Visible="false">
-                    <div class="anon-nav">
-                        <a class="anon-login-link" href="<%: ResolveUrl("~/Account/Login.aspx") %>">Ingresar</a>
-                        <a class="button button-primary button-sm" href="<%: ResolveUrl("~/Account/Registro.aspx") %>">Crear cuenta</a>
+        <div class="app-shell" id="appShell" runat="server">
+            <asp:PlaceHolder ID="SidebarHolder" runat="server" Visible="false">
+                <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+                <aside class="app-sidebar" id="appSidebar" aria-label="Navegación principal">
+                    <div class="sidebar-header">
+                        <a class="sidebar-brand" href="<%: ResolveUrl("~/Default.aspx") %>" aria-label="MediStack, inicio">
+                            <img class="brand-logo" src="<%: ResolveUrl("~/Content/MediStack-logo-violeta.png") %>" alt="MediStack" />
+                            <span class="brand-compact-mark">MS</span>
+                        </a>
+                        <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Alternar menú lateral" aria-label="Alternar menú lateral">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-toggle-icon">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="3" x2="9" y2="21"></line>
+                                <path d="m14 9-3 3 3 3"></path>
+                            </svg>
+                        </button>
                     </div>
+
+                    <div class="sidebar-scrollable">
+                        <asp:Panel ID="NavegacionAdministrativa" runat="server" CssClass="sidebar-nav-panel" Visible="false">
+                            <nav class="sidebar-nav" aria-label="Gestión de la clínica">
+                                <div class="sidebar-section-title"><span>Gestión Clínica</span></div>
+                                <a href="<%: ResolveUrl("~/Pacientes.aspx") %>" class="sidebar-nav-link" data-title="Pacientes"><span>Pacientes</span></a>
+                                <a href="<%: ResolveUrl("~/Turnos.aspx") %>" class="sidebar-nav-link" data-title="Turnos"><span>Turnos</span></a>
+                                <a href="<%: ResolveUrl("~/Agenda.aspx") %>" class="sidebar-nav-link" data-title="Agendas"><span>Agendas</span></a>
+                                <a href="<%: ResolveUrl("~/RevisionDia.aspx") %>" class="sidebar-nav-link" data-title="Revisión del día"><span>Revisión del día</span></a>
+                                <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>" class="sidebar-nav-link" data-title="Asistente"><span>Asistente</span></a>
+
+                                <div class="sidebar-section-title"><span>Finanzas</span></div>
+                                <a href="<%: ResolveUrl("~/Cobros.aspx") %>" class="sidebar-nav-link" data-title="Cobros"><span>Cobros</span></a>
+                                <a href="<%: ResolveUrl("~/Caja.aspx") %>" class="sidebar-nav-link" data-title="Caja"><span>Caja</span></a>
+                                <a href="<%: ResolveUrl("~/Liquidaciones.aspx") %>" class="sidebar-nav-link" data-title="Honorarios"><span>Honorarios</span></a>
+                                <a href="<%: ResolveUrl("~/Reportes.aspx") %>" class="sidebar-nav-link" data-title="Reportes"><span>Reportes</span></a>
+
+                                <div class="sidebar-section-title"><span>Catálogos</span></div>
+                                <a href="<%: ResolveUrl("~/Profesionales.aspx") %>" class="sidebar-nav-link" data-title="Profesionales"><span>Profesionales</span></a>
+                                <a href="<%: ResolveUrl("~/Especialidades.aspx") %>" class="sidebar-nav-link" data-title="Especialidades"><span>Especialidades</span></a>
+                                <a href="<%: ResolveUrl("~/ObrasSociales.aspx") %>" class="sidebar-nav-link" data-title="Obras sociales"><span>Obras sociales</span></a>
+                                <a href="<%: ResolveUrl("~/Coberturas.aspx") %>" class="sidebar-nav-link" data-title="Coberturas"><span>Coberturas</span></a>
+                                <a href="<%: ResolveUrl("~/Convenios.aspx") %>" class="sidebar-nav-link" data-title="Convenios"><span>Convenios</span></a>
+                            </nav>
+                        </asp:Panel>
+
+                        <asp:Panel ID="NavegacionPaciente" runat="server" CssClass="sidebar-nav-panel" Visible="false">
+                            <nav class="sidebar-nav" aria-label="Mi cuenta de paciente">
+                                <div class="sidebar-section-title"><span>Mis Servicios</span></div>
+                                <a href="<%: ResolveUrl("~/Turnos.aspx") %>" class="sidebar-nav-link" data-title="Mis turnos"><span>Mis turnos</span></a>
+                                <a href="<%: ResolveUrl("~/Turnos.aspx") %>#solicitar-turno-title" class="sidebar-nav-link" data-title="Solicitar turno"><span>Solicitar turno</span></a>
+                                <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>" class="sidebar-nav-link" data-title="Asistente de turnos"><span>Asistente de turnos</span></a>
+                                <a href="<%: ResolveUrl("~/Cobros.aspx") %>" class="sidebar-nav-link" data-title="Mis cobros"><span>Mis cobros</span></a>
+                            </nav>
+                        </asp:Panel>
+
+                        <asp:Panel ID="NavegacionProfesional" runat="server" CssClass="sidebar-nav-panel" Visible="false">
+                            <nav class="sidebar-nav" aria-label="Mi actividad profesional">
+                                <div class="sidebar-section-title"><span>Atención Médica</span></div>
+                                <a href="<%: ResolveUrl("~/Agenda.aspx") %>" class="sidebar-nav-link" data-title="Mi agenda"><span>Mi agenda</span></a>
+                                <a href="<%: ResolveUrl("~/Turnos.aspx") %>" class="sidebar-nav-link" data-title="Turnos"><span>Turnos</span></a>
+                                <a href="<%: ResolveUrl("~/Cobros.aspx") %>" class="sidebar-nav-link" data-title="Cobros"><span>Cobros</span></a>
+                                <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>" class="sidebar-nav-link" data-title="Asistente"><span>Asistente</span></a>
+                            </nav>
+                        </asp:Panel>
+                    </div>
+
+                    <div class="sidebar-user-footer">
+                        <div class="sidebar-user-card">
+                            <div class="user-avatar" title="Usuario activo">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="avatar-svg">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                            </div>
+                            <div class="sidebar-user-meta">
+                                <span class="sidebar-user-name"><asp:Literal ID="NombreActual" runat="server" /></span>
+                                <span class="sidebar-user-role"><asp:Literal ID="RolActual" runat="server" /></span>
+                            </div>
+                            <a class="sidebar-logout-btn" href="<%: ResolveUrl("~/Salir.aspx") %>" title="Cerrar sesión" aria-label="Cerrar sesión">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                    <polyline points="16 17 21 12 16 7" />
+                                    <line x1="21" y1="12" x2="9" y2="12" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-resizer" id="sidebarResizer" title="Arrastrar para ajustar ancho"></div>
+                </aside>
+            </asp:PlaceHolder>
+
+            <div class="app-main-area">
+                <asp:PlaceHolder ID="TopbarAutenticado" runat="server" Visible="false">
+                    <header class="app-topbar">
+                        <div class="topbar-left">
+                            <button type="button" class="topbar-menu-btn" id="topbarMenuBtn" title="Abrir menú" aria-label="Abrir menú">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                                </svg>
+                            </button>
+                            <div class="topbar-page-info">
+                                <span class="topbar-clinic-badge">MediStack</span>
+                                <h1 class="topbar-page-title"><%: Page.Title %></h1>
+                            </div>
+                        </div>
+                        <div class="topbar-right">
+                            <a class="topbar-action-btn" href="<%: ResolveUrl("~/Default.aspx") %>" title="Ir a Inicio" aria-label="Ir a Inicio">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                    <polyline points="9 22 9 12 15 12 15 22" />
+                                </svg>
+                            </a>
+                            <asp:PlaceHolder ID="PhMiFicha" runat="server" Visible="false">
+                                <a class="topbar-action-btn" href="<%: ResolveUrl("~/FichaPaciente.aspx") %>" title="Mi ficha médica" aria-label="Mi ficha médica">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                                        <rect x="8" y="2" width="8" height="4" rx="1" />
+                                        <circle cx="12" cy="11" r="2" />
+                                        <path d="M8 17a4 4 0 0 1 8 0" />
+                                    </svg>
+                                </a>
+                            </asp:PlaceHolder>
+                        </div>
+                    </header>
                 </asp:PlaceHolder>
-            </nav>
-        </header>
-        <asp:Panel ID="NavegacionAdministrativa" runat="server" CssClass="admin-nav" Visible="false">
-            <nav class="admin-nav-inner" aria-label="Gestión de la clínica">
-                <a href="<%: ResolveUrl("~/Default.aspx") %>">Inicio</a>
-                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Ver tu espacio</a>
-                <a href="<%: ResolveUrl("~/Pacientes.aspx") %>">Pacientes</a>
-                <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Turnos</a>
-                <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Cobros</a>
-                <a href="<%: ResolveUrl("~/Caja.aspx") %>">Caja</a>
-                <a href="<%: ResolveUrl("~/RevisionDia.aspx") %>">Revisión del día</a>
-                <a href="<%: ResolveUrl("~/Liquidaciones.aspx") %>">Honorarios</a>
-                <a href="<%: ResolveUrl("~/Reportes.aspx") %>">Reportes</a>
-                <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente</a>
-                <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Agendas</a>
-                <a href="<%: ResolveUrl("~/Profesionales.aspx") %>">Profesionales</a>
-                <a href="<%: ResolveUrl("~/Especialidades.aspx") %>">Especialidades</a>
-                <a href="<%: ResolveUrl("~/ObrasSociales.aspx") %>">Obras sociales</a>
-                <a href="<%: ResolveUrl("~/Coberturas.aspx") %>">Coberturas</a>
-                <a href="<%: ResolveUrl("~/Convenios.aspx") %>">Convenios</a>
-            </nav>
-        </asp:Panel>
-        <asp:Panel ID="NavegacionPaciente" runat="server" CssClass="admin-nav" Visible="false">
-            <nav class="admin-nav-inner" aria-label="Mi cuenta de paciente">
-                <a href="<%: ResolveUrl("~/Default.aspx") %>">Inicio</a>
-                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Ver tu espacio</a>
-                <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Mis turnos</a>
-                <a href="<%: ResolveUrl("~/Turnos.aspx") %>#solicitar-turno-title">Solicitar turno</a>
-                <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente de turnos</a>
-                <a href="<%: ResolveUrl("~/FichaPaciente.aspx") %>">Mi ficha</a>
-                <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Mis cobros</a>
-            </nav>
-        </asp:Panel>
-        <asp:Panel ID="NavegacionProfesional" runat="server" CssClass="admin-nav" Visible="false">
-            <nav class="admin-nav-inner" aria-label="Mi actividad profesional">
-                <a href="<%: ResolveUrl("~/Default.aspx") %>">Inicio</a>
-                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>">Ver tu espacio</a>
-                <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Mi agenda</a>
-                <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Turnos</a>
-                <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Cobros</a>
-                <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente</a>
-            </nav>
-        </asp:Panel>
-        <main id="main-content" class="main-container" tabindex="-1">
-            <asp:ContentPlaceHolder ID="MainContent" runat="server" />
-        </main>
-        <footer class="site-footer">
-            <p>MediStack · Gestión clínica</p>
-        </footer>
+
+                <asp:PlaceHolder ID="HeaderAnonimo" runat="server" Visible="false">
+                    <header class="site-header">
+                        <a class="brand" href="<%: ResolveUrl("~/Default.aspx") %>" aria-label="MediStack, inicio">
+                            <img class="brand-logo" height="44" style="height:44px;width:auto" src="<%: ResolveUrl("~/Content/MediStack-logo-violeta.png") %>" alt="MediStack" />
+                        </a>
+                        <nav class="user-nav" aria-label="Cuenta">
+                            <div class="anon-nav">
+                                <a class="anon-login-link" href="<%: ResolveUrl("~/Account/Login.aspx") %>">Ingresar</a>
+                                <a class="button button-primary button-sm" href="<%: ResolveUrl("~/Account/Registro.aspx") %>">Crear cuenta</a>
+                            </div>
+                        </nav>
+                    </header>
+                </asp:PlaceHolder>
+
+                <main id="main-content" class="main-container" tabindex="-1">
+                    <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+                </main>
+
+                <footer class="site-footer">
+                    <p>MediStack · Gestión clínica</p>
+                </footer>
+            </div>
+        </div>
     </form>
 </body>
 </html>

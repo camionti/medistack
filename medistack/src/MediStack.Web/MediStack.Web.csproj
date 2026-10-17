@@ -71,6 +71,7 @@
     <Content Include="Content\landing.css" />
     <Content Include="Account\RecuperarCuenta.aspx" />
     <Content Include="Scripts\accesibilidad.js" />
+    <Content Include="Scripts\sidebar.js" />
     <Content Include="Content\MediStack-logo-violeta.png" />
     <Content Include="Pacientes.aspx" />
     <Content Include="FichaPaciente.aspx" />
