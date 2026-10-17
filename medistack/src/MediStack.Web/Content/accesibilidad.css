@@ -1,8 +1,9 @@
 .ms-visual-bar {
-    position: fixed;
-    z-index: 2000;
-    left: max(16px, env(safe-area-inset-left));
-    bottom: max(16px, env(safe-area-inset-bottom));
+    position: fixed !important;
+    z-index: 2000 !important;
+    right: max(16px, env(safe-area-inset-right)) !important;
+    bottom: max(16px, env(safe-area-inset-bottom)) !important;
+    left: auto !important;
     padding: 0;
     width: fit-content;
     background: transparent;
@@ -45,7 +46,8 @@
 }
 .ms-visual-panel {
     position: absolute;
-    left: 0;
+    right: 0;
+    left: auto;
     bottom: calc(100% + 18px);
     width: min(420px, calc(100vw - 32px));
     max-height: calc(100vh - 126px);
@@ -63,7 +65,8 @@
     position: absolute;
     z-index: 1;
     bottom: calc(100% + 10px);
-    left: 24px;
+    right: 24px;
+    left: auto;
     width: 18px;
     height: 18px;
     background: #fff;
@@ -358,7 +361,8 @@ html[data-ms-contraste="alto"] .ms-visual-reset {
 }
 @media (max-width: 600px) {
     .ms-visual-bar {
-        left: max(12px, env(safe-area-inset-left));
+        right: max(12px, env(safe-area-inset-right));
+        left: auto;
         bottom: max(12px, env(safe-area-inset-bottom));
     }
     .ms-visual-panel {
