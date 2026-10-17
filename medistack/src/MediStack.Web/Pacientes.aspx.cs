@@ -1,8 +1,9 @@
-using System;
-using System.Data;
-using System.Web.UI.WebControls;
 using MediStack.Dominio;
 using MediStack.Negocio;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Web.UI.WebControls;
 
 namespace MediStack.Web
 {
@@ -32,6 +33,84 @@ namespace MediStack.Web
         {
             Busqueda.Text = string.Empty;
             CargarConManejoDeErrores(Mensaje, "No se pudieron cargar los pacientes", CargarPacientes);
+        }
+
+        protected void btnExportarCsv_Click(object sender, EventArgs e)
+        {
+            CargarConManejoDeErrores(Mensaje, "No se pudo exportar a CSV", () =>
+            {
+                string subtitulo;
+                DataTable tabla = ObtenerTablaPacientesParaExportar(out subtitulo);
+                if (tabla == null) return;
+                ExportadorUtil.ExportarCSV(tabla, "Padron_Pacientes_" + DateTime.Now.ToString("yyyyMMdd_HHmm"));
+            });
+        }
+
+        protected void btnExportarPdf_Click(object sender, EventArgs e)
+        {
+            CargarConManejoDeErrores(Mensaje, "No se pudo exportar a PDF", () =>
+            {
+                string subtitulo;
+                DataTable tabla = ObtenerTablaPacientesParaExportar(out subtitulo);
+                if (tabla == null) return;
+                ExportadorUtil.ExportarPDF(tabla, "Padron_Pacientes_" + DateTime.Now.ToString("yyyyMMdd_HHmm"), "Padrón de Pacientes Registrados", subtitulo);
+            });
+        }
+
+        private DataTable ObtenerTablaPacientesParaExportar(out string subtitulo)
+        {
+            subtitulo = string.Empty;
+            var resultadoBusqueda = _negocio.BuscarPacientes(Busqueda.Text);
+
+            DataTable datosCrudos;
+            if (resultadoBusqueda is DataTable dt)
+            {
+                datosCrudos = dt;
+            }
+            else
+            {
+                // Si la capa de negocio devuelve una lista genérica, la convertimos a DataTable de forma segura
+                datosCrudos = new DataTable();
+                datosCrudos.Columns.Add("Nombre", typeof(string));
+                datosCrudos.Columns.Add("Apellido", typeof(string));
+                datosCrudos.Columns.Add("NumeroDocumento", typeof(string));
+                datosCrudos.Columns.Add("Email", typeof(string));
+                datosCrudos.Columns.Add("Telefono", typeof(string));
+                datosCrudos.Columns.Add("ObraSocial", typeof(string));
+                datosCrudos.Columns.Add("NumeroAfiliado", typeof(string));
+                datosCrudos.Columns.Add("Activo", typeof(bool));
+
+                foreach (DataKey key in PacientesGrid.DataKeys)
+                {
+                    DataRow row = datosCrudos.NewRow();
+                    row["Nombre"] = key.Values["Nombre"];
+                    row["Apellido"] = key.Values["Apellido"];
+                    row["NumeroDocumento"] = key.Values["NumeroDocumento"];
+                    row["Email"] = key.Values["Email"];
+                    row["Telefono"] = key.Values["Telefono"];
+                    row["ObraSocial"] = key.Values["ObraSocial"];
+                    row["NumeroAfiliado"] = key.Values["NumeroAfiliado"];
+                    row["Activo"] = key.Values["Activo"];
+                    datosCrudos.Rows.Add(row);
+                }
+            }
+
+            string filtroInfo = string.IsNullOrWhiteSpace(Busqueda.Text) ? "todos los registros" : "búsqueda: \"" + Busqueda.Text.Trim() + "\"";
+            subtitulo = datosCrudos.Rows.Count + (datosCrudos.Rows.Count == 1 ? " paciente" : " pacientes") + " (" + filtroInfo + ").";
+
+            var columnas = new Dictionary<string, string>
+            {
+                { "Nombre", "Nombre" },
+                { "Apellido", "Apellido" },
+                { "NumeroDocumento", "Documento" },
+                { "Email", "Correo electrónico" },
+                { "Telefono", "Teléfono" },
+                { "ObraSocial", "Obra social" },
+                { "NumeroAfiliado", "N° Afiliado" },
+                { "Activo", "Estado" }
+            };
+
+            return ExportadorUtil.PrepararTablaParaReporte(datosCrudos, columnas);
         }
 
         protected void Nuevo_Click(object sender, EventArgs e)

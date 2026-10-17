@@ -1497,3 +1497,51 @@ body.is-resizing-sidebar * {
     right: 24px !important;
     left: auto !important;
 }
+
+
+.cabecera-grilla-exportar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.acciones-exportar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.btn-exportar-sutil {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #475569;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+    .btn-exportar-sutil:hover {
+        background-color: #f0f9ff;
+        color: #0284c7;
+        border-color: #bae6fd;
+    }
+
+    .btn-exportar-sutil svg {
+        width: 13px;
+        height: 13px;
+        stroke: currentColor;
+        flex-shrink: 0;
+    }

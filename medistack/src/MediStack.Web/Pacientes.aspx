@@ -7,7 +7,30 @@
     </section>
     <asp:Label ID="Mensaje" runat="server" Visible="false" role="status" />
     <section class="panel management-panel" aria-labelledby="buscar-paciente-title">
-        <h2 id="buscar-paciente-title" class="section-title">Buscar pacientes</h2>
+        <div class="section-heading-row">
+            <h2 id="buscar-paciente-title" class="section-title" style="margin-bottom: 0;">Buscar pacientes</h2>
+            <div class="acciones-exportar">
+                <asp:LinkButton ID="btnExportarCsv" runat="server" CssClass="btn-exportar-sutil"
+                    OnClick="btnExportarCsv_Click" CausesValidation="false" ToolTip="Exportar padrón a CSV">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    CSV
+                </asp:LinkButton>
+                <asp:LinkButton ID="btnExportarPdf" runat="server" CssClass="btn-exportar-sutil"
+                    OnClick="btnExportarPdf_Click" CausesValidation="false" ToolTip="Descargar padrón en PDF">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <polyline points="9 15 12 18 15 15"></polyline>
+                    </svg>
+                    PDF
+                </asp:LinkButton>
+            </div>
+        </div>
         <div class="search-row">
             <asp:Label ID="BusquedaLabel" runat="server" AssociatedControlID="Busqueda" Text="Nombre, documento, usuario o correo" CssClass="visually-hidden" />
             <asp:TextBox ID="Busqueda" runat="server" CssClass="form-control" MaxLength="100" />

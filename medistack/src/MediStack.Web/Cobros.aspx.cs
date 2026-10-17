@@ -1,10 +1,11 @@
+using MediStack.Negocio;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
 using System.Web;
 using System.Web.UI.WebControls;
-using MediStack.Negocio;
 
 namespace MediStack.Web
 {
@@ -51,6 +52,67 @@ namespace MediStack.Web
             Desde.Text = string.Empty;
             Hasta.Text = string.Empty;
             EjecutarConManejoDeErrores("No se pudieron cargar los cobros", CargarCobros);
+        }
+
+        protected void btnExportarCsv_Click(object sender, EventArgs e)
+        {
+            EjecutarConManejoDeErrores("No se pudo exportar a CSV", () =>
+            {
+                string subtitulo;
+                DataTable tabla = ObtenerTablaCobrosParaExportar(out subtitulo);
+                if (tabla == null) return;
+                ExportadorUtil.ExportarCSV(tabla, "Cobros_Caja_" + DateTime.Now.ToString("yyyyMMdd_HHmm"));
+            });
+        }
+
+        protected void btnExportarPdf_Click(object sender, EventArgs e)
+        {
+            EjecutarConManejoDeErrores("No se pudo exportar a PDF", () =>
+            {
+                string subtitulo;
+                DataTable tabla = ObtenerTablaCobrosParaExportar(out subtitulo);
+                if (tabla == null) return;
+                ExportadorUtil.ExportarPDF(tabla, "Cobros_Caja_" + DateTime.Now.ToString("yyyyMMdd_HHmm"), "Reporte de Cobros y Caja", subtitulo);
+            });
+        }
+
+        private DataTable ObtenerTablaCobrosParaExportar(out string subtitulo)
+        {
+            subtitulo = string.Empty;
+            DateTime? desde;
+            DateTime? hasta;
+            string errorFiltro;
+            if (!TryLeerFiltroFechas(Desde, Hasta, out desde, out hasta, out errorFiltro))
+            {
+                MostrarError(errorFiltro);
+                return null;
+            }
+
+            Guid? pacienteId = TieneRol("PACIENTE") ? (Guid?)ObtenerUsuarioActual() : null;
+            Guid? profesionalId = TieneRol("PROFESIONAL") ? (Guid?)ObtenerUsuarioActual() : null;
+            DataTable datosCrudos = _negocio.ObtenerCobros(pacienteId, profesionalId, desde, hasta);
+
+            string periodo = !desde.HasValue && !hasta.HasValue ? "sin filtro de fecha"
+                : desde.HasValue && hasta.HasValue && desde.Value == hasta.Value
+                    ? "el " + desde.Value.ToString("dd/MM/yyyy")
+                : (desde.HasValue ? "desde el " + desde.Value.ToString("dd/MM/yyyy") + " " : string.Empty)
+                    + (hasta.HasValue ? "hasta el " + hasta.Value.ToString("dd/MM/yyyy") : string.Empty);
+            subtitulo = datosCrudos.Rows.Count + (datosCrudos.Rows.Count == 1 ? " cobro" : " cobros") + " (" + periodo.Trim() + ").";
+
+            var columnas = new Dictionary<string, string>
+            {
+                { "FechaHoraCobro", "Fecha de cobro" },
+                { "TurnoId", "Turno" },
+                { "Paciente", "Paciente" },
+                { "Profesional", "Profesional" },
+                { "Especialidad", "Especialidad" },
+                { "TipoCobro", "Concepto" },
+                { "MontoCobrado", "Importe" },
+                { "MedioPago", "Medio" },
+                { "EstadoCobro", "Estado" }
+            };
+
+            return ExportadorUtil.PrepararTablaParaReporte(datosCrudos, columnas);
         }
 
         protected void Turno_SelectedIndexChanged(object sender, EventArgs e)

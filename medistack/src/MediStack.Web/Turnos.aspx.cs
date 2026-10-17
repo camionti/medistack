@@ -349,6 +349,60 @@ namespace MediStack.Web
             EjecutarConManejoDeErrores("No se pudieron cargar los turnos", CargarTurnos);
         }
 
+        protected void btnExportarCsv_Click(object sender, EventArgs e)
+        {
+            EjecutarConManejoDeErrores("No se pudo exportar a CSV", () =>
+            {
+                string subtitulo;
+                DataTable tabla = ObtenerTablaTurnosParaExportar(out subtitulo);
+                if (tabla == null) return;
+                ExportadorUtil.ExportarCSV(tabla, "Turnos_MediStack_" + DateTime.Now.ToString("yyyyMMdd_HHmm"));
+            });
+        }
+
+        protected void btnExportarPdf_Click(object sender, EventArgs e)
+        {
+            EjecutarConManejoDeErrores("No se pudo exportar a PDF", () =>
+            {
+                string subtitulo;
+                DataTable tabla = ObtenerTablaTurnosParaExportar(out subtitulo);
+                if (tabla == null) return;
+                ExportadorUtil.ExportarPDF(tabla, "Turnos_MediStack_" + DateTime.Now.ToString("yyyyMMdd_HHmm"), TituloListado.Text, subtitulo);
+            });
+        }
+
+        private DataTable ObtenerTablaTurnosParaExportar(out string subtitulo)
+        {
+            subtitulo = string.Empty;
+            DateTime? desde;
+            DateTime? hasta;
+            string errorFiltro;
+            if (!TryLeerFiltroFechas(Desde, Hasta, out desde, out hasta, out errorFiltro))
+            {
+                MostrarError(errorFiltro);
+                return null;
+            }
+
+            Guid? pacienteId = EsPaciente ? (Guid?)ObtenerUsuarioActual() : null;
+            Guid? profesionalId = TieneRol("PROFESIONAL") ? (Guid?)ObtenerUsuarioActual() : null;
+            DataTable datosCrudos = _negocio.ObtenerTurnos(pacienteId, profesionalId, desde, hasta);
+            subtitulo = DescribirFiltro(desde, hasta, datosCrudos.Rows.Count, "turno");
+
+            var columnas = new Dictionary<string, string>
+            {
+                { "FechaHora", "Fecha y hora" },
+                { "Paciente", "Paciente" },
+                { "Profesional", "Profesional" },
+                { "Especialidad", "Especialidad" },
+                { "DuracionEstandarMinutos", "Duración (min)" },
+                { "Motivo", "Motivo" },
+                { "Estado", "Estado" },
+                { "EstadoSena", "Estado seña" },
+                { "MontoSena", "Monto seña" }
+            };
+
+            return ExportadorUtil.PrepararTablaParaReporte(datosCrudos, columnas);
+        }
         protected void DisponibilidadGrid_RowCommand(object sender, GridViewCommandEventArgs e)
         {
             if (e.CommandName != "ElegirHorario")
