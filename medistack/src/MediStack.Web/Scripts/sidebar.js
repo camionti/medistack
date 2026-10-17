@@ -112,6 +112,7 @@
 
         // Highlight active navigation link
         highlightActiveLink();
+        window.addEventListener("hashchange", highlightActiveLink);
     });
 
     function highlightActiveLink() {
@@ -119,6 +120,11 @@
         var currentHash = window.location.hash.toLowerCase();
         var links = document.querySelectorAll(".sidebar-nav-link");
         if (!links || links.length === 0) return;
+
+        for (var k = 0; k < links.length; k++) {
+            links[k].classList.remove("is-active");
+            links[k].removeAttribute("aria-current");
+        }
 
         var matchedLink = null;
 
@@ -154,4 +160,6 @@
             matchedLink.setAttribute("aria-current", "page");
         }
     }
+
+    window.highlightSidebarActiveLink = highlightActiveLink;
 })();

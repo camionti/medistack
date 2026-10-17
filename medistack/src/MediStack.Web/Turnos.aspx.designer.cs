@@ -7,6 +7,10 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.Literal ConfirmarCancelacionDetalle;
         protected global::System.Web.UI.WebControls.Button BotonConfirmarCancelacionUrl;
         protected global::System.Web.UI.WebControls.Button BotonDescartarCancelacionUrl;
+        protected global::System.Web.UI.WebControls.HiddenField VistaActiva;
+        protected global::System.Web.UI.WebControls.PlaceHolder PhTurnosTabs;
+        protected global::System.Web.UI.WebControls.Literal TabTituloListado;
+        protected global::System.Web.UI.WebControls.Literal TabTituloSolicitud;
         protected global::System.Web.UI.WebControls.Panel SolicitudPanel;
         protected global::System.Web.UI.WebControls.Literal TituloSolicitud;
         protected global::System.Web.UI.WebControls.Button CancelarReprogramacion;
@@ -39,6 +43,7 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.Button VolverHorarios;
         protected global::System.Web.UI.WebControls.Button ConfirmarSolicitud;
         protected global::System.Web.UI.WebControls.Button CancelarSolicitud;
+        protected global::System.Web.UI.WebControls.Panel ListadoPanel;
         protected global::System.Web.UI.WebControls.Literal TituloListado;
         protected global::System.Web.UI.WebControls.Label DesdeLabel;
         protected global::System.Web.UI.WebControls.TextBox Desde;

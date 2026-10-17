@@ -19,7 +19,31 @@
         </div>
     </asp:Panel>
 
-    <asp:Panel ID="SolicitudPanel" runat="server" Visible="false">
+    <asp:HiddenField ID="VistaActiva" runat="server" Value="listado" />
+
+    <asp:PlaceHolder ID="PhTurnosTabs" runat="server" Visible="false">
+        <nav class="turnos-tabs-nav" role="tablist" aria-label="Secciones de turnos">
+            <button type="button" class='<%= (VistaActiva != null && VistaActiva.Value == "solicitar") ? "turnos-tab-btn" : "turnos-tab-btn is-active" %>' id="tabBtnListado" role="tab" aria-selected='<%= (VistaActiva != null && VistaActiva.Value == "solicitar") ? "false" : "true" %>' aria-controls="<%= ListadoPanel.ClientID %>">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span id="tabTextoListado"><asp:Literal ID="TabTituloListado" runat="server">Mis turnos</asp:Literal></span>
+            </button>
+            <button type="button" class='<%= (VistaActiva != null && VistaActiva.Value == "solicitar") ? "turnos-tab-btn is-active" : "turnos-tab-btn" %>' id="tabBtnSolicitud" role="tab" aria-selected='<%= (VistaActiva != null && VistaActiva.Value == "solicitar") ? "true" : "false" %>' aria-controls="<%= SolicitudPanel.ClientID %>">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                <span id="tabTextoSolicitud"><asp:Literal ID="TabTituloSolicitud" runat="server">Solicitar turno</asp:Literal></span>
+            </button>
+        </nav>
+    </asp:PlaceHolder>
+
+    <asp:Panel ID="SolicitudPanel" runat="server" Visible="false" CssClass="turnos-tab-panel">
         <section class="panel management-panel" aria-labelledby="solicitar-turno-title">
             <div class="section-heading-row">
                 <div>
@@ -271,11 +295,13 @@
             specialty.addEventListener('change', updateSteps);
             professional.addEventListener('change', updateSteps);
             date.addEventListener('input', updateSteps);
+            window.actualizarWizardTurnos = updateSteps;
             updateSteps();
         }());
     </script>
 
-    <section class="panel management-panel" aria-labelledby="mis-turnos-title">
+    <asp:Panel ID="ListadoPanel" runat="server" CssClass="turnos-tab-panel">
+        <section class="panel management-panel" aria-labelledby="mis-turnos-title">
         <h2 id="mis-turnos-title" class="section-title"><asp:Literal ID="TituloListado" runat="server">Turnos</asp:Literal></h2>
         <div class="search-row agenda-filter">
             <div class="form-group">
@@ -350,4 +376,104 @@
         </div>
         <p class="form-note">Los pacientes pueden cancelar o reprogramar sus turnos hasta 24 horas antes. Cancelar un turno libera su horario. El estado de una seña pagada no implica un reembolso; los cobros y reembolsos se gestionarán en la etapa de Caja.</p>
     </section>
+    </asp:Panel>
+
+    <script type="text/javascript">
+        (function () {
+            function getPanelSolicitud() {
+                return document.getElementById('<%= SolicitudPanel.ClientID %>');
+            }
+            function getPanelListado() {
+                return document.getElementById('<%= ListadoPanel.ClientID %>');
+            }
+            function getVistaActivaInput() {
+                return document.getElementById('<%= VistaActiva.ClientID %>');
+            }
+
+            function setVista(vista, actualizarHash) {
+                var panelSolicitud = getPanelSolicitud();
+                var panelListado = getPanelListado();
+                if (!panelSolicitud || !panelListado) return;
+
+                var esSolicitar = vista === 'solicitar';
+
+                panelSolicitud.classList.toggle('is-hidden', !esSolicitar);
+                panelListado.classList.toggle('is-hidden', esSolicitar);
+
+                var btnSolicitud = document.getElementById('tabBtnSolicitud');
+                var btnListado = document.getElementById('tabBtnListado');
+
+                if (btnSolicitud) {
+                    btnSolicitud.classList.toggle('is-active', esSolicitar);
+                    btnSolicitud.setAttribute('aria-selected', esSolicitar ? 'true' : 'false');
+                }
+                if (btnListado) {
+                    btnListado.classList.toggle('is-active', !esSolicitar);
+                    btnListado.setAttribute('aria-selected', !esSolicitar ? 'true' : 'false');
+                }
+
+                var vistaActivaInput = getVistaActivaInput();
+                if (vistaActivaInput) {
+                    vistaActivaInput.value = esSolicitar ? 'solicitar' : 'listado';
+                }
+
+                if (esSolicitar && typeof window.actualizarWizardTurnos === 'function') {
+                    window.actualizarWizardTurnos();
+                }
+
+                if (actualizarHash) {
+                    var targetHash = esSolicitar ? '#solicitar-turno-title' : '#mis-turnos-title';
+                    try {
+                        history.replaceState(null, '', targetHash);
+                    } catch (e) {
+                        window.location.hash = targetHash;
+                    }
+                    if (typeof window.highlightSidebarActiveLink === 'function') {
+                        window.highlightSidebarActiveLink();
+                    }
+                }
+            }
+
+            function resolverVistaDesdeHash() {
+                var hash = (window.location.hash || '').toLowerCase();
+                if (hash === '#solicitar-turno-title' || hash === '#solicitar-turno') {
+                    setVista('solicitar', false);
+                } else if (hash === '#mis-turnos-title' || hash === '#mis-turnos') {
+                    setVista('listado', false);
+                } else {
+                    var input = getVistaActivaInput();
+                    var vistaVal = input ? input.value : 'listado';
+                    setVista(vistaVal || 'listado', false);
+                }
+            }
+
+            function initTurnosTabs() {
+                var btnListado = document.getElementById('tabBtnListado');
+                var btnSolicitud = document.getElementById('tabBtnSolicitud');
+
+                if (btnListado) {
+                    btnListado.addEventListener('click', function () {
+                        setVista('listado', true);
+                    });
+                }
+
+                if (btnSolicitud) {
+                    btnSolicitud.addEventListener('click', function () {
+                        setVista('solicitar', true);
+                    });
+                }
+
+                window.addEventListener('hashchange', resolverVistaDesdeHash);
+                window.addEventListener('popstate', resolverVistaDesdeHash);
+
+                resolverVistaDesdeHash();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initTurnosTabs);
+            } else {
+                initTurnosTabs();
+            }
+        }());
+    </script>
 </asp:Content>

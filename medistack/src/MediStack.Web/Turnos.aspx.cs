@@ -53,6 +53,24 @@ namespace MediStack.Web
 
             if (!IsPostBack)
             {
+                string vista = (Request.QueryString["vista"] ?? string.Empty).ToLowerInvariant();
+                string accion = (Request.QueryString["accion"] ?? string.Empty).ToLowerInvariant();
+                int turnoId;
+                bool tieneTurnoId = int.TryParse(Request.QueryString["turnoId"], out turnoId) && turnoId > 0;
+
+                if (accion == "cancelar" || tieneTurnoId)
+                {
+                    if (VistaActiva != null) VistaActiva.Value = "listado";
+                }
+                else if (vista == "solicitar")
+                {
+                    if (VistaActiva != null) VistaActiva.Value = "solicitar";
+                }
+                else
+                {
+                    if (VistaActiva != null) VistaActiva.Value = "listado";
+                }
+
                 EjecutarConManejoDeErrores("No se pudieron cargar los turnos", () =>
                 {
                     CargarOpcionesIniciales();
@@ -67,6 +85,48 @@ namespace MediStack.Web
             }
 
             ConfigurarPasosSolicitud();
+        }
+
+        protected override void OnPreRender(EventArgs e)
+        {
+            base.OnPreRender(e);
+            ActualizarVisibilidadVistas();
+        }
+
+        private void ActualizarVisibilidadVistas()
+        {
+            if (TieneRol("PROFESIONAL"))
+            {
+                if (PhTurnosTabs != null) PhTurnosTabs.Visible = false;
+                if (SolicitudPanel != null) SolicitudPanel.Visible = false;
+                if (ListadoPanel != null) ListadoPanel.CssClass = "turnos-tab-panel";
+                return;
+            }
+
+            bool tabsHabilitadas = EsPaciente || EsAdministrativo;
+            if (PhTurnosTabs != null) PhTurnosTabs.Visible = tabsHabilitadas;
+
+            if (tabsHabilitadas)
+            {
+                if (TabTituloListado != null)
+                {
+                    TabTituloListado.Text = EsPaciente ? "Mis turnos" : "Gestión de turnos";
+                }
+                if (TabTituloSolicitud != null)
+                {
+                    TabTituloSolicitud.Text = EsPaciente ? "Solicitar turno" : "Agendar turno";
+                }
+
+                bool mostrarSolicitud = string.Equals(VistaActiva != null ? VistaActiva.Value : string.Empty, "solicitar", StringComparison.OrdinalIgnoreCase);
+                if (SolicitudPanel != null)
+                {
+                    SolicitudPanel.CssClass = mostrarSolicitud ? "turnos-tab-panel" : "turnos-tab-panel is-hidden";
+                }
+                if (ListadoPanel != null)
+                {
+                    ListadoPanel.CssClass = mostrarSolicitud ? "turnos-tab-panel is-hidden" : "turnos-tab-panel";
+                }
+            }
         }
 
         protected void Especialidad_SelectedIndexChanged(object sender, EventArgs e)
@@ -277,11 +337,13 @@ namespace MediStack.Web
 
         protected void Filtrar_Click(object sender, EventArgs e)
         {
+            if (VistaActiva != null) VistaActiva.Value = "listado";
             EjecutarConManejoDeErrores("No se pudieron filtrar los turnos", CargarTurnos);
         }
 
         protected void LimpiarFiltro_Click(object sender, EventArgs e)
         {
+            if (VistaActiva != null) VistaActiva.Value = "listado";
             Desde.Text = string.Empty;
             Hasta.Text = string.Empty;
             EjecutarConManejoDeErrores("No se pudieron cargar los turnos", CargarTurnos);
@@ -429,15 +491,18 @@ namespace MediStack.Web
                 Motivo.Text = string.Empty;
                 CargarTurnos();
                 CargarResumenProfesionales();
+                if (VistaActiva != null) VistaActiva.Value = "listado";
             }
             catch (InvalidOperationException ex)
             {
+                if (VistaActiva != null) VistaActiva.Value = "solicitar";
                 ConfirmacionSolicitudPanel.Visible = false;
                 CargarDisponibilidad();
                 MostrarError(ex.Message);
             }
             catch (SqlException ex)
             {
+                if (VistaActiva != null) VistaActiva.Value = "solicitar";
                 ConfirmacionSolicitudPanel.Visible = false;
                 CargarDisponibilidad();
                 MostrarError("No se pudo guardar el turno (error SQL " + ex.Number + "). Actualiza la disponibilidad e intenta nuevamente.");
@@ -523,6 +588,7 @@ namespace MediStack.Web
             LimpiarMensaje();
             Motivo.Text = string.Empty;
             LimpiarDisponibilidad();
+            if (VistaActiva != null) VistaActiva.Value = "listado";
         }
 
         private void VerificarAccionUrl()
@@ -1006,6 +1072,7 @@ namespace MediStack.Web
             }
 
             ViewState["TurnoAReprogramar"] = turnoId;
+            if (VistaActiva != null) VistaActiva.Value = "solicitar";
             if (EsAdministrativo)
             {
                 Paciente.SelectedValue = turno.PacienteId.ToString();

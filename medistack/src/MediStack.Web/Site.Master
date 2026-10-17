@@ -155,7 +155,7 @@
                             <nav class="sidebar-nav" aria-label="Mi cuenta de paciente">
                                 <div class="sidebar-section-title"><span>Mis Servicios</span></div>
                                 <a href="<%: ResolveUrl("~/Turnos.aspx") %>" class="sidebar-nav-link" data-title="Mis turnos"><span>Mis turnos</span></a>
-                                <a href="<%: ResolveUrl("~/Turnos.aspx") %>#solicitar-turno-title" class="sidebar-nav-link" data-title="Solicitar turno"><span>Solicitar turno</span></a>
+                                <a href="<%: ResolveUrl("~/Turnos.aspx?vista=solicitar") %>#solicitar-turno-title" class="sidebar-nav-link" data-title="Solicitar turno"><span>Solicitar turno</span></a>
                                 <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>" class="sidebar-nav-link" data-title="Asistente de turnos"><span>Asistente de turnos</span></a>
                                 <a href="<%: ResolveUrl("~/Cobros.aspx") %>" class="sidebar-nav-link" data-title="Mis cobros"><span>Mis cobros</span></a>
                             </nav>
