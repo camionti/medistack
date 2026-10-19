@@ -372,6 +372,10 @@ namespace MediStack.Web
         /// Campo generado automáticamente.
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel SenaPresencialPanel;
+        protected global::System.Web.UI.WebControls.Literal SenaPresencialTexto;
+        protected global::System.Web.UI.WebControls.Label MedioPagoSenaPresencialLabel;
+        protected global::System.Web.UI.WebControls.DropDownList MedioPagoSenaPresencial;
         protected global::System.Web.UI.WebControls.Button ConfirmarSolicitud;
 
         /// <summary>

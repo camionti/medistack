@@ -27,6 +27,12 @@ namespace MediStack.Dominio
         // true = la reserva la hace el propio paciente desde la web (canal online).
         // false = la carga el administrativo (canal presencial): nunca exige seña al reservar.
         public bool EsReservaOnline { get; set; }
+
+        // Solo canal presencial: con que medio el administrativo cobra la seña en el mostrador
+        // (Efectivo, Tarjeta o Transferencia) y quien la cobra. Si el paciente no tiene cobertura
+        // para el turno, la seña es obligatoria y se cobra en el mismo momento de reservar.
+        public string MedioPagoSena { get; set; }
+        public Guid? CobradorId { get; set; }
     }
 
     // Reglas de turnos compartidas por Datos (la regla real) y Web (para mostrar u ocultar botones).
@@ -103,15 +109,20 @@ namespace MediStack.Dominio
         public int CantidadHorarios { get; set; }
     }
 
-    // Resultado de reservar un turno: su Id y la seña que quedó pendiente (0 si no requiere).
+    // Resultado de reservar un turno: su Id y la seña (0 si no requiere).
     public sealed class ReservaTurno
     {
         public int TurnoId { get; set; }
         public decimal MontoSena { get; set; }
 
+        // true si la seña ya se cobró en el mostrador al reservar (canal presencial).
+        public bool SenaCobradaEnMostrador { get; set; }
+        public string MedioPagoSena { get; set; }
+
+        // Hay una seña pendiente que el paciente todavia tiene que pagar (canal online).
         public bool RequierePagoSena
         {
-            get { return MontoSena > 0; }
+            get { return MontoSena > 0 && !SenaCobradaEnMostrador; }
         }
     }
 

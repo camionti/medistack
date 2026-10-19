@@ -213,6 +213,15 @@
                     <asp:Label ID="MotivoLabel" runat="server" AssociatedControlID="Motivo" Text="Motivo de consulta (opcional)" />
                     <asp:TextBox ID="Motivo" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="2" MaxLength="500" />
                 </asp:Panel>
+                <asp:Panel ID="SenaPresencialPanel" runat="server" CssClass="form-group" Visible="false">
+                    <p class="form-note"><strong><asp:Literal ID="SenaPresencialTexto" runat="server" Mode="Encode" /></strong></p>
+                    <asp:Label ID="MedioPagoSenaPresencialLabel" runat="server" AssociatedControlID="MedioPagoSenaPresencial" Text="¿Cómo paga la seña?" />
+                    <asp:DropDownList ID="MedioPagoSenaPresencial" runat="server" CssClass="form-control">
+                        <asp:ListItem Text="Efectivo" Value="Efectivo" />
+                        <asp:ListItem Text="Tarjeta de débito o crédito" Value="Tarjeta" />
+                        <asp:ListItem Text="Transferencia / Mercado Pago" Value="Transferencia" />
+                    </asp:DropDownList>
+                </asp:Panel>
                 <div class="form-actions">
                     <asp:Button ID="ConfirmarSolicitud" runat="server" Text="Finalizar turno"
                         CssClass="button button-primary" CausesValidation="false"

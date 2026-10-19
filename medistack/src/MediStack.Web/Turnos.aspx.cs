@@ -459,6 +459,7 @@ namespace MediStack.Web
                     "Vas a solicitar " + especialidad + " con " + profesional
                     + " el " + fechaHora.ToString("dddd dd/MM/yyyy 'a las' HH:mm", CultureInfo.GetCultureInfo("es-AR"))
                     + " hs. Duración: " + Convert.ToInt32(horario.Values["DuracionMinutos"]) + " minutos.");
+                ConfigurarSenaPresencial(pacienteId, profesionalId, especialidadId, fechaHora);
                 ConfirmacionSolicitudPanel.Visible = true;
                 HorariosPanel.Visible = false;
                 MotivoPanel.Visible = true;
@@ -499,7 +500,11 @@ namespace MediStack.Web
                     EspecialidadId = especialidadId,
                     FechaHora = fechaHora,
                     Motivo = Motivo.Text,
-                    EsReservaOnline = EsPaciente
+                    EsReservaOnline = EsPaciente,
+                    // Presencial sin cobertura: la seña se cobra en el mostrador con el medio elegido.
+                    MedioPagoSena = EsAdministrativo && SenaPresencialPanel.Visible
+                        ? MedioPagoSenaPresencial.SelectedValue : null,
+                    CobradorId = EsAdministrativo ? (Guid?)ObtenerUsuarioActual() : null
                 };
 
                 if (EsReprogramacion)
@@ -527,7 +532,14 @@ namespace MediStack.Web
                         return;
                     }
 
-                    if (reserva.RequierePagoSena)
+                    if (reserva.SenaCobradaEnMostrador)
+                    {
+                        MostrarExito("Turno confirmado. Se cobró la seña de "
+                            + reserva.MontoSena.ToString("C", CultureInfo.GetCultureInfo("es-AR"))
+                            + " (" + MedioPagoSenaPresencial.SelectedItem.Text + ") y quedó registrada en la caja del día.");
+                        _negocio.EnviarConfirmacionTurnoAsync(reserva.TurnoId, ConfiguracionSitio.ObtenerUrlBase());
+                    }
+                    else if (reserva.RequierePagoSena)
                     {
                         MostrarExito("Reservamos tu turno por " + ReglasTurno.MinutosParaPagarSena
                             + " minutos. Para confirmarlo, pagá la seña de "
@@ -919,7 +931,7 @@ namespace MediStack.Web
             DateTime desde = DateTime.Today;
             DateTime hasta = desde.AddDays(59);
             IList<ResumenDisponibilidadProfesional> resumen = _negocio.ObtenerResumenDisponibilidad(
-                especialidadId, pacienteId, desde, hasta, TurnoExcluido(), EsPaciente);
+                especialidadId, pacienteId, desde, hasta, TurnoExcluido(), true);
             ProfesionalesDisponibilidadGrid.DataSource = resumen;
             ProfesionalesDisponibilidadGrid.DataBind();
             ExploradorDisponibilidadPanel.Visible = true;
@@ -954,18 +966,15 @@ namespace MediStack.Web
 
         protected string CoberturaResumen(object cobertura, object montoSena)
         {
-            if (!EsPaciente)
-            {
-                return "Seña no requerida en carga administrativa";
-            }
-
             if (Convert.ToBoolean(cobertura))
             {
-                return "Cubierto por tu obra social";
+                return EsPaciente ? "Cubierto por tu obra social" : "Cubierto por su obra social";
             }
 
-            return "Sin cobertura · seña "
-                + Convert.ToDecimal(montoSena).ToString("C", CultureInfo.GetCultureInfo("es-AR"));
+            string sena = Convert.ToDecimal(montoSena).ToString("C", CultureInfo.GetCultureInfo("es-AR"));
+            return EsPaciente
+                ? "Sin cobertura · seña " + sena
+                : "Sin cobertura · seña " + sena + " (se cobra en el mostrador)";
         }
 
         private void MostrarDuracionSeleccionada()
@@ -1219,6 +1228,39 @@ namespace MediStack.Web
             ConfirmacionSolicitudPanel.Visible = false;
             MotivoPanel.Visible = false;
             ResumenSolicitud.Text = string.Empty;
+            SenaPresencialPanel.Visible = false;
+            ConfirmarSolicitud.Text = "Finalizar turno";
+        }
+
+        // Administrativo: si el paciente no tiene cobertura para el turno, la seña es obligatoria
+        // y se cobra en el mostrador. Se avisa el monto y se pide el medio de pago antes de finalizar.
+        private void ConfigurarSenaPresencial(Guid pacienteId, Guid profesionalId, int especialidadId, DateTime fechaHora)
+        {
+            SenaPresencialPanel.Visible = false;
+            ConfirmarSolicitud.Text = "Finalizar turno";
+            if (!EsAdministrativo || EsReprogramacion)
+            {
+                return;
+            }
+
+            decimal monto = _negocio.CalcularSenaRequerida(new SolicitudTurno
+            {
+                PacienteId = pacienteId,
+                ProfesionalId = profesionalId,
+                EspecialidadId = especialidadId,
+                FechaHora = fechaHora
+            });
+            if (monto <= 0)
+            {
+                return;
+            }
+
+            SenaPresencialTexto.Text = "El paciente no tiene cobertura con este profesional. Para reservar el turno hay que cobrar la seña de "
+                + monto.ToString("C", CultureInfo.GetCultureInfo("es-AR"))
+                + ". El cobro queda registrado en la caja del día y el turno queda confirmado.";
+            MedioPagoSenaPresencial.SelectedIndex = 0;
+            SenaPresencialPanel.Visible = true;
+            ConfirmarSolicitud.Text = "Cobrar seña y finalizar turno";
         }
 
         private void FinalizarReprogramacion()

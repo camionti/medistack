@@ -324,22 +324,58 @@ namespace MediStack.Datos
                         LiberarReservasVencidas(conexion, transaccion);
                         ValidarHorarioYDisponibilidad(conexion, transaccion, solicitud, null);
 
-                        decimal montoSena = 0m;
+                        decimal montoSena = CalcularSenaRequerida(conexion, transaccion, solicitud);
                         string estadoSena = "NoRequerida";
+                        string estadoTurno = "Solicitado";
                         DateTime? vencimientoSena = null;
-                        if (solicitud.EsReservaOnline)
+                        DateTime? fechaHoraSena = null;
+                        bool cobrarEnMostrador = false;
+
+                        if (montoSena > 0 && solicitud.EsReservaOnline)
                         {
-                            montoSena = CalcularSenaRequerida(conexion, transaccion, solicitud);
-                            if (montoSena > 0)
+                            // Online: la seña queda pendiente y el paciente tiene unos minutos para pagarla.
+                            estadoSena = "Pendiente";
+                            vencimientoSena = ReglasTurno.CalcularVencimientoSena(DateTime.Now);
+                        }
+                        else if (montoSena > 0)
+                        {
+                            // Presencial: sin cobertura, la seña es obligatoria y se cobra ahora en el mostrador.
+                            if (string.IsNullOrWhiteSpace(solicitud.MedioPagoSena) || !solicitud.CobradorId.HasValue)
                             {
-                                estadoSena = "Pendiente";
-                                vencimientoSena = ReglasTurno.CalcularVencimientoSena(DateTime.Now);
+                                throw new InvalidOperationException(
+                                    "El paciente no tiene cobertura para este turno: para reservarlo hay que cobrar la seña de "
+                                    + montoSena.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("es-AR")) + ".");
                             }
+
+                            estadoSena = "Pagada";
+                            estadoTurno = "Confirmado";
+                            fechaHoraSena = DateTime.Now;
+                            cobrarEnMostrador = true;
+                        }
+                        else
+                        {
+                            montoSena = 0m;
                         }
 
-                        int turnoId = InsertarTurno(conexion, transaccion, solicitud, montoSena, estadoSena, vencimientoSena);
+                        int turnoId = InsertarTurno(conexion, transaccion, solicitud, montoSena, estadoSena,
+                            vencimientoSena, estadoTurno, fechaHoraSena);
+
+                        if (cobrarEnMostrador)
+                        {
+                            // En la MISMA transaccion: si el cobro falla (por ejemplo, caja cerrada),
+                            // tampoco se crea el turno.
+                            CobrosDatos.RegistrarSenaPresencialEnTransaccion(conexion, transaccion, turnoId,
+                                montoSena, solicitud.MedioPagoSena, solicitud.CobradorId.Value);
+                        }
+
                         transaccion.Commit();
-                        return new ReservaTurno { TurnoId = turnoId, MontoSena = montoSena };
+                        return new ReservaTurno
+                        {
+                            TurnoId = turnoId,
+                            MontoSena = montoSena,
+                            SenaCobradaEnMostrador = cobrarEnMostrador,
+                            MedioPagoSena = cobrarEnMostrador ? solicitud.MedioPagoSena : null
+                        };
                     }
                     catch
                     {
@@ -776,6 +812,16 @@ namespace MediStack.Datos
             {
                 comando.Parameters.Add("@MargenMinutos", SqlDbType.Int).Value = ReglasTurno.MinutosMargenPagoSena;
                 comando.ExecuteNonQuery();
+            }
+        }
+
+        // Seña que corresponde a un turno (0 si el paciente tiene cobertura). Para mostrarla antes de reservar.
+        public decimal ObtenerSenaRequerida(SolicitudTurno solicitud)
+        {
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            {
+                conexion.Open();
+                return CalcularSenaRequerida(conexion, null, solicitud);
             }
         }
 

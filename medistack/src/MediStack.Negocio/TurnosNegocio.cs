@@ -479,9 +479,29 @@ namespace MediStack.Negocio
         }
 
         // Devuelve el Id del turno creado y la seña pendiente (0 si el turno no requiere seña).
+        // Seña que corresponde al turno (0 si tiene cobertura). La usa la pantalla para avisar,
+        // antes de reservar, que hay que cobrarla en el mostrador.
+        public decimal CalcularSenaRequerida(SolicitudTurno solicitud)
+        {
+            if (solicitud == null || solicitud.PacienteId == Guid.Empty
+                || solicitud.ProfesionalId == Guid.Empty || solicitud.EspecialidadId <= 0)
+            {
+                return 0m;
+            }
+
+            return _datos.ObtenerSenaRequerida(solicitud);
+        }
+
         public ReservaTurno SolicitarTurno(SolicitudTurno solicitud)
         {
             ValidarSolicitud(solicitud, null);
+            if (solicitud != null && !solicitud.EsReservaOnline && !string.IsNullOrEmpty(solicitud.MedioPagoSena)
+                && solicitud.MedioPagoSena != "Efectivo" && solicitud.MedioPagoSena != "Tarjeta"
+                && solicitud.MedioPagoSena != "Transferencia")
+            {
+                throw new InvalidOperationException("Seleccioná un medio de pago válido para la seña.");
+            }
+
             ReservaTurno reserva = null;
             EjecutarSeguro(() => reserva = _datos.SolicitarTurno(solicitud));
             return reserva;
@@ -569,6 +589,12 @@ namespace MediStack.Negocio
             }
             catch (SqlException ex)
             {
+                // Caja cerrada o usuario no habilitado para cobrar (cobro de seña en el mostrador).
+                if (ex.Number >= 51110 && ex.Number <= 51112)
+                {
+                    throw new InvalidOperationException(ex.Message);
+                }
+
                 if (ex.Number >= 51020 && ex.Number <= 51025)
                 {
                     throw new InvalidOperationException(ex.Message);

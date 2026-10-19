@@ -563,6 +563,32 @@ namespace MediStack.Datos
             }
         }
 
+        // Registra la seña cobrada en el mostrador al reservar un turno presencial.
+        // Se ejecuta DENTRO de la transaccion de la reserva (TurnosDatos.SolicitarTurno):
+        // la caja del dia tiene que estar abierta y quien cobra tiene que ser administrativo.
+        internal static void RegistrarSenaPresencialEnTransaccion(SqlConnection conexion, SqlTransaction transaccion,
+            int turnoId, decimal monto, string medioPago, Guid cobradorId)
+        {
+            ValidarCajaAbierta(conexion, transaccion, DateTime.Today);
+            ValidarCobrador(conexion, transaccion, cobradorId);
+
+            using (SqlCommand comando = new SqlCommand(@"
+                INSERT INTO dbo.Cobros
+                    (TurnoId, TipoCobro, MontoCobrado, MedioPago, MontoRecibido, Vuelto, UsuarioCobradorId)
+                VALUES
+                    (@TurnoId, N'Sena', @Monto, @MedioPago, @Monto, 0, @CobradorId);",
+                conexion, transaccion))
+            {
+                comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
+                comando.Parameters.Add("@Monto", SqlDbType.Decimal).Value = monto;
+                comando.Parameters["@Monto"].Precision = 12;
+                comando.Parameters["@Monto"].Scale = 2;
+                comando.Parameters.Add("@MedioPago", SqlDbType.NVarChar, 20).Value = medioPago;
+                comando.Parameters.Add("@CobradorId", SqlDbType.UniqueIdentifier).Value = cobradorId;
+                comando.ExecuteNonQuery();
+            }
+        }
+
         private static void ValidarCajaAbierta(
             SqlConnection conexion, SqlTransaction transaccion, DateTime fecha)
         {
