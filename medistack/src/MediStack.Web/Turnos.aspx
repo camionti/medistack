@@ -10,7 +10,14 @@
     <asp:Panel ID="ConfirmarCancelacionUrlPanel" runat="server" Visible="false" CssClass="panel" style="margin-bottom: 24px; border-left: 4px solid #dc2626; background: #fff;">
         <h2 class="section-title" style="color: #dc2626; margin-top: 0;">Confirmación de cancelación de turno</h2>
         <p><asp:Literal ID="ConfirmarCancelacionDetalle" runat="server" /></p>
-        <p class="form-note">Si cancelás con al menos 24 hs de anticipación y habías pagado una seña, quedará registrada como reembolsada.</p>
+        <p class="form-note"><asp:Literal ID="ConfirmarCancelacionNota" runat="server" Mode="Encode" /></p>
+        <asp:Panel ID="MotivoCancelacionPanel" runat="server" CssClass="form-group" Visible="false">
+            <asp:Label ID="MotivoCancelacionLabel" runat="server" AssociatedControlID="MotivoCancelacionLista" Text="¿Quién cancela el turno?" />
+            <asp:DropDownList ID="MotivoCancelacionLista" runat="server" CssClass="form-control">
+                <asp:ListItem Text="A pedido del paciente" Value="Paciente" />
+                <asp:ListItem Text="La clínica o el profesional" Value="Clinica" />
+            </asp:DropDownList>
+        </asp:Panel>
         <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center;">
             <asp:Button ID="BotonConfirmarCancelacionUrl" runat="server" Text="Sí, cancelar este turno"
                 CssClass="button button-danger" OnClick="BotonConfirmarCancelacionUrl_Click" CausesValidation="false" />
@@ -221,6 +228,10 @@
                         <asp:ListItem Text="Tarjeta de débito o crédito" Value="Tarjeta" />
                         <asp:ListItem Text="Transferencia / Mercado Pago" Value="Transferencia" />
                     </asp:DropDownList>
+                    <asp:Label ID="CuentaDevolucionSenaLabel" runat="server" AssociatedControlID="CuentaDevolucionSena"
+                        Text="CBU/CVU o alias del paciente (solo tarjeta o transferencia, para devolver la seña si cancela)" />
+                    <asp:TextBox ID="CuentaDevolucionSena" runat="server" CssClass="form-control" MaxLength="30"
+                        placeholder="22 números o alias" />
                     <asp:Panel ID="CajaNoAbiertaPanel" runat="server" CssClass="alert alert-error" Visible="false">
                         <asp:Literal ID="CajaNoAbiertaTexto" runat="server" Mode="Encode" />
                         <asp:HyperLink ID="AbrirCajaLink" runat="server" NavigateUrl="~/Caja.aspx?abrir=1&amp;volver=turnos"
@@ -401,7 +412,7 @@
                                 <asp:LinkButton ID="CancelarTurno" runat="server" Text="Cancelar"
                                     CommandName="CancelarTurno" CommandArgument="<%# Container.DataItemIndex %>"
                                     CausesValidation="false" Visible='<%# PuedeCancelarOReprogramar(Eval("PacienteId"), Eval("Estado"), Eval("FechaHora")) %>'
-                                    OnClientClick="return confirm('¿Cancelar este turno? La operación no procesa reembolsos de señas.');" />
+                                    OnClientClick='<%# EsAdministrativo ? "" : "return confirm(\u0027¿Cancelar este turno? Si pagaste una seña, se te devuelve.\u0027);" %>' />
                                 <asp:Label ID="FueraDePlazo" runat="server" CssClass="form-note"
                                     Text="Faltan menos de 24 hs: para cancelarlo o reprogramarlo comunicate con la clínica."
                                     Visible='<%# FueraDePlazoParaPaciente(Eval("PacienteId"), Eval("Estado"), Eval("FechaHora")) %>' />

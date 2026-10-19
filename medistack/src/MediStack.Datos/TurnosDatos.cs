@@ -365,7 +365,8 @@ namespace MediStack.Datos
                             // En la MISMA transaccion: si el cobro falla (por ejemplo, caja cerrada),
                             // tampoco se crea el turno.
                             CobrosDatos.RegistrarSenaPresencialEnTransaccion(conexion, transaccion, turnoId,
-                                montoSena, solicitud.MedioPagoSena, solicitud.CobradorId.Value);
+                                montoSena, solicitud.MedioPagoSena, solicitud.CobradorId.Value,
+                                solicitud.CuentaDevolucionSena);
                         }
 
                         transaccion.Commit();
@@ -512,7 +513,11 @@ namespace MediStack.Datos
             }
         }
 
-        public void CancelarTurno(int turnoId, Guid? pacienteAutorizado)
+        // Cancela el turno y resuelve la seña pagada en la misma transaccion:
+        //   se devuelve si cancela la clinica, o si cancela el paciente con al menos 24 hs de anticipacion;
+        //   si cancela el paciente con menos tiempo (solo puede hacerlo el administrativo), se retiene.
+        public ResultadoCancelacion CancelarTurno(int turnoId, Guid? pacienteAutorizado,
+            MotivoCancelacion motivo, Guid? usuarioId)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
             {
@@ -543,9 +548,14 @@ namespace MediStack.Datos
                                 + ReglasTurno.HorasMinimasCancelacionPaciente + " horas de anticipacion. Comunicate con la clinica.");
                         }
 
+                        bool devolverSena = motivo == MotivoCancelacion.Clinica
+                            || ReglasTurno.PacienteDentroDelPlazo(turno.FechaHora);
+
                         CancelarTurnoEnTransaccion(conexion, transaccion, turnoId);
-                        ReintegrarSenaPagada(conexion, transaccion, turnoId);
+                        ResultadoCancelacion resultado = ReembolsosDatos.ResolverSenaAlCancelar(
+                            conexion, transaccion, turnoId, devolverSena, motivo, usuarioId);
                         transaccion.Commit();
+                        return resultado;
                     }
                     catch
                     {
@@ -556,7 +566,8 @@ namespace MediStack.Datos
             }
         }
 
-        public void CambiarEstadoTurno(
+        // Devuelve el resultado de la seña solo cuando el nuevo estado es Cancelado (si no, null).
+        public ResultadoCancelacion CambiarEstadoTurno(
             int turnoId, string nuevoEstado, bool esAdministrativo, Guid? profesionalAutorizado)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
@@ -596,10 +607,14 @@ namespace MediStack.Datos
                         using (SqlCommand comando = new SqlCommand(@"
                             UPDATE dbo.Turnos
                             SET Estado = @Estado,
-                                EstadoSena = CASE WHEN @Estado = N'Cancelado' AND EstadoSena = N'Pendiente'
+                                -- Ausente: el paciente no vino, la clinica se queda con la seña.
+                                -- Cancelado: la seña sin pagar deja de ser necesaria; la pagada
+                                -- la resuelve ResolverSenaAlCancelar (mas abajo).
+                                EstadoSena = CASE WHEN @Estado = N'Ausente' AND EstadoSena = N'Pagada'
+                                                  THEN N'Retenida'
+                                                  WHEN @Estado = N'Cancelado' AND EstadoSena = N'Pendiente'
                                                   THEN N'NoRequerida'
-                                                  WHEN @Estado = N'Cancelado' AND EstadoSena = N'Pagada'
-                                                  THEN N'Reembolsada' ELSE EstadoSena END
+                                                  ELSE EstadoSena END
                             WHERE TurnoId = @TurnoId;",
                             conexion, transaccion))
                         {
@@ -608,7 +623,18 @@ namespace MediStack.Datos
                             comando.ExecuteNonQuery();
                         }
 
+                        // Cancelacion desde Revision del dia (turno pasado sin resolver): cuenta como
+                        // cancelacion de la clinica, asi que la seña pagada se devuelve.
+                        // (Si el paciente no vino, corresponde marcarlo Ausente y la seña se retiene.)
+                        ResultadoCancelacion resultado = null;
+                        if (nuevoEstado == "Cancelado")
+                        {
+                            resultado = ReembolsosDatos.ResolverSenaAlCancelar(
+                                conexion, transaccion, turnoId, true, MotivoCancelacion.Clinica, null);
+                        }
+
                         transaccion.Commit();
+                        return resultado;
                     }
                     catch
                     {
@@ -764,24 +790,12 @@ namespace MediStack.Datos
             using (SqlCommand comando = new SqlCommand(@"
                 UPDATE dbo.Turnos
                 SET Estado = N'Cancelado',
+                    -- Seña sin pagar: deja de ser necesaria. Seña pagada: la resuelve
+                    -- ReembolsosDatos.ResolverSenaAlCancelar (devolver o retener).
                     EstadoSena = CASE WHEN EstadoSena = N'Pendiente' THEN N'NoRequerida'
-                                      WHEN EstadoSena = N'Pagada' THEN N'Reembolsada'
-                                      ELSE EstadoSena END
+                                      ELSE EstadoSena END,
+                    VencimientoSena = NULL
                 WHERE TurnoId = @TurnoId;",
-                conexion, transaccion))
-            {
-                comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
-                comando.ExecuteNonQuery();
-            }
-        }
-
-        private static void ReintegrarSenaPagada(
-            SqlConnection conexion, SqlTransaction transaccion, int turnoId)
-        {
-            using (SqlCommand comando = new SqlCommand(@"
-                UPDATE dbo.Turnos
-                SET EstadoSena = N'Reembolsada'
-                WHERE TurnoId = @TurnoId AND EstadoSena = N'Pagada';",
                 conexion, transaccion))
             {
                 comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;

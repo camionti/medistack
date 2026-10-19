@@ -33,6 +33,9 @@ namespace MediStack.Dominio
         // para el turno, la seña es obligatoria y se cobra en el mismo momento de reservar.
         public string MedioPagoSena { get; set; }
         public Guid? CobradorId { get; set; }
+
+        // Seña presencial con tarjeta o transferencia: CBU, CVU o alias para devolverla si se cancela.
+        public string CuentaDevolucionSena { get; set; }
     }
 
     // Reglas de turnos compartidas por Datos (la regla real) y Web (para mostrar u ocultar botones).

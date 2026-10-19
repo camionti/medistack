@@ -505,7 +505,9 @@ namespace MediStack.Web
                     // Presencial sin cobertura: la seña se cobra en el mostrador con el medio elegido.
                     MedioPagoSena = EsAdministrativo && SenaPresencialPanel.Visible
                         ? MedioPagoSenaPresencial.SelectedValue : null,
-                    CobradorId = EsAdministrativo ? (Guid?)ObtenerUsuarioActual() : null
+                    CobradorId = EsAdministrativo ? (Guid?)ObtenerUsuarioActual() : null,
+                    CuentaDevolucionSena = EsAdministrativo && SenaPresencialPanel.Visible
+                        ? CuentaDevolucionSena.Text : null
                 };
 
                 if (EsReprogramacion)
@@ -599,8 +601,25 @@ namespace MediStack.Web
 
                 if (e.CommandName == "CancelarTurno")
                 {
-                    _negocio.CancelarTurno(turnoId, EsPaciente ? (Guid?)ObtenerUsuarioActual() : null);
-                    MostrarExito("El turno fue cancelado. El horario vuelve a estar disponible.");
+                    // El administrativo primero confirma e indica quién cancela (define si se devuelve la seña).
+                    if (EsAdministrativo)
+                    {
+                        TurnoDetalle turnoACancelar = _negocio.ObtenerTurno(turnoId);
+                        if (turnoACancelar == null)
+                        {
+                            MostrarError("El turno ya no existe. Actualizá la página.");
+                            return;
+                        }
+
+                        MostrarConfirmacionCancelacion(turnoACancelar);
+                        return;
+                    }
+
+                    ResultadoCancelacion cancelacion = _negocio.CancelarTurno(
+                        turnoId, ObtenerUsuarioActual(), MotivoCancelacion.Paciente,
+                        ObtenerUsuarioActual(), ConfiguracionSitio.ObtenerUrlBase());
+                    MostrarExito(MensajeCancelacion(
+                        "El turno fue cancelado. El horario vuelve a estar disponible.", cancelacion));
                 }
                 else if (e.CommandName == "Reprogramar")
                 {
@@ -694,12 +713,53 @@ namespace MediStack.Web
                     return;
                 }
 
-                ViewState["TurnoACancelarUrl"] = turnoId;
-                ConfirmarCancelacionDetalle.Text = string.Format(
-                    "Estás por cancelar el turno #{0} programado para el <b>{1:dd/MM/yyyy 'a las' HH:mm} hs</b>.",
-                    turnoId, turno.FechaHora);
-                ConfirmarCancelacionUrlPanel.Visible = true;
+                MostrarConfirmacionCancelacion(turno);
             }
+        }
+
+        // Panel de confirmacion de la cancelacion (desde el link del mail o, para el administrativo,
+        // desde la grilla). Explica que pasa con la seña segun quien cancela y cuanto falta.
+        private void MostrarConfirmacionCancelacion(TurnoDetalle turno)
+        {
+            ViewState["TurnoACancelarUrl"] = turno.TurnoId;
+            ConfirmarCancelacionDetalle.Text = string.Format(
+                "Estás por cancelar el turno #{0} programado para el <b>{1:dd/MM/yyyy 'a las' HH:mm} hs</b>.",
+                turno.TurnoId, turno.FechaHora);
+
+            MotivoCancelacionPanel.Visible = EsAdministrativo;
+            MotivoCancelacionLista.SelectedIndex = 0;
+            if (EsAdministrativo)
+            {
+                ConfirmarCancelacionNota.Text = ReglasTurno.PacienteDentroDelPlazo(turno.FechaHora)
+                    ? "Si el turno tiene una seña pagada, se devuelve: faltan " + ReglasTurno.HorasMinimasCancelacionPaciente
+                        + " horas o más."
+                    : "Faltan menos de " + ReglasTurno.HorasMinimasCancelacionPaciente + " horas. Si el turno tiene una seña "
+                        + "pagada, se devuelve solo si cancela la clínica; si lo pide el paciente, la seña se retiene.";
+            }
+            else
+            {
+                ConfirmarCancelacionNota.Text = "Si pagaste una seña, se te devuelve por el mismo medio con el que pagaste.";
+            }
+
+            ConfirmarCancelacionUrlPanel.Visible = true;
+        }
+
+        private string MensajeCancelacion(string mensajeBase, ResultadoCancelacion cancelacion)
+        {
+            string mensaje = mensajeBase;
+            string textoSena = TurnosNegocio.DescribirSena(cancelacion);
+            if (textoSena.Length > 0)
+            {
+                mensaje += " " + textoSena;
+            }
+
+            if (EsAdministrativo && cancelacion != null
+                && cancelacion.DestinoSena == DestinoSenaCancelacion.Reembolso)
+            {
+                mensaje += " Quedó en Reembolsos pendientes para registrar la devolución.";
+            }
+
+            return mensaje;
         }
 
         protected void BotonConfirmarCancelacionUrl_Click(object sender, EventArgs e)
@@ -713,10 +773,16 @@ namespace MediStack.Web
 
             try
             {
-                _negocio.CancelarTurno(turnoId, EsPaciente ? (Guid?)ObtenerUsuarioActual() : null);
+                MotivoCancelacion motivo = EsAdministrativo && MotivoCancelacionLista.SelectedValue == "Clinica"
+                    ? MotivoCancelacion.Clinica
+                    : MotivoCancelacion.Paciente;
+                ResultadoCancelacion cancelacion = _negocio.CancelarTurno(
+                    turnoId, EsPaciente ? (Guid?)ObtenerUsuarioActual() : null, motivo,
+                    ObtenerUsuarioActual(), ConfiguracionSitio.ObtenerUrlBase());
                 ConfirmarCancelacionUrlPanel.Visible = false;
                 ViewState.Remove("TurnoACancelarUrl");
-                MostrarExito("El turno #" + turnoId + " fue cancelado correctamente. El horario vuelve a estar disponible.");
+                MostrarExito(MensajeCancelacion("El turno #" + turnoId
+                    + " fue cancelado correctamente. El horario vuelve a estar disponible.", cancelacion));
                 CargarTurnos();
             }
             catch (InvalidOperationException ex)
@@ -809,7 +875,13 @@ namespace MediStack.Web
                     + " · vence " + Convert.ToDateTime(vencimientoSena).ToString("HH:mm", es) + " hs";
             }
 
-            return estado == "NoRequerida" ? "No requerida" : estado;
+            switch (estado)
+            {
+                case "NoRequerida": return "No requerida";
+                case "ReembolsoPendiente": return "Reembolso pendiente";
+                case "Retenida": return "Retenida";
+                default: return estado;
+            }
         }
 
         protected bool PuedeCerrarTurno(object estado, object fechaHora)
@@ -1264,6 +1336,7 @@ namespace MediStack.Web
                 + monto.ToString("C", CultureInfo.GetCultureInfo("es-AR"))
                 + ". El cobro queda registrado en la caja del día y el turno queda confirmado.";
             MedioPagoSenaPresencial.SelectedIndex = 0;
+            CuentaDevolucionSena.Text = string.Empty;
             SenaPresencialPanel.Visible = true;
             ConfirmarSolicitud.Text = "Cobrar seña y finalizar turno";
 

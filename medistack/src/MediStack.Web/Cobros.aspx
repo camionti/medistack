@@ -35,6 +35,12 @@
                 </asp:DropDownList>
             </div>
             <div class="form-group">
+                <asp:Label ID="CuentaDevolucionLabel" runat="server" AssociatedControlID="CuentaDevolucion"
+                    Text="CBU/CVU o alias (seña con tarjeta o transferencia)" />
+                <asp:TextBox ID="CuentaDevolucion" runat="server" CssClass="form-control" MaxLength="30"
+                    placeholder="Para devolverla si cancela" />
+            </div>
+            <div class="form-group">
                 <asp:Label ID="MontoRecibidoLabel" runat="server" AssociatedControlID="MontoRecibido" Text="Importe recibido" />
                 <asp:TextBox ID="MontoRecibido" runat="server" CssClass="form-control" TextMode="Number"
                     min="0" max="9999999999.99" step="0.01" inputmode="decimal" />

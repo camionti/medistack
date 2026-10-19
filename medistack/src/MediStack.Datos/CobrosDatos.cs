@@ -138,7 +138,8 @@ namespace MediStack.Datos
                 new SqlParameter("@TurnoId", SqlDbType.Int) { Value = turnoId });
         }
 
-        public void RegistrarCobro(int turnoId, string tipoCobro, string medioPago, decimal montoRecibido, Guid cobradorId)
+        public void RegistrarCobro(int turnoId, string tipoCobro, string medioPago, decimal montoRecibido, Guid cobradorId,
+            string cuentaDevolucion)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
             {
@@ -238,10 +239,10 @@ namespace MediStack.Datos
                             IF @TipoCobro = N'Sena'
                                 INSERT INTO dbo.Cobros
                                     (TurnoId, TipoCobro, MontoCobrado, MedioPago, MontoRecibido,
-                                     Vuelto, UsuarioCobradorId)
+                                     Vuelto, UsuarioCobradorId, CuentaDevolucion)
                                 VALUES
                                     (@TurnoId, @TipoCobro, @MontoCobrado, @MedioPago, @MontoRecibido,
-                                     @Vuelto, @CobradorId);
+                                     @Vuelto, @CobradorId, @CuentaDevolucion);
                             ELSE
                                 INSERT INTO dbo.Cobros
                                     (TurnoId, TipoCobro, MontoBase, MontoObraSocial, Copago,
@@ -261,6 +262,8 @@ namespace MediStack.Datos
                             comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
                             comando.Parameters.Add("@TipoCobro", SqlDbType.NVarChar, 20).Value = tipoCobro;
                             comando.Parameters.Add("@MedioPago", SqlDbType.NVarChar, 20).Value = medioPago;
+                            comando.Parameters.Add("@CuentaDevolucion", SqlDbType.NVarChar, 30).Value =
+                                string.IsNullOrWhiteSpace(cuentaDevolucion) ? (object)DBNull.Value : cuentaDevolucion;
                             comando.Parameters.Add("@MontoRecibido", SqlDbType.Decimal).Value = montoRecibido;
                             comando.Parameters["@MontoRecibido"].Precision = 12;
                             comando.Parameters["@MontoRecibido"].Scale = 2;
@@ -674,16 +677,17 @@ namespace MediStack.Datos
         // Se ejecuta DENTRO de la transaccion de la reserva (TurnosDatos.SolicitarTurno):
         // la caja del dia tiene que estar abierta y quien cobra tiene que ser administrativo.
         internal static void RegistrarSenaPresencialEnTransaccion(SqlConnection conexion, SqlTransaction transaccion,
-            int turnoId, decimal monto, string medioPago, Guid cobradorId)
+            int turnoId, decimal monto, string medioPago, Guid cobradorId, string cuentaDevolucion)
         {
             ValidarCajaAbierta(conexion, transaccion);
             ValidarCobrador(conexion, transaccion, cobradorId);
 
             using (SqlCommand comando = new SqlCommand(@"
                 INSERT INTO dbo.Cobros
-                    (TurnoId, TipoCobro, MontoCobrado, MedioPago, MontoRecibido, Vuelto, UsuarioCobradorId)
+                    (TurnoId, TipoCobro, MontoCobrado, MedioPago, MontoRecibido, Vuelto, UsuarioCobradorId,
+                     CuentaDevolucion)
                 VALUES
-                    (@TurnoId, N'Sena', @Monto, @MedioPago, @Monto, 0, @CobradorId);",
+                    (@TurnoId, N'Sena', @Monto, @MedioPago, @Monto, 0, @CobradorId, @CuentaDevolucion);",
                 conexion, transaccion))
             {
                 comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
@@ -692,13 +696,15 @@ namespace MediStack.Datos
                 comando.Parameters["@Monto"].Scale = 2;
                 comando.Parameters.Add("@MedioPago", SqlDbType.NVarChar, 20).Value = medioPago;
                 comando.Parameters.Add("@CobradorId", SqlDbType.UniqueIdentifier).Value = cobradorId;
+                comando.Parameters.Add("@CuentaDevolucion", SqlDbType.NVarChar, 30).Value =
+                    string.IsNullOrWhiteSpace(cuentaDevolucion) ? (object)DBNull.Value : cuentaDevolucion;
                 comando.ExecuteNonQuery();
             }
         }
 
         // "Hoy" lo decide siempre el reloj de SQL Server (no el del servidor web),
         // asi la validacion y las grabaciones usan exactamente la misma fecha.
-        private static void ValidarCajaAbierta(SqlConnection conexion, SqlTransaction transaccion)
+        internal static void ValidarCajaAbierta(SqlConnection conexion, SqlTransaction transaccion)
         {
             using (SqlCommand comando = new SqlCommand(@"
                 DECLARE @Fecha DATE = CONVERT(date, SYSDATETIME());
@@ -715,7 +721,7 @@ namespace MediStack.Datos
             }
         }
 
-        private static void ValidarCobrador(
+        internal static void ValidarCobrador(
             SqlConnection conexion, SqlTransaction transaccion, Guid cobradorId)
         {
             using (SqlCommand comando = new SqlCommand(@"

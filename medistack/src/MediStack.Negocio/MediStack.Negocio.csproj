@@ -59,6 +59,7 @@
     <Compile Include="GeminiProveedorIA.cs" />
     <Compile Include="MercadoPagoServicio.cs" />
     <Compile Include="PagoSenaNegocio.cs" />
+    <Compile Include="ReembolsosNegocio.cs" />
     <Compile Include="ResultadoLogin.cs" />
     <Compile Include="VerificadorPassword.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

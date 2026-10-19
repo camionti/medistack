@@ -40,6 +40,10 @@ namespace MediStack.Web
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal ConfirmarCancelacionDetalle;
+        protected global::System.Web.UI.WebControls.Literal ConfirmarCancelacionNota;
+        protected global::System.Web.UI.WebControls.Panel MotivoCancelacionPanel;
+        protected global::System.Web.UI.WebControls.Label MotivoCancelacionLabel;
+        protected global::System.Web.UI.WebControls.DropDownList MotivoCancelacionLista;
 
         /// <summary>
         /// Control BotonConfirmarCancelacionUrl.
@@ -376,6 +380,8 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.Literal SenaPresencialTexto;
         protected global::System.Web.UI.WebControls.Label MedioPagoSenaPresencialLabel;
         protected global::System.Web.UI.WebControls.DropDownList MedioPagoSenaPresencial;
+        protected global::System.Web.UI.WebControls.Label CuentaDevolucionSenaLabel;
+        protected global::System.Web.UI.WebControls.TextBox CuentaDevolucionSena;
         protected global::System.Web.UI.WebControls.Panel CajaNoAbiertaPanel;
         protected global::System.Web.UI.WebControls.Literal CajaNoAbiertaTexto;
         protected global::System.Web.UI.WebControls.HyperLink AbrirCajaLink;

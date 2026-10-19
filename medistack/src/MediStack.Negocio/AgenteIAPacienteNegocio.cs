@@ -80,8 +80,15 @@ namespace MediStack.Negocio
                 throw new InvalidOperationException("No se pudo identificar el turno a cancelar.");
             }
 
-            _turnos.CancelarTurno(turnoId, pacienteId);
-            string texto = "El turno #" + turnoId + " fue cancelado. Si habías pagado una seña, quedó registrada como reembolsada.";
+            ResultadoCancelacion cancelacion = _turnos.CancelarTurno(
+                turnoId, pacienteId, MotivoCancelacion.Paciente, pacienteId,
+                System.Configuration.ConfigurationManager.AppSettings["App.UrlBase"]);
+            string texto = "El turno #" + turnoId + " fue cancelado.";
+            string textoSena = TurnosNegocio.DescribirSena(cancelacion);
+            if (textoSena.Length > 0)
+            {
+                texto += " " + textoSena;
+            }
             _interacciones.Registrar(new InteraccionIA
             {
                 UsuarioId = pacienteId,

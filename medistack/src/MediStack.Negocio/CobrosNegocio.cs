@@ -55,8 +55,11 @@ namespace MediStack.Negocio
             return _datos.ObtenerImportesCobro(turnoId);
         }
 
+        // cuentaDevolucion: solo para señas con tarjeta o transferencia (CBU, CVU o alias del paciente
+        // para poder devolverla si cancela). En otros casos se ignora.
         public void RegistrarCobro(
-            int turnoId, string tipoCobro, string medioPago, decimal montoRecibido, Guid cobradorId)
+            int turnoId, string tipoCobro, string medioPago, decimal montoRecibido, Guid cobradorId,
+            string cuentaDevolucion)
         {
             if (turnoId <= 0)
             {
@@ -84,8 +87,23 @@ namespace MediStack.Negocio
                 throw new InvalidOperationException("No se pudo validar al usuario administrativo.");
             }
 
+            if (tipoCobro == "Sena" && ReglasReembolso.RequiereCuentaDevolucion(medioPago))
+            {
+                cuentaDevolucion = ReglasReembolso.NormalizarCuenta(cuentaDevolucion);
+                if (!ReglasReembolso.CuentaDevolucionValida(cuentaDevolucion))
+                {
+                    throw new InvalidOperationException(
+                        "Para cobrar la seña con tarjeta o transferencia ingresá el CBU/CVU (22 números) o el alias "
+                        + "de la cuenta del paciente, para poder devolverla si cancela.");
+                }
+            }
+            else
+            {
+                cuentaDevolucion = null;
+            }
+
             EjecutarSeguro(() => _datos.RegistrarCobro(
-                turnoId, tipoCobro, medioPago, montoRecibido, cobradorId));
+                turnoId, tipoCobro, medioPago, montoRecibido, cobradorId, cuentaDevolucion));
         }
 
         // Acredita una seña pagada online. Lo llaman la vuelta de Mercado Pago y el webhook,

@@ -89,6 +89,7 @@
     <Content Include="MercadoPagoWebhook.ashx" />
     <Content Include="Cobros.aspx" />
     <Content Include="Caja.aspx" />
+    <Content Include="Reembolsos.aspx" />
     <Content Include="RevisionDia.aspx" />
     <Content Include="Liquidaciones.aspx" />
     <Content Include="Reportes.aspx" />
@@ -217,6 +218,13 @@
     </Compile>
     <Compile Include="Cobros.aspx.designer.cs">
       <DependentUpon>Cobros.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Reembolsos.aspx.cs">
+      <DependentUpon>Reembolsos.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reembolsos.aspx.designer.cs">
+      <DependentUpon>Reembolsos.aspx</DependentUpon>
     </Compile>
     <Compile Include="Caja.aspx.cs">
       <DependentUpon>Caja.aspx</DependentUpon>

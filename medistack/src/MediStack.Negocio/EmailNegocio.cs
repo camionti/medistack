@@ -149,6 +149,30 @@ namespace MediStack.Negocio
                 ArmarPlantilla("Recordatorio de turno", contenido));
         }
 
+        public async Task<bool> EnviarCancelacionTurnoAsync(NotificacionTurno datos, string textoSena)
+        {
+            if (datos == null || string.IsNullOrWhiteSpace(datos.PacienteEmail))
+            {
+                return false;
+            }
+
+            string contenido = "<h2 style=\"margin:0 0 6px;font-size:20px;color:#0f172a\">Tu turno fue cancelado</h2>"
+                + "<p style=\"margin:0 0 16px;color:#334155;font-size:15px;line-height:1.55\">Hola <b>"
+                + WebUtility.HtmlEncode(datos.PacienteNombre) + "</b>,<br/>"
+                + "te confirmamos que se canceló tu turno de <b>" + WebUtility.HtmlEncode(datos.Especialidad)
+                + "</b> con " + WebUtility.HtmlEncode(datos.ProfesionalNombre) + " del "
+                + WebUtility.HtmlEncode(FormatearFechaTurno(datos.FechaHora)) + ".</p>"
+                + (string.IsNullOrWhiteSpace(textoSena)
+                    ? string.Empty
+                    : "<div style=\"background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;margin:0 0 20px\">"
+                      + "<p style=\"margin:0;font-size:14px;line-height:1.5;color:#1e293b\"><b>Seña:</b> "
+                      + WebUtility.HtmlEncode(textoSena) + "</p></div>")
+                + "<p style=\"margin:0;color:#64748b;font-size:13px\">Podés sacar un nuevo turno cuando quieras desde tu cuenta en MediStack.</p>";
+
+            return await EnviarCorreoAsync(datos.PacienteEmail, "Turno cancelado - MediStack",
+                ArmarPlantilla("Cancelación de turno", contenido));
+        }
+
         private static string FormatearFechaTurno(DateTime fechaHora)
         {
             CultureInfo es = CultureInfo.GetCultureInfo("es-AR");

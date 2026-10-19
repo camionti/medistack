@@ -29,11 +29,17 @@ namespace MediStack.Web
 
             try
             {
-                _negocio.CambiarEstado(turnoId, e.CommandName, true, null);
+                MediStack.Dominio.ResultadoCancelacion cancelacion =
+                    _negocio.CambiarEstado(turnoId, e.CommandName, true, null);
                 string texto = e.CommandName == "Atendido" ? "El turno fue marcado como atendido."
                     : e.CommandName == "Ausente" ? "El turno fue marcado como ausente."
                     : e.CommandName == "Confirmado" ? "El turno fue confirmado."
                     : "El turno fue cancelado.";
+                string textoSena = TurnosNegocio.DescribirSena(cancelacion);
+                if (textoSena.Length > 0)
+                {
+                    texto += " " + textoSena;
+                }
                 MostrarExito(Mensaje, texto);
             }
             catch (InvalidOperationException ex)

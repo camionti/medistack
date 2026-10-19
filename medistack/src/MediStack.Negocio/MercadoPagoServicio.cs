@@ -227,20 +227,21 @@ namespace MediStack.Negocio
             {
             }
 
+            if (detalle.Length > 300)
+            {
+                detalle = detalle.Substring(0, 300);
+            }
+
+            // El detalle es la respuesta de Mercado Pago (nunca incluye nuestro token).
             if (codigo == 401 || codigo == 403)
             {
                 return new InvalidOperationException(
-                    "Mercado Pago rechazo las credenciales. Revisa MercadoPago.AccessToken en secrets.config.", ex);
+                    "Mercado Pago rechazo la operacion por permisos (" + codigo + "). Detalle: " + detalle, ex);
             }
 
             if (codigo == 404)
             {
                 return new InvalidOperationException("Mercado Pago no encontro el pago o recurso solicitado.", ex);
-            }
-
-            if (detalle.Length > 300)
-            {
-                detalle = detalle.Substring(0, 300);
             }
 
             return new InvalidOperationException(

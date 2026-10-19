@@ -157,9 +157,11 @@ namespace MediStack.Web
                     TipoCobro.SelectedValue,
                     MedioPago.SelectedValue,
                     montoRecibido,
-                    ObtenerUsuarioActual());
+                    ObtenerUsuarioActual(),
+                    CuentaDevolucion.Text);
                 MostrarExito("El cobro se registró correctamente.");
                 MontoRecibido.Text = string.Empty;
+                CuentaDevolucion.Text = string.Empty;
                 CargarTurnosCobrables();
                 ActualizarOpcionesCobro();
                 CargarCobros();

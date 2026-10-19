@@ -139,6 +139,7 @@
                                 <div class="sidebar-section-title"><span>Finanzas</span></div>
                                 <a href="<%: ResolveUrl("~/Cobros.aspx") %>" class="sidebar-nav-link" data-title="Cobros"><span>Cobros</span></a>
                                 <a href="<%: ResolveUrl("~/Caja.aspx") %>" class="sidebar-nav-link" data-title="Caja"><span>Caja</span></a>
+                                <a href="<%: ResolveUrl("~/Reembolsos.aspx") %>" class="sidebar-nav-link" data-title="Reembolsos"><span>Reembolsos</span></a>
                                 <a href="<%: ResolveUrl("~/Liquidaciones.aspx") %>" class="sidebar-nav-link" data-title="Honorarios"><span>Honorarios</span></a>
                                 <a href="<%: ResolveUrl("~/Reportes.aspx") %>" class="sidebar-nav-link" data-title="Reportes"><span>Reportes</span></a>
 

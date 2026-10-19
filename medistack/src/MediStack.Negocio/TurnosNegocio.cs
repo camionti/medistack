@@ -502,6 +502,24 @@ namespace MediStack.Negocio
                 throw new InvalidOperationException("Seleccioná un medio de pago válido para la seña.");
             }
 
+            // Seña cobrada en el mostrador con tarjeta o transferencia: hace falta una cuenta
+            // (CBU, CVU o alias) para poder devolverla si el turno se cancela.
+            if (solicitud != null && !solicitud.EsReservaOnline
+                && ReglasReembolso.RequiereCuentaDevolucion(solicitud.MedioPagoSena))
+            {
+                solicitud.CuentaDevolucionSena = ReglasReembolso.NormalizarCuenta(solicitud.CuentaDevolucionSena);
+                if (!ReglasReembolso.CuentaDevolucionValida(solicitud.CuentaDevolucionSena))
+                {
+                    throw new InvalidOperationException(
+                        "Para cobrar la seña con tarjeta o transferencia ingresá el CBU/CVU (22 números) o el alias "
+                        + "de la cuenta del paciente, para poder devolverla si cancela.");
+                }
+            }
+            else if (solicitud != null)
+            {
+                solicitud.CuentaDevolucionSena = null;
+            }
+
             ReservaTurno reserva = null;
             EjecutarSeguro(() => reserva = _datos.SolicitarTurno(solicitud));
             return reserva;
@@ -518,17 +536,73 @@ namespace MediStack.Negocio
             EjecutarSeguro(() => _datos.ReprogramarTurno(turnoId, pacienteAutorizado, destino));
         }
 
-        public void CancelarTurno(int turnoId, Guid? pacienteAutorizado)
+        // Cancela el turno y resuelve la seña. El paciente siempre cancela como "Paciente";
+        // el administrativo indica si cancela la clinica o si lo pide el paciente.
+        // Si corresponde devolver la seña, queda un reembolso pendiente en el panel de Reembolsos.
+        public ResultadoCancelacion CancelarTurno(int turnoId, Guid? pacienteAutorizado,
+            MotivoCancelacion motivo, Guid? usuarioId, string baseUrl)
         {
             if (turnoId <= 0)
             {
                 throw new InvalidOperationException("Selecciona un turno valido para cancelar.");
             }
 
-            EjecutarSeguro(() => _datos.CancelarTurno(turnoId, pacienteAutorizado));
+            if (pacienteAutorizado.HasValue)
+            {
+                motivo = MotivoCancelacion.Paciente;
+            }
+
+            ResultadoCancelacion resultado = null;
+            EjecutarSeguro(() => resultado = _datos.CancelarTurno(turnoId, pacienteAutorizado, motivo, usuarioId));
+
+            EnviarCancelacionTurnoAsync(turnoId, resultado, baseUrl);
+            return resultado;
         }
 
-        public void CambiarEstado(int turnoId, string estado, bool esAdministrativo, Guid? profesionalAutorizado)
+        // Texto para el paciente / administrativo sobre que paso con la seña.
+        public static string DescribirSena(ResultadoCancelacion resultado)
+        {
+            if (resultado == null || resultado.DestinoSena == DestinoSenaCancelacion.SinSenaPagada)
+            {
+                return string.Empty;
+            }
+
+            string monto = resultado.Monto.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("es-AR"));
+            if (resultado.DestinoSena == DestinoSenaCancelacion.Retenida)
+            {
+                return "La seña de " + monto + " no se devuelve porque la cancelación se hizo con menos de "
+                    + ReglasTurno.HorasMinimasCancelacionPaciente + " horas de anticipación.";
+            }
+
+            return "La seña de " + monto + " "
+                + ReglasReembolso.ComoSeDevuelve(resultado.MedioPago) + ".";
+        }
+
+        private void EnviarCancelacionTurnoAsync(int turnoId, ResultadoCancelacion resultado, string baseUrl)
+        {
+            string textoSena = DescribirSena(resultado);
+            System.Threading.ThreadPool.QueueUserWorkItem(async state =>
+            {
+                try
+                {
+                    NotificacionTurno datos = _datos.ObtenerDatosNotificacion(turnoId);
+                    if (datos == null || string.IsNullOrWhiteSpace(datos.PacienteEmail))
+                    {
+                        return;
+                    }
+
+                    ArmarUrlsNotificacion(datos, baseUrl);
+                    await _emailNegocio.EnviarCancelacionTurnoAsync(datos, textoSena);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError("Error al enviar el aviso de cancelación por email: " + ex);
+                }
+            });
+        }
+
+        // Para "Cancelado" (Revision del dia) devuelve que paso con la seña; para el resto, null.
+        public ResultadoCancelacion CambiarEstado(int turnoId, string estado, bool esAdministrativo, Guid? profesionalAutorizado)
         {
             string[] estados = { "Confirmado", "Atendido", "Ausente", "Cancelado" };
             if (turnoId <= 0 || !estados.Contains(estado, StringComparer.Ordinal))
@@ -536,8 +610,10 @@ namespace MediStack.Negocio
                 throw new InvalidOperationException("Selecciona un estado valido para el turno.");
             }
 
-            EjecutarSeguro(() => _datos.CambiarEstadoTurno(
+            ResultadoCancelacion resultado = null;
+            EjecutarSeguro(() => resultado = _datos.CambiarEstadoTurno(
                 turnoId, estado, esAdministrativo, profesionalAutorizado));
+            return resultado;
         }
 
         private static void ValidarSeleccion(Guid profesionalId, int especialidadId, DateTime fecha)
@@ -607,7 +683,12 @@ namespace MediStack.Negocio
 
                 if (ex.Number == 547)
                 {
-                    throw new InvalidOperationException("La solicitud ya no coincide con las relaciones activas del paciente, profesional y especialidad.");
+                    // Se violo una regla de la base (CHECK o clave foranea). Se muestra el detalle real
+                    // para no confundir: por ejemplo, falta correr un script de migracion.
+                    throw new InvalidOperationException(
+                        "La base de datos rechazó la operación porque no cumple una de sus reglas. "
+                        + "Si recién se actualizó el sistema, verificá que estén ejecutados todos los scripts de database. "
+                        + "Detalle: " + ex.Message);
                 }
 
                 if (ex.Number == 1205)

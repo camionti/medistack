@@ -103,6 +103,8 @@ namespace MediStack.Web
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList MedioPago;
+        protected global::System.Web.UI.WebControls.Label CuentaDevolucionLabel;
+        protected global::System.Web.UI.WebControls.TextBox CuentaDevolucion;
 
         /// <summary>
         /// Control MontoRecibidoLabel.
