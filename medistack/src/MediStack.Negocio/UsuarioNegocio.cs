@@ -1,7 +1,7 @@
 using System;
 using MediStack.Datos;
 using MediStack.Dominio;
-
+using System.Data;
 namespace MediStack.Negocio
 {
     public class UsuarioNegocio
@@ -43,5 +43,24 @@ namespace MediStack.Negocio
             _usuarioDatos.RegistrarAccesoCorrecto(usuario.UsuarioId);
             return ResultadoLogin.Correcto(usuario);
         }
+        public DataTable ObtenerUsuariosBloqueados()
+        {
+            return _usuarioDatos.ListarBloqueados(); 
+        }
+
+        public void DesbloquearUsuario(Guid usuarioId)
+        {
+            if (usuarioId == Guid.Empty) 
+            {
+                throw new InvalidOperationException("Seleccioná una cuenta válida.");
+            }
+
+            int filas = _usuarioDatos.Desbloquear(usuarioId); 
+            if (filas == 0)
+            {
+                throw new InvalidOperationException("La cuenta ya no estaba bloqueada."); 
+            }
+        }
+
     }
 }

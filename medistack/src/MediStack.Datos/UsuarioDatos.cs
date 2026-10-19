@@ -95,6 +95,51 @@ namespace MediStack.Datos
             EjecutarActualizacion(consulta, usuarioId);
         }
 
+        public DataTable ListarBloqueados()
+        {
+            const string consulta = @"
+        SELECT u.UsuarioId, u.NombreUsuario,
+               u.Nombre + N' ' + u.Apellido AS NombreCompleto,
+               r.Nombre AS Rol, u.IntentosFallidos, u.BloqueadoHasta,
+               DATEDIFF(MINUTE, SYSDATETIME(), u.BloqueadoHasta) AS MinutosRestantes
+        FROM dbo.Usuarios AS u
+        INNER JOIN dbo.Roles AS r ON r.RolId = u.RolId
+        WHERE u.Activo = 1
+          AND u.BloqueadoHasta IS NOT NULL
+          AND u.BloqueadoHasta > SYSDATETIME()
+        ORDER BY u.BloqueadoHasta DESC;"; 
+
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            using (SqlCommand comando = new SqlCommand(consulta, conexion))
+            {
+                conexion.Open();
+                using (SqlDataReader lector = comando.ExecuteReader())
+                {
+                    DataTable tabla = new DataTable(); 
+                    tabla.Load(lector); 
+                    return tabla;
+                }
+            }
+        }
+
+        public int Desbloquear(Guid usuarioId)
+        {
+            const string consulta = @"
+        UPDATE dbo.Usuarios
+        SET IntentosFallidos = 0, BloqueadoHasta = NULL
+        WHERE UsuarioId = @UsuarioId
+          AND Activo = 1
+          AND BloqueadoHasta IS NOT NULL
+          AND BloqueadoHasta > SYSDATETIME();"; 
+
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            using (SqlCommand comando = new SqlCommand(consulta, conexion))
+            {
+                comando.Parameters.Add("@UsuarioId", SqlDbType.UniqueIdentifier).Value = usuarioId;
+                conexion.Open();
+                return comando.ExecuteNonQuery(); 
+            }
+        }
         private void EjecutarActualizacion(string consulta, Guid usuarioId)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))

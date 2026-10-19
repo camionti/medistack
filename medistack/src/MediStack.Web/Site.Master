@@ -148,6 +148,8 @@
                                 <a href="<%: ResolveUrl("~/ObrasSociales.aspx") %>" class="sidebar-nav-link" data-title="Obras sociales"><span>Obras sociales</span></a>
                                 <a href="<%: ResolveUrl("~/Coberturas.aspx") %>" class="sidebar-nav-link" data-title="Coberturas"><span>Coberturas</span></a>
                                 <a href="<%: ResolveUrl("~/Convenios.aspx") %>" class="sidebar-nav-link" data-title="Convenios"><span>Convenios</span></a>
+                                <div class="sidebar-section-title"><span>Seguridad</span></div>
+                                <a href="<%: ResolveUrl("~/UsuariosBloqueados.aspx") %>" class="sidebar-nav-link" data-title="Usuarios bloqueados"><span>Usuarios bloqueados</span></a>
                             </nav>
                         </asp:Panel>
 

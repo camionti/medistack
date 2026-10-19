@@ -103,6 +103,7 @@
     <Content Include="Salir.aspx" />
     <Content Include="Site.Master" />
     <Content Include="Global.asax" />
+    <Content Include="UsuariosBloqueados.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -298,6 +299,13 @@
       <DependentUpon>Site.Master</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UsuariosBloqueados.aspx.cs">
+      <DependentUpon>UsuariosBloqueados.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="UsuariosBloqueados.aspx.designer.cs">
+      <DependentUpon>UsuariosBloqueados.aspx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="secrets.config" />
