@@ -589,8 +589,8 @@ namespace MediStack.Negocio
             }
             catch (SqlException ex)
             {
-                // Caja cerrada o usuario no habilitado para cobrar (cobro de seña en el mostrador).
-                if (ex.Number >= 51110 && ex.Number <= 51112)
+                // Caja cerrada, sin abrir o usuario no habilitado para cobrar (seña en el mostrador).
+                if (ex.Number >= 51110 && ex.Number <= 51113)
                 {
                     throw new InvalidOperationException(ex.Message);
                 }

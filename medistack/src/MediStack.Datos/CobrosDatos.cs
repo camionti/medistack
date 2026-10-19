@@ -147,7 +147,7 @@ namespace MediStack.Datos
                 {
                     try
                     {
-                        ValidarCajaAbierta(conexion, transaccion, DateTime.Today);
+                        ValidarCajaAbierta(conexion, transaccion);
                         ValidarCobrador(conexion, transaccion, cobradorId);
 
                         using (SqlCommand comando = new SqlCommand(@"
@@ -407,7 +407,7 @@ namespace MediStack.Datos
                 SELECT c.CierreCajaId, c.Fecha, c.FechaHoraCierre,
                        c.TotalEfectivo, c.TotalTarjeta, c.TotalTransferencia,
                        c.TotalGeneral, c.CantidadCobros, c.EfectivoContado, c.Diferencia,
-                       c.TotalEgresos,
+                       c.TotalEgresos, c.FondoInicial,
                        u.Nombre + N' ' + u.Apellido AS Administrativo
                 FROM dbo.CierresCaja c
                 INNER JOIN dbo.Usuarios u ON u.UsuarioId = c.AdministrativoId
@@ -422,10 +422,105 @@ namespace MediStack.Datos
             return Consultar(@"
                 SELECT CierreCajaId, Fecha, TotalEfectivo, TotalTarjeta, TotalTransferencia,
                        TotalGeneral, CantidadCobros, EfectivoContado, Diferencia, FechaHoraCierre,
-                       TotalEgresos
+                       TotalEgresos, FondoInicial
                 FROM dbo.CierresCaja
                 WHERE Fecha = @Fecha;",
                 new SqlParameter("@Fecha", SqlDbType.Date) { Value = fecha.Date });
+        }
+
+        // Una fila con: la fecha de hoy segun SQL Server, la caja abierta (si hay, de cualquier dia)
+        // y si la caja de hoy ya esta cerrada. De aca sale el estado que muestran las pantallas.
+        public DataTable ObtenerEstadoCaja()
+        {
+            return Consultar(@"
+                DECLARE @Hoy DATE = CONVERT(date, SYSDATETIME());
+
+                SELECT @Hoy AS Hoy,
+                       a.Fecha AS FechaCajaAbierta, a.FondoInicial, a.FechaHoraApertura,
+                       u.Nombre + N' ' + u.Apellido AS Administrativo,
+                       CASE WHEN EXISTS (SELECT 1 FROM dbo.CierresCaja WHERE Fecha = @Hoy)
+                            THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS CerradaHoy
+                FROM (SELECT 1 AS Uno) base
+                LEFT JOIN
+                (
+                    SELECT TOP (1) ap.Fecha, ap.FondoInicial, ap.FechaHoraApertura, ap.AdministrativoId
+                    FROM dbo.AperturasCaja ap
+                    WHERE ap.Fecha <= @Hoy
+                      AND NOT EXISTS (SELECT 1 FROM dbo.CierresCaja c WHERE c.Fecha = ap.Fecha)
+                    ORDER BY ap.Fecha
+                ) a ON 1 = 1
+                LEFT JOIN dbo.Usuarios u ON u.UsuarioId = a.AdministrativoId;");
+        }
+
+        public DataTable ObtenerAperturaCaja(DateTime fecha)
+        {
+            return Consultar(@"
+                SELECT a.AperturaCajaId, a.Fecha, a.FondoInicial, a.FechaHoraApertura,
+                       u.Nombre + N' ' + u.Apellido AS Administrativo
+                FROM dbo.AperturasCaja a
+                INNER JOIN dbo.Usuarios u ON u.UsuarioId = a.AdministrativoId
+                WHERE a.Fecha = @Fecha;",
+                new SqlParameter("@Fecha", SqlDbType.Date) { Value = fecha.Date });
+        }
+
+        // Abre la caja de HOY con el fondo inicial (el cambio con el que arranca el cajon).
+        // Una sola apertura por dia; una caja cerrada no se vuelve a abrir.
+        public void AbrirCaja(Guid administrativoId, decimal fondoInicial)
+        {
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            {
+                conexion.Open();
+                using (SqlTransaction transaccion = conexion.BeginTransaction(IsolationLevel.Serializable))
+                {
+                    try
+                    {
+                        ValidarCobrador(conexion, transaccion, administrativoId);
+                        using (SqlCommand comando = new SqlCommand(@"
+                            DECLARE @Fecha DATE = CONVERT(date, SYSDATETIME());
+
+                            IF EXISTS (SELECT 1 FROM dbo.CierresCaja WITH (UPDLOCK, HOLDLOCK) WHERE Fecha = @Fecha)
+                                THROW 51110, N'La caja de esta fecha ya está cerrada.', 1;
+
+                            IF EXISTS (SELECT 1 FROM dbo.AperturasCaja WITH (UPDLOCK, HOLDLOCK) WHERE Fecha = @Fecha)
+                                THROW 51114, N'La caja de hoy ya está abierta.', 1;
+
+                            -- Regla estricta: no se arranca el dia si quedo una caja anterior sin cerrar.
+                            DECLARE @Pendiente DATE;
+                            SELECT TOP (1) @Pendiente = a.Fecha
+                            FROM dbo.AperturasCaja a WITH (UPDLOCK, HOLDLOCK)
+                            WHERE a.Fecha < @Fecha
+                              AND NOT EXISTS (SELECT 1 FROM dbo.CierresCaja c WHERE c.Fecha = a.Fecha)
+                            ORDER BY a.Fecha;
+
+                            IF @Pendiente IS NOT NULL
+                            BEGIN
+                                DECLARE @MensajePendiente NVARCHAR(200) =
+                                    N'La caja del ' + CONVERT(nvarchar(10), @Pendiente, 103)
+                                    + N' quedó sin cerrar. Cerrala antes de abrir la de hoy.';
+                                THROW 51115, @MensajePendiente, 1;
+                            END;
+
+                            INSERT INTO dbo.AperturasCaja (Fecha, FondoInicial, AdministrativoId)
+                            VALUES (@Fecha, @FondoInicial, @AdministrativoId);",
+                            conexion, transaccion))
+                        {
+                            SqlParameter pFondo = comando.Parameters.Add("@FondoInicial", SqlDbType.Decimal);
+                            pFondo.Precision = 12;
+                            pFondo.Scale = 2;
+                            pFondo.Value = fondoInicial;
+                            comando.Parameters.Add("@AdministrativoId", SqlDbType.UniqueIdentifier).Value = administrativoId;
+                            comando.ExecuteNonQuery();
+                        }
+
+                        transaccion.Commit();
+                    }
+                    catch
+                    {
+                        transaccion.Rollback();
+                        throw;
+                    }
+                }
+            }
         }
 
         public DataTable ObtenerEgresos(DateTime desde, DateTime hasta)
@@ -460,7 +555,7 @@ namespace MediStack.Datos
                     try
                     {
                         ValidarCobrador(conexion, transaccion, administrativoId);
-                        ValidarCajaAbierta(conexion, transaccion, DateTime.Today);
+                        ValidarCajaAbierta(conexion, transaccion);
                         using (SqlCommand comando = new SqlCommand(@"
                             INSERT INTO dbo.Egresos (Fecha, Concepto, Monto, Categoria, Comprobante, AdministrativoId)
                             VALUES (CONVERT(date, SYSDATETIME()), @Concepto, @Monto, @Categoria, @Comprobante,
@@ -490,7 +585,9 @@ namespace MediStack.Datos
             }
         }
 
-        public void CerrarCaja(DateTime fecha, Guid administrativoId, decimal efectivoContado)
+        // Cierra la caja que este abierta: la de hoy o, si quedo colgada, la de un dia anterior.
+        // Devuelve la fecha de la caja que se cerro.
+        public DateTime CerrarCaja(Guid administrativoId, decimal efectivoContado)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
             {
@@ -499,16 +596,22 @@ namespace MediStack.Datos
                 {
                     try
                     {
-                        if (fecha.Date != DateTime.Today)
-                        {
-                            throw new InvalidOperationException("La caja solo se puede cerrar para la fecha de hoy.");
-                        }
-
+                        DateTime fechaCerrada;
                         ValidarCobrador(conexion, transaccion, administrativoId);
                         using (SqlCommand comando = new SqlCommand(@"
-                            IF EXISTS (SELECT 1 FROM dbo.CierresCaja WITH (UPDLOCK, HOLDLOCK)
-                                       WHERE Fecha = @Fecha)
-                                THROW 51110, N'La caja de esta fecha ya está cerrada.', 1;
+                            -- La caja a cerrar es la apertura que todavia no tiene cierre
+                            -- (con la regla estricta, hay como mucho una).
+                            DECLARE @Fecha DATE;
+                            DECLARE @FondoInicial DECIMAL(12,2);
+                            SELECT TOP (1) @Fecha = a.Fecha, @FondoInicial = a.FondoInicial
+                            FROM dbo.AperturasCaja a WITH (UPDLOCK, HOLDLOCK)
+                            WHERE a.Fecha <= CONVERT(date, SYSDATETIME())
+                              AND NOT EXISTS (SELECT 1 FROM dbo.CierresCaja c WITH (UPDLOCK, HOLDLOCK)
+                                              WHERE c.Fecha = a.Fecha)
+                            ORDER BY a.Fecha;
+
+                            IF @Fecha IS NULL
+                                THROW 51113, N'No hay ninguna caja abierta para cerrar.', 1;
 
                             DECLARE @TotalEfectivo DECIMAL(12,2);
                             DECLARE @TotalTarjeta DECIMAL(12,2);
@@ -536,23 +639,27 @@ namespace MediStack.Datos
                             INSERT INTO dbo.CierresCaja
                                 (Fecha, AdministrativoId, TotalEfectivo, TotalTarjeta,
                                  TotalTransferencia, TotalGeneral, CantidadCobros,
-                                 EfectivoContado, Diferencia, TotalEgresos)
+                                 EfectivoContado, Diferencia, TotalEgresos, FondoInicial)
                             VALUES
                                 (@Fecha, @AdministrativoId, @TotalEfectivo, @TotalTarjeta,
                                  @TotalTransferencia, @TotalGeneral, @CantidadCobros,
-                                 @EfectivoContado, @EfectivoContado - (@TotalEfectivo - @TotalEgresos),
-                                 @TotalEgresos);",
+                                 @EfectivoContado,
+                                 -- En el cajon deberia haber: fondo + efectivo cobrado - egresos.
+                                 @EfectivoContado - (@FondoInicial + @TotalEfectivo - @TotalEgresos),
+                                 @TotalEgresos, @FondoInicial);
+
+                            SELECT @Fecha;",
                             conexion, transaccion))
                         {
-                            comando.Parameters.Add("@Fecha", SqlDbType.Date).Value = fecha.Date;
                             comando.Parameters.Add("@AdministrativoId", SqlDbType.UniqueIdentifier).Value = administrativoId;
                             comando.Parameters.Add("@EfectivoContado", SqlDbType.Decimal).Value = efectivoContado;
                             comando.Parameters["@EfectivoContado"].Precision = 12;
                             comando.Parameters["@EfectivoContado"].Scale = 2;
-                            comando.ExecuteNonQuery();
+                            fechaCerrada = Convert.ToDateTime(comando.ExecuteScalar());
                         }
 
                         transaccion.Commit();
+                        return fechaCerrada;
                     }
                     catch
                     {
@@ -569,7 +676,7 @@ namespace MediStack.Datos
         internal static void RegistrarSenaPresencialEnTransaccion(SqlConnection conexion, SqlTransaction transaccion,
             int turnoId, decimal monto, string medioPago, Guid cobradorId)
         {
-            ValidarCajaAbierta(conexion, transaccion, DateTime.Today);
+            ValidarCajaAbierta(conexion, transaccion);
             ValidarCobrador(conexion, transaccion, cobradorId);
 
             using (SqlCommand comando = new SqlCommand(@"
@@ -589,15 +696,21 @@ namespace MediStack.Datos
             }
         }
 
-        private static void ValidarCajaAbierta(
-            SqlConnection conexion, SqlTransaction transaccion, DateTime fecha)
+        // "Hoy" lo decide siempre el reloj de SQL Server (no el del servidor web),
+        // asi la validacion y las grabaciones usan exactamente la misma fecha.
+        private static void ValidarCajaAbierta(SqlConnection conexion, SqlTransaction transaccion)
         {
             using (SqlCommand comando = new SqlCommand(@"
+                DECLARE @Fecha DATE = CONVERT(date, SYSDATETIME());
+
                 IF EXISTS (SELECT 1 FROM dbo.CierresCaja WITH (UPDLOCK, HOLDLOCK) WHERE Fecha = @Fecha)
-                    THROW 51111, N'La caja del día ya está cerrada y no admite nuevos cobros.', 1;",
+                    THROW 51111, N'La caja del día ya está cerrada y no admite nuevos cobros.', 1;
+
+                -- Sin apertura del dia (con su fondo inicial) no se cobra en el mostrador.
+                IF NOT EXISTS (SELECT 1 FROM dbo.AperturasCaja WITH (UPDLOCK, HOLDLOCK) WHERE Fecha = @Fecha)
+                    THROW 51113, N'La caja del día no está abierta. Abrila desde Caja indicando el fondo inicial.', 1;",
                 conexion, transaccion))
             {
-                comando.Parameters.Add("@Fecha", SqlDbType.Date).Value = fecha.Date;
                 comando.ExecuteNonQuery();
             }
         }

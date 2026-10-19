@@ -221,6 +221,11 @@
                         <asp:ListItem Text="Tarjeta de débito o crédito" Value="Tarjeta" />
                         <asp:ListItem Text="Transferencia / Mercado Pago" Value="Transferencia" />
                     </asp:DropDownList>
+                    <asp:Panel ID="CajaNoAbiertaPanel" runat="server" CssClass="alert alert-error" Visible="false">
+                        <asp:Literal ID="CajaNoAbiertaTexto" runat="server" Mode="Encode" />
+                        <asp:HyperLink ID="AbrirCajaLink" runat="server" NavigateUrl="~/Caja.aspx?abrir=1&amp;volver=turnos"
+                            Text="Abrir caja" />
+                    </asp:Panel>
                 </asp:Panel>
                 <div class="form-actions">
                     <asp:Button ID="ConfirmarSolicitud" runat="server" Text="Finalizar turno"

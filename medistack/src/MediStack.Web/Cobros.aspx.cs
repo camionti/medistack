@@ -34,6 +34,12 @@ namespace MediStack.Web
             {
                 if (esAdministrativo)
                 {
+                    // Para cobrar en el mostrador la caja del día tiene que estar abierta.
+                    if (RedirigirSiCajaSinAbrir())
+                    {
+                        return;
+                    }
+
                     CargarTurnosCobrables();
                     ActualizarOpcionesCobro();
                 }
@@ -139,6 +145,11 @@ namespace MediStack.Web
                 return;
             }
 
+            if (RedirigirSiCajaSinAbrir() || !RegistroPanel.Visible)
+            {
+                return;
+            }
+
             try
             {
                 _negocio.RegistrarCobro(
@@ -162,6 +173,27 @@ namespace MediStack.Web
             {
                 MostrarError("No se pudo registrar el cobro (error SQL " + ex.Number + ").");
             }
+        }
+
+        // Si la caja de hoy no se abrió, manda a Caja para abrirla con el fondo inicial
+        // y, una vez abierta, vuelve acá. Si ya está cerrada, se oculta el registro de cobros.
+        private bool RedirigirSiCajaSinAbrir()
+        {
+            EstadoCajaDia estado = _negocio.ObtenerEstadoCajaHoy();
+            if (estado == EstadoCajaDia.SinAbrir || estado == EstadoCajaDia.PendienteDiaAnterior)
+            {
+                Response.Redirect(ResolveUrl("~/Caja.aspx?abrir=1&volver=cobros"), false);
+                Context.ApplicationInstance.CompleteRequest();
+                return true;
+            }
+
+            if (estado == EstadoCajaDia.Cerrada)
+            {
+                RegistroPanel.Visible = false;
+                MostrarError("La caja de hoy ya está cerrada: no se pueden registrar nuevos cobros hasta mañana.");
+            }
+
+            return false;
         }
 
         private void CargarCobros()

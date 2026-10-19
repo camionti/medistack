@@ -6,6 +6,25 @@ using MediStack.Dominio;
 
 namespace MediStack.Negocio
 {
+    public enum EstadoCajaDia
+    {
+        SinAbrir,
+        Abierta,
+        Cerrada,
+        // Quedo abierta una caja de un dia anterior: hay que cerrarla antes de abrir la de hoy.
+        PendienteDiaAnterior
+    }
+
+    public sealed class EstadoCaja
+    {
+        public EstadoCajaDia Estado { get; set; }
+        public DateTime Hoy { get; set; }
+        public DateTime? FechaCaja { get; set; }
+        public decimal FondoInicial { get; set; }
+        public DateTime? FechaHoraApertura { get; set; }
+        public string Administrativo { get; set; }
+    }
+
     public sealed class CobrosNegocio
     {
         private readonly CobrosDatos _datos = new CobrosDatos();
@@ -177,13 +196,61 @@ namespace MediStack.Negocio
             EjecutarSeguro(() => _datos.RegistrarEgreso(administrativoId, concepto, monto, categoria, comprobante));
         }
 
-        public void CerrarCaja(DateTime fecha, Guid administrativoId, decimal efectivoContado)
+        // Estado de la caja segun la fecha de SQL Server (unico reloj del sistema para la caja).
+        public EstadoCaja ObtenerEstadoCaja()
         {
-            if (fecha.Date != DateTime.Today)
+            DataRow fila = _datos.ObtenerEstadoCaja().Rows[0];
+            EstadoCaja estado = new EstadoCaja { Hoy = Convert.ToDateTime(fila["Hoy"]).Date };
+
+            if (fila["FechaCajaAbierta"] != DBNull.Value)
             {
-                throw new InvalidOperationException("La caja solo se puede cerrar para la fecha de hoy.");
+                estado.FechaCaja = Convert.ToDateTime(fila["FechaCajaAbierta"]).Date;
+                estado.FondoInicial = Convert.ToDecimal(fila["FondoInicial"]);
+                estado.FechaHoraApertura = Convert.ToDateTime(fila["FechaHoraApertura"]);
+                estado.Administrativo = Convert.ToString(fila["Administrativo"]);
+                estado.Estado = estado.FechaCaja < estado.Hoy
+                    ? EstadoCajaDia.PendienteDiaAnterior
+                    : EstadoCajaDia.Abierta;
+            }
+            else
+            {
+                estado.Estado = Convert.ToBoolean(fila["CerradaHoy"])
+                    ? EstadoCajaDia.Cerrada
+                    : EstadoCajaDia.SinAbrir;
             }
 
+            return estado;
+        }
+
+        public EstadoCajaDia ObtenerEstadoCajaHoy()
+        {
+            return ObtenerEstadoCaja().Estado;
+        }
+
+        public DataTable ObtenerAperturaCaja(DateTime fecha)
+        {
+            return _datos.ObtenerAperturaCaja(fecha.Date);
+        }
+
+        public void AbrirCaja(Guid administrativoId, decimal fondoInicial)
+        {
+            if (administrativoId == Guid.Empty)
+            {
+                throw new InvalidOperationException("No se pudo validar al usuario administrativo.");
+            }
+
+            if (fondoInicial < 0 || fondoInicial > 9999999999.99m
+                || decimal.Round(fondoInicial, 2) != fondoInicial)
+            {
+                throw new InvalidOperationException("El fondo inicial debe ser cero o mayor y tener como máximo dos decimales.");
+            }
+
+            EjecutarSeguro(() => _datos.AbrirCaja(administrativoId, fondoInicial));
+        }
+
+        // Cierra la caja abierta (la de hoy o una anterior que quedo sin cerrar) y devuelve su fecha.
+        public DateTime CerrarCaja(Guid administrativoId, decimal efectivoContado)
+        {
             if (administrativoId == Guid.Empty)
             {
                 throw new InvalidOperationException("No se pudo validar al usuario administrativo.");
@@ -195,7 +262,9 @@ namespace MediStack.Negocio
                 throw new InvalidOperationException("El efectivo contado debe ser válido y tener como máximo dos decimales.");
             }
 
-            EjecutarSeguro(() => _datos.CerrarCaja(fecha, administrativoId, efectivoContado));
+            DateTime fechaCerrada = DateTime.MinValue;
+            EjecutarSeguro(() => fechaCerrada = _datos.CerrarCaja(administrativoId, efectivoContado));
+            return fechaCerrada;
         }
 
         private static void ValidarPeriodo(DateTime desde, DateTime hasta)
@@ -223,7 +292,7 @@ namespace MediStack.Negocio
             }
             catch (SqlException ex)
             {
-                if (ex.Number >= 51101 && ex.Number <= 51112)
+                if (ex.Number >= 51101 && ex.Number <= 51115)
                 {
                     throw new InvalidOperationException(ex.Message);
                 }

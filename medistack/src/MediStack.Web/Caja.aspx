@@ -11,6 +11,19 @@
     <section class="panel management-panel" aria-labelledby="estado-caja-title">
         <h2 id="estado-caja-title" class="section-title">Estado de hoy · <asp:Literal ID="FechaHoy" runat="server" /></h2>
         <p><asp:Literal ID="EstadoHoy" runat="server" /></p>
+        <asp:Panel ID="AbrirPanel" runat="server" Visible="false">
+            <p class="form-note">Para cobrar en el mostrador primero hay que abrir la caja del día, indicando con cuánto efectivo arranca el cajón (el cambio). Los pagos online de Mercado Pago no dependen de la caja.</p>
+            <div class="search-row">
+                <div class="form-group">
+                    <asp:Label ID="FondoInicialLabel" runat="server" AssociatedControlID="FondoInicial"
+                        Text="Fondo inicial (efectivo en el cajón)" />
+                    <asp:TextBox ID="FondoInicial" runat="server" CssClass="form-control"
+                        TextMode="Number" min="0" max="9999999999.99" step="0.01" inputmode="decimal" />
+                </div>
+                <asp:Button ID="Abrir" runat="server" Text="Abrir caja"
+                    CssClass="button button-primary" OnClick="Abrir_Click" />
+            </div>
+        </asp:Panel>
         <asp:Panel ID="CerrarPanel" runat="server" Visible="false">
             <div class="search-row">
                 <div class="form-group">
@@ -131,6 +144,7 @@
                     <asp:BoundField DataField="FechaHoraCierre" HeaderText="Hora de cierre" DataFormatString="{0:dd/MM/yyyy HH:mm}" />
                     <asp:BoundField DataField="Administrativo" HeaderText="Administrativo" />
                     <asp:BoundField DataField="CantidadCobros" HeaderText="Cobros" />
+                    <asp:BoundField DataField="FondoInicial" HeaderText="Fondo inicial" DataFormatString="{0:C2}" />
                     <asp:BoundField DataField="TotalEfectivo" HeaderText="Efectivo" DataFormatString="{0:C2}" />
                     <asp:BoundField DataField="TotalTarjeta" HeaderText="Tarjeta" DataFormatString="{0:C2}" />
                     <asp:BoundField DataField="TotalTransferencia" HeaderText="Transferencia" DataFormatString="{0:C2}" />
@@ -141,6 +155,6 @@
                 </Columns>
             </asp:GridView>
         </div>
-        <p class="form-note">La base implementa un cierre diario único. La caja se considera abierta hasta que se registra ese cierre. La diferencia se calcula como efectivo contado − (efectivo cobrado − egresos).</p>
+        <p class="form-note">Cada día tiene una única apertura (con su fondo inicial) y un único cierre. Sin apertura no se puede cobrar en el mostrador ni registrar egresos, y una caja cerrada no se vuelve a abrir. La diferencia se calcula como efectivo contado − (fondo inicial + efectivo cobrado − egresos).</p>
     </section>
 </asp:Content>

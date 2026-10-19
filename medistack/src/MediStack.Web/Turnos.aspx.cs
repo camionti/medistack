@@ -13,6 +13,7 @@ namespace MediStack.Web
     public partial class TurnosPagina : PaginaProtegida
     {
         private readonly TurnosNegocio _negocio = new TurnosNegocio();
+        private readonly CobrosNegocio _cobros = new CobrosNegocio();
 
         protected bool EsPaciente
         {
@@ -1229,7 +1230,9 @@ namespace MediStack.Web
             MotivoPanel.Visible = false;
             ResumenSolicitud.Text = string.Empty;
             SenaPresencialPanel.Visible = false;
+            CajaNoAbiertaPanel.Visible = false;
             ConfirmarSolicitud.Text = "Finalizar turno";
+            ConfirmarSolicitud.Enabled = true;
         }
 
         // Administrativo: si el paciente no tiene cobertura para el turno, la seña es obligatoria
@@ -1237,7 +1240,9 @@ namespace MediStack.Web
         private void ConfigurarSenaPresencial(Guid pacienteId, Guid profesionalId, int especialidadId, DateTime fechaHora)
         {
             SenaPresencialPanel.Visible = false;
+            CajaNoAbiertaPanel.Visible = false;
             ConfirmarSolicitud.Text = "Finalizar turno";
+            ConfirmarSolicitud.Enabled = true;
             if (!EsAdministrativo || EsReprogramacion)
             {
                 return;
@@ -1261,6 +1266,21 @@ namespace MediStack.Web
             MedioPagoSenaPresencial.SelectedIndex = 0;
             SenaPresencialPanel.Visible = true;
             ConfirmarSolicitud.Text = "Cobrar seña y finalizar turno";
+
+            // La seña se cobra en el mostrador: sin caja abierta no se puede finalizar.
+            EstadoCajaDia estadoCaja = _cobros.ObtenerEstadoCajaHoy();
+            if (estadoCaja != EstadoCajaDia.Abierta)
+            {
+                bool sinAbrir = estadoCaja != EstadoCajaDia.Cerrada;
+                CajaNoAbiertaTexto.Text = estadoCaja == EstadoCajaDia.PendienteDiaAnterior
+                    ? "Quedó una caja de un día anterior sin cerrar: hay que cerrarla y abrir la de hoy para cobrar la seña. "
+                    : sinAbrir
+                        ? "La caja de hoy no está abierta, así que no se puede cobrar la seña. "
+                        : "La caja de hoy ya está cerrada: no se pueden cobrar señas hasta mañana.";
+                AbrirCajaLink.Visible = sinAbrir;
+                CajaNoAbiertaPanel.Visible = true;
+                ConfirmarSolicitud.Enabled = false;
+            }
         }
 
         private void FinalizarReprogramacion()

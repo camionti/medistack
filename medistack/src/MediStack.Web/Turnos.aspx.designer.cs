@@ -376,6 +376,9 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.Literal SenaPresencialTexto;
         protected global::System.Web.UI.WebControls.Label MedioPagoSenaPresencialLabel;
         protected global::System.Web.UI.WebControls.DropDownList MedioPagoSenaPresencial;
+        protected global::System.Web.UI.WebControls.Panel CajaNoAbiertaPanel;
+        protected global::System.Web.UI.WebControls.Literal CajaNoAbiertaTexto;
+        protected global::System.Web.UI.WebControls.HyperLink AbrirCajaLink;
         protected global::System.Web.UI.WebControls.Button ConfirmarSolicitud;
 
         /// <summary>

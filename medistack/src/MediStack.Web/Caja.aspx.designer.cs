@@ -5,6 +5,10 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.Label Mensaje;
         protected global::System.Web.UI.WebControls.Literal FechaHoy;
         protected global::System.Web.UI.WebControls.Literal EstadoHoy;
+        protected global::System.Web.UI.WebControls.Panel AbrirPanel;
+        protected global::System.Web.UI.WebControls.Label FondoInicialLabel;
+        protected global::System.Web.UI.WebControls.TextBox FondoInicial;
+        protected global::System.Web.UI.WebControls.Button Abrir;
         protected global::System.Web.UI.WebControls.Panel CerrarPanel;
         protected global::System.Web.UI.WebControls.Label EfectivoContadoLabel;
         protected global::System.Web.UI.WebControls.TextBox EfectivoContado;
