@@ -175,8 +175,8 @@ html[data-ms-tamano="grande"] { font-size: 150%; }
 html[data-ms-tamano="muy-grande"] { font-size: 200%; }
 
 html[data-ms-tamano] body { font-size: .875rem; }
-html[data-ms-tamano] .data-table { font-size: .8125rem; }
-html[data-ms-tamano] .data-table th { font-size: .6875rem; }
+html[data-ms-tamano] .data-table { font-size: .9375rem; }
+html[data-ms-tamano] .data-table th { font-size: .8125rem; }
 
 html[data-ms-tamano]:not([data-ms-tamano="normal"]) .page-heading h1 { font-size: 2rem; }
 html[data-ms-tamano]:not([data-ms-tamano="normal"]) .login-heading h1 { font-size: 1.85rem; }

@@ -1048,6 +1048,58 @@ body.is-resizing-sidebar * {
     font-weight: 600;
 }
 
+.status-tag.status-turno,
+.status-tag.status-franja {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    min-height: 1.9rem;
+    padding: .3rem .7rem;
+    font-size: .875rem;
+    font-weight: 700;
+    line-height: 1.3;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.status-tag.status-turno::before,
+.status-tag.status-franja::before {
+    content: "";
+    flex: 0 0 .4rem;
+    width: .4rem;
+    height: .4rem;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.status-turno[data-estado="Solicitado"] {
+    color: #825000;
+    background: #fff5db;
+}
+
+.status-turno[data-estado="Confirmado"] {
+    color: #174d98;
+    background: #eaf3ff;
+}
+
+.status-turno[data-estado="Atendido"],
+.status-franja[data-estado="Activa"] {
+    color: #176039;
+    background: #eaf7ee;
+}
+
+.status-turno[data-estado="Ausente"] {
+    color: #922c32;
+    background: #fff0f0;
+}
+
+.status-turno[data-estado="Cancelado"],
+.status-franja[data-estado="Inactiva"] {
+    color: #475569;
+    background: #f1f5f9;
+}
+
 .management-panel {
     margin-top: 1.25rem;
 }
@@ -1270,6 +1322,9 @@ body.is-resizing-sidebar * {
 .table-wrap {
     width: 100%;
     overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: .875rem;
+    background: var(--color-white);
 }
 
 .data-table {
@@ -1279,22 +1334,23 @@ body.is-resizing-sidebar * {
 
 .data-table th,
 .data-table td {
-    padding: .75rem .65rem;
+    padding: .85rem .8rem;
     border-bottom: 1px solid var(--color-border);
     text-align: left;
-    vertical-align: top;
+    vertical-align: middle;
 }
 
 .data-table {
-    font-size: 13px;
+    font-size: .9375rem;
+    line-height: 1.5;
 }
 
 .data-table th {
     color: #fff;
-    background: linear-gradient(to top, #2152ff, #21d4fd);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .04em;
+    background: #174a9d;
+    font-size: .8125rem;
+    font-weight: 700;
+    letter-spacing: .025em;
     text-transform: uppercase;
     white-space: nowrap;
 }
@@ -1308,11 +1364,23 @@ body.is-resizing-sidebar * {
 }
 
 .data-table tbody tr:nth-child(even) {
-    background: #f8fafc;
+    background: #f8faff;
 }
 
-.data-table tbody tr:hover {
-    background: #eef1ff;
+.data-table tbody tr:hover,
+.data-table tbody tr:focus-within {
+    background: #edf4ff;
+}
+
+.data-table td[colspan] {
+    padding: 1.4rem .8rem;
+    text-align: center;
+    color: var(--color-muted);
+}
+
+.data-table .row-actions {
+    min-width: 0;
+    gap: .5rem;
 }
 
 .row-actions {

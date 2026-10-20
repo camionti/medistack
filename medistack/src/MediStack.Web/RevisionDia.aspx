@@ -19,7 +19,11 @@
                     <asp:BoundField DataField="Paciente" HeaderText="Paciente" />
                     <asp:BoundField DataField="Profesional" HeaderText="Profesional" />
                     <asp:BoundField DataField="Especialidad" HeaderText="Especialidad" />
-                    <asp:BoundField DataField="Estado" HeaderText="Estado" />
+                    <asp:TemplateField HeaderText="Estado">
+                        <ItemTemplate>
+                            <span class="status-tag status-turno" data-estado='<%#: Eval("Estado") %>'><%#: Eval("Estado") %></span>
+                        </ItemTemplate>
+                    </asp:TemplateField>
                     <asp:TemplateField HeaderText="Acciones">
                         <ItemTemplate>
                             <asp:Button runat="server" Text="Asistió" CssClass="button button-primary button-sm"

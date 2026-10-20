@@ -129,7 +129,11 @@
                     <asp:BoundField DataField="Paciente" HeaderText="Paciente" />
                     <asp:BoundField DataField="Especialidad" HeaderText="Especialidad" />
                     <asp:BoundField DataField="Motivo" HeaderText="Motivo" />
-                    <asp:BoundField DataField="Estado" HeaderText="Estado" />
+                    <asp:TemplateField HeaderText="Estado">
+                        <ItemTemplate>
+                            <span class="status-tag status-turno" data-estado='<%#: Eval("Estado") %>'><%#: Eval("Estado") %></span>
+                        </ItemTemplate>
+                    </asp:TemplateField>
                     <asp:TemplateField HeaderText="Reprogramación">
                         <ItemTemplate>
                             <%#: DetalleReprogramacion(Eval("TurnoReprogramadoDesdeId"), Eval("TurnoReprogramadoHaciaId"), Eval("FechaReprogramacion"), Eval("FechaHora")) %>
@@ -172,7 +176,11 @@
                             <ItemTemplate><%# ((TimeSpan)Eval("HoraFin")).ToString(@"hh\:mm") %></ItemTemplate>
                         </asp:TemplateField>
                         <asp:TemplateField HeaderText="Estado">
-                            <ItemTemplate><%# Convert.ToBoolean(Eval("Activo")) ? "Activa" : "Inactiva" %></ItemTemplate>
+                            <ItemTemplate>
+                                <span class="status-tag status-franja" data-estado='<%# Convert.ToBoolean(Eval("Activo")) ? "Activa" : "Inactiva" %>'>
+                                    <%#: Convert.ToBoolean(Eval("Activo")) ? "Activa" : "Inactiva" %>
+                                </span>
+                            </ItemTemplate>
                         </asp:TemplateField>
                         <asp:TemplateField HeaderText="Acciones">
                             <ItemTemplate>
