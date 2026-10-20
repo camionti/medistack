@@ -7,8 +7,74 @@
     </section>
     <asp:Label ID="Mensaje" runat="server" Visible="false" role="status" />
 
+    <asp:Panel ID="VistaSemanalPanel" runat="server" Visible="false">
+        <section class="panel management-panel" aria-labelledby="agenda-semana-title">
+            <div class="section-heading-row">
+                <div>
+                    <h2 id="agenda-semana-title" class="section-title">Agenda semanal</h2>
+                    <p class="form-note"><asp:Literal ID="ResumenSemana" runat="server" /></p>
+                </div>
+                <div class="agenda-week-actions">
+                    <asp:HyperLink ID="SemanaAnterior" runat="server" CssClass="button button-light" Text="Semana anterior" />
+                    <asp:HyperLink ID="SemanaActual" runat="server" CssClass="button button-secondary" Text="Semana actual" />
+                    <asp:HyperLink ID="SemanaSiguiente" runat="server" CssClass="button button-light" Text="Semana siguiente" />
+                </div>
+            </div>
+            <div class="agenda-filter-tabs" role="group" aria-label="Filtro de turnos">
+                <asp:HyperLink ID="FiltroTodos" runat="server" CssClass="turnos-tab-btn" Text="Todos" />
+                <asp:HyperLink ID="FiltroCancelados" runat="server" CssClass="turnos-tab-btn" Text="Cancelados recientes" />
+                <asp:HyperLink ID="FiltroReprogramados" runat="server" CssClass="turnos-tab-btn" Text="Reprogramados" />
+            </div>
+            <asp:Label ID="AvisoFinDeSemana" runat="server" Visible="false" CssClass="agenda-notice" />
+            <div class="agenda-week-grid">
+                <asp:Repeater ID="AgendaSemanalRepeater" runat="server">
+                    <ItemTemplate>
+                        <article class='<%# Convert.ToBoolean(Eval("Habilitado")) ? "agenda-day-column" : "agenda-day-column agenda-day-locked" %>'>
+                            <asp:HyperLink ID="DiaAgendaLink" runat="server"
+                                CssClass="agenda-day-header"
+                                NavigateUrl='<%# UrlDia(Eval("Fecha")) %>'>
+                                <span><%#: Convert.ToDateTime(Eval("Fecha")).ToString("dddd") %></span>
+                                <strong><%#: Convert.ToDateTime(Eval("Fecha")).ToString("dd/MM") %></strong>
+                            </asp:HyperLink>
+                            <asp:Repeater ID="TurnosDiaRepeater" runat="server" DataSource='<%# Eval("Turnos") %>'>
+                                <ItemTemplate>
+                                    <article class='<%# ClaseTurnoAgenda(Eval("Estado"), Eval("EsReprogramado")) %>'>
+                                        <a class="agenda-turno-link" href='<%# UrlDia(Eval("FechaHora")) %>'>
+                                            <time><%#: Convert.ToDateTime(Eval("FechaHora")).ToString("HH:mm") %></time>
+                                            <strong><%#: Eval("Paciente") %></strong>
+                                            <span><%#: Eval("Especialidad") %></span>
+                                            <span class="agenda-turno-motivo" title='<%#: Convert.ToString(Eval("Motivo")) %>'>
+                                                <%#: MotivoCorto(Eval("Motivo")) %>
+                                            </span>
+                                            <span class="agenda-turno-reprogramacion">
+                                                <%#: DetalleReprogramacion(Eval("TurnoReprogramadoDesdeId"), Eval("TurnoReprogramadoHaciaId"), Eval("FechaReprogramacion"), Eval("FechaHora")) %>
+                                            </span>
+                                            <span class="agenda-turno-estado"><%#: EstadoAgenda(Eval("Estado"), Eval("EsReprogramado")) %></span>
+                                        </a>
+                                    </article>
+                                </ItemTemplate>
+                            </asp:Repeater>
+                            <asp:Label runat="server" CssClass="agenda-day-empty"
+                                Visible='<%# ((System.Collections.ICollection)Eval("Turnos")).Count == 0 %>'
+                                Text="Sin turnos asignados" />
+                            <asp:Label runat="server" CssClass="agenda-day-warning"
+                                Visible='<%# Convert.ToBoolean(Eval("TieneTurnosFueraDeHorario")) %>'
+                                Text="Hay turnos fuera de una franja activa." />
+                        </article>
+                    </ItemTemplate>
+                </asp:Repeater>
+            </div>
+        </section>
+    </asp:Panel>
+
+    <asp:Panel ID="VistaDiariaPanel" runat="server">
+    <asp:Panel ID="DisponibilidadPanel" runat="server">
     <section class="panel management-panel" aria-labelledby="agenda-dia-title">
-        <h2 id="agenda-dia-title" class="section-title">Agenda diaria: horarios del día</h2>
+        <div class="section-heading-row">
+            <h2 id="agenda-dia-title" class="section-title">Agenda diaria: horarios del día</h2>
+            <asp:HyperLink ID="VolverSemana" runat="server" CssClass="button button-light"
+                Text="Volver a la semana" Visible="false" />
+        </div>
         <div class="search-row agenda-filter">
             <div class="form-group agenda-professional-filter">
                 <asp:Label ID="ProfesionalLabel" runat="server" AssociatedControlID="Profesional" Text="Profesional" />
@@ -51,6 +117,7 @@
             </asp:GridView>
         </div>
     </section>
+    </asp:Panel>
 
     <section class="panel management-panel" aria-labelledby="turnos-dia-title">
         <h2 id="turnos-dia-title" class="section-title">Turnos asignados en la fecha</h2>
@@ -63,6 +130,11 @@
                     <asp:BoundField DataField="Especialidad" HeaderText="Especialidad" />
                     <asp:BoundField DataField="Motivo" HeaderText="Motivo" />
                     <asp:BoundField DataField="Estado" HeaderText="Estado" />
+                    <asp:TemplateField HeaderText="Reprogramación">
+                        <ItemTemplate>
+                            <%#: DetalleReprogramacion(Eval("TurnoReprogramadoDesdeId"), Eval("TurnoReprogramadoHaciaId"), Eval("FechaReprogramacion"), Eval("FechaHora")) %>
+                        </ItemTemplate>
+                    </asp:TemplateField>
                     <asp:BoundField DataField="EstadoSena" HeaderText="Seña" />
                     <asp:TemplateField HeaderText="Ficha">
                         <ItemTemplate>
@@ -74,6 +146,7 @@
             </asp:GridView>
         </div>
     </section>
+    </asp:Panel>
 
     <asp:Panel ID="GestionHorariosPanel" runat="server" Visible="false">
         <section class="panel management-panel" aria-labelledby="horarios-titulo">

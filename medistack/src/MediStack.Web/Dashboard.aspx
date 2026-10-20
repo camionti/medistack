@@ -37,8 +37,14 @@
                     <p>Consulta tus horarios, disponibilidad y turnos del día.</p>
                     <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Ver mi agenda</a>
                 </article>
-                <article class="panel dashboard-card">
+                <article class="panel dashboard-card dashboard-card-highlight">
                     <span class="card-number" aria-hidden="true">02</span>
+                    <h3>Jornada de hoy</h3>
+                    <p>Accede directamente al detalle de los turnos de tu jornada actual.</p>
+                    <asp:HyperLink ID="JornadaHoyLink" runat="server" Text="Ver jornada de hoy" />
+                </article>
+                <article class="panel dashboard-card">
+                    <span class="card-number" aria-hidden="true">03</span>
                     <h3>Pacientes</h3>
                     <p>Accede a las fichas vinculadas con tus atenciones.</p>
                     <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Consultar turnos y pacientes</a>

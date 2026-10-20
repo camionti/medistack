@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.Linq;
 using MediStack.Datos;
 using MediStack.Dominio;
@@ -36,6 +37,58 @@ namespace MediStack.Negocio
         {
             ValidarSeleccionAgenda(profesionalId, fecha);
             return _datos.ObtenerTurnosAgenda(profesionalId, fecha);
+        }
+
+        public IList<DiaAgendaSemanal> ObtenerAgendaSemanal(Guid profesionalId, DateTime fechaReferencia)
+        {
+            ValidarSeleccionAgenda(profesionalId, fechaReferencia);
+            DateTime inicio = ObtenerInicioSemana(fechaReferencia);
+            DateTime fin = inicio.AddDays(5);
+            DataTable turnosTabla = _datos.ObtenerTurnosAgendaSemana(profesionalId, inicio, fin);
+            DataTable horarios = _datos.ObtenerHorariosAtencion(profesionalId);
+            IList<TurnoAgenda> turnos = CargarTurnos(turnosTabla);
+            List<DiaAgendaSemanal> dias = new List<DiaAgendaSemanal>();
+            CultureInfo es = CultureInfo.GetCultureInfo("es-AR");
+
+            for (int i = 0; i < 5; i++)
+            {
+                DateTime fecha = inicio.AddDays(i);
+                int diaSemana = i + 1;
+                List<TurnoAgenda> delDia = turnos
+                    .Where(t => t.FechaHora.Date == fecha.Date)
+                    .OrderBy(t => t.FechaHora)
+                    .ThenBy(t => t.TurnoId)
+                    .ToList();
+                bool habilitado = horarios.Rows.Cast<DataRow>()
+                    .Any(h => Convert.ToBoolean(h["Activo"]) && Convert.ToInt32(h["DiaSemana"]) == diaSemana);
+                bool fueraDeHorario = delDia.Any(t => !EstaDentroDeHorario(t, horarios, diaSemana));
+
+                dias.Add(new DiaAgendaSemanal
+                {
+                    Fecha = fecha,
+                    DiaSemana = diaSemana,
+                    NombreDia = fecha.ToString("dddd", es),
+                    Habilitado = habilitado || delDia.Count > 0,
+                    TieneTurnosFueraDeHorario = fueraDeHorario,
+                    Turnos = delDia
+                });
+            }
+
+            return dias;
+        }
+
+        public bool TieneTurnosFinDeSemana(Guid profesionalId, DateTime fechaReferencia)
+        {
+            ValidarSeleccionAgenda(profesionalId, fechaReferencia);
+            DateTime inicio = ObtenerInicioSemana(fechaReferencia);
+            DataTable turnos = _datos.ObtenerTurnosAgendaSemana(profesionalId, inicio.AddDays(5), inicio.AddDays(7));
+            return turnos.Rows.Count > 0;
+        }
+
+        public IList<TurnoAgenda> ObtenerTurnosJornada(Guid profesionalId, DateTime fecha)
+        {
+            ValidarSeleccionAgenda(profesionalId, fecha);
+            return CargarTurnos(_datos.ObtenerTurnosAgenda(profesionalId, fecha));
         }
 
         public IList<FranjaAgenda> ObtenerDisponibilidad(Guid profesionalId, DateTime fecha)
@@ -155,11 +208,41 @@ namespace MediStack.Negocio
                     Especialidad = Convert.ToString(fila["Especialidad"]),
                     DuracionMinutos = Convert.ToInt16(fila["DuracionEstandarMinutos"]),
                     EstadoSena = Convert.ToString(fila["EstadoSena"]),
-                    MontoSena = Convert.ToDecimal(fila["MontoSena"])
+                    MontoSena = Convert.ToDecimal(fila["MontoSena"]),
+                    TurnoReprogramadoDesdeId = ValorEnteroNullable(fila, "TurnoReprogramadoDesdeId"),
+                    TurnoReprogramadoHaciaId = ValorEnteroNullable(fila, "TurnoReprogramadoHaciaId"),
+                    FechaReprogramacion = ValorFechaNullable(fila, "FechaReprogramacion")
                 });
             }
 
             return items;
+        }
+
+        private static DateTime ObtenerInicioSemana(DateTime fecha)
+        {
+            int desplazamiento = ((int)fecha.DayOfWeek + 6) % 7;
+            return fecha.Date.AddDays(-desplazamiento);
+        }
+
+        private static bool EstaDentroDeHorario(TurnoAgenda turno, DataTable horarios, int diaSemana)
+        {
+            return horarios.Rows.Cast<DataRow>().Any(h =>
+                Convert.ToBoolean(h["Activo"])
+                && Convert.ToInt32(h["DiaSemana"]) == diaSemana
+                && turno.FechaHora.TimeOfDay >= (TimeSpan)h["HoraInicio"]
+                && turno.FechaHora.TimeOfDay.Add(TimeSpan.FromMinutes(turno.DuracionMinutos)) <= (TimeSpan)h["HoraFin"]);
+        }
+
+        private static int? ValorEnteroNullable(DataRow fila, string columna)
+        {
+            return !fila.Table.Columns.Contains(columna) || fila.IsNull(columna)
+                ? (int?)null : Convert.ToInt32(fila[columna]);
+        }
+
+        private static DateTime? ValorFechaNullable(DataRow fila, string columna)
+        {
+            return !fila.Table.Columns.Contains(columna) || fila.IsNull(columna)
+                ? (DateTime?)null : Convert.ToDateTime(fila[columna]);
         }
 
         private static void ValidarSeleccionAgenda(Guid profesionalId, DateTime fecha)

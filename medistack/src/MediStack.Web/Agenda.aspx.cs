@@ -27,6 +27,7 @@ namespace MediStack.Web
             GestionHorariosPanel.Visible = esAdministrativo;
             ProfesionalLabel.Visible = esAdministrativo;
             Profesional.Enabled = esAdministrativo;
+            DisponibilidadPanel.Visible = !esProfesional;
 
             if (!IsPostBack)
             {
@@ -42,7 +43,23 @@ namespace MediStack.Web
                     Fecha.Text = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     CargarEspecialidadesHorario();
                     LimpiarFormularioHorario();
-                    CargarDatosAgenda();
+                    DateTime fechaInicial = ObtenerFechaConsulta();
+                    Fecha.Text = fechaInicial.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                    if (esProfesional && !EsVistaDiaria)
+                    {
+                        VistaSemanalPanel.Visible = true;
+                        VistaDiariaPanel.Visible = false;
+                        CargarAgendaSemanal(fechaInicial);
+                    }
+                    else
+                    {
+                        if (esProfesional)
+                        {
+                            VolverSemana.Visible = true;
+                            VolverSemana.NavigateUrl = UrlSemana(InicioSemana(fechaInicial), string.Empty);
+                        }
+                        CargarDatosAgenda();
+                    }
                 });
             }
         }
@@ -192,6 +209,68 @@ namespace MediStack.Web
             return dias[numero];
         }
 
+        protected string UrlDia(object valor)
+        {
+            DateTime fecha = Convert.ToDateTime(valor);
+            return ResolveUrl("~/Agenda.aspx?vista=dia&fecha="
+                + fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        }
+
+        protected string MotivoCorto(object valor)
+        {
+            string motivo = Convert.ToString(valor);
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                return "Sin motivo";
+            }
+
+            motivo = motivo.Trim();
+            return motivo.Length > 8 ? motivo.Substring(0, 8) + "..." : motivo;
+        }
+
+        protected string ClaseTurnoAgenda(object estado, object reprogramado)
+        {
+            string clase = "agenda-turno-card";
+            if (string.Equals(Convert.ToString(estado), "Cancelado", StringComparison.OrdinalIgnoreCase))
+            {
+                clase += " agenda-turno-cancelado";
+            }
+            else if (Convert.ToBoolean(reprogramado))
+            {
+                clase += " agenda-turno-reprogramado";
+            }
+
+            return clase;
+        }
+
+        protected string EstadoAgenda(object estado, object reprogramado)
+        {
+            string texto = Convert.ToString(estado);
+            if (Convert.ToBoolean(reprogramado))
+            {
+                texto += " · Reprogramado";
+            }
+
+            return texto;
+        }
+
+        protected string DetalleReprogramacion(
+            object turnoDesde, object turnoHacia, object fechaHacia, object fechaActual)
+        {
+            if (turnoDesde != null && turnoDesde != DBNull.Value)
+            {
+                return "Reprogramado desde turno #" + Convert.ToString(turnoDesde);
+            }
+
+            if (turnoHacia != null && turnoHacia != DBNull.Value
+                && fechaHacia != null && fechaHacia != DBNull.Value)
+            {
+                return "Reprogramado para el " + Convert.ToDateTime(fechaHacia).ToString("dd/MM HH:mm");
+            }
+
+            return string.Empty;
+        }
+
         private void CargarProfesionales()
         {
             DataTable profesionales = _negocio.ObtenerProfesionales();
@@ -284,6 +363,100 @@ namespace MediStack.Web
             HorariosGrid.DataBind();
             ResumenAgenda.Text = HttpUtility.HtmlEncode(
                 ArmarResumen(Profesional.SelectedItem.Text, fecha, franjas, turnos, semanal));
+        }
+
+        private void CargarAgendaSemanal(DateTime fechaReferencia)
+        {
+            Guid profesionalId;
+            if (!Guid.TryParse(Profesional.SelectedValue, out profesionalId)
+                || !EsPropioProfesional(profesionalId))
+            {
+                MostrarError("No tienes acceso a la agenda de ese profesional.");
+                return;
+            }
+
+            DateTime lunes = InicioSemana(fechaReferencia);
+            IList<DiaAgendaSemanal> dias = _negocio.ObtenerAgendaSemanal(profesionalId, lunes);
+            string filtro = ObtenerFiltroAgenda();
+            if (filtro == "cancelados")
+            {
+                foreach (DiaAgendaSemanal dia in dias)
+                {
+                    dia.Turnos = dia.Turnos.Where(t => t.Estado == "Cancelado").ToList();
+                }
+            }
+            else if (filtro == "reprogramados")
+            {
+                foreach (DiaAgendaSemanal dia in dias)
+                {
+                    dia.Turnos = dia.Turnos.Where(t => t.EsReprogramado).ToList();
+                }
+            }
+
+            AgendaSemanalRepeater.DataSource = dias;
+            AgendaSemanalRepeater.DataBind();
+            DateTime viernes = lunes.AddDays(4);
+            ResumenSemana.Text = HttpUtility.HtmlEncode(
+                "Semana del " + lunes.ToString("dd/MM/yyyy") + " al " + viernes.ToString("dd/MM/yyyy")
+                + " · " + dias.Sum(d => d.Turnos.Count) + " turno/s visible/s.");
+            ConfigurarEnlacesSemana(lunes, filtro);
+            bool hayFinDeSemana = _negocio.TieneTurnosFinDeSemana(profesionalId, lunes);
+            AvisoFinDeSemana.Visible = hayFinDeSemana;
+            AvisoFinDeSemana.Text = hayFinDeSemana
+                ? "Hay turnos registrados sábado o domingo. La grilla semanal muestra únicamente lunes a viernes."
+                : string.Empty;
+        }
+
+        private void ConfigurarEnlacesSemana(DateTime lunes, string filtro)
+        {
+            SemanaAnterior.NavigateUrl = UrlSemana(lunes.AddDays(-7), filtro);
+            SemanaActual.NavigateUrl = UrlSemana(DateTime.Today, filtro);
+            SemanaSiguiente.NavigateUrl = UrlSemana(lunes.AddDays(7), filtro);
+            FiltroTodos.NavigateUrl = UrlSemana(lunes, string.Empty);
+            FiltroCancelados.NavigateUrl = UrlSemana(lunes, "cancelados");
+            FiltroReprogramados.NavigateUrl = UrlSemana(lunes, "reprogramados");
+            FiltroTodos.CssClass = ClaseFiltro(filtro, string.Empty);
+            FiltroCancelados.CssClass = ClaseFiltro(filtro, "cancelados");
+            FiltroReprogramados.CssClass = ClaseFiltro(filtro, "reprogramados");
+        }
+
+        private string UrlSemana(DateTime fecha, string filtro)
+        {
+            string url = ResolveUrl("~/Agenda.aspx?vista=semana&fecha="
+                + fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            return string.IsNullOrEmpty(filtro) ? url : url + "&filtro=" + HttpUtility.UrlEncode(filtro);
+        }
+
+        private static string ClaseFiltro(string filtroActual, string filtro)
+        {
+            return "turnos-tab-btn" + (string.Equals(filtroActual, filtro, StringComparison.OrdinalIgnoreCase)
+                ? " is-active" : string.Empty);
+        }
+
+        private DateTime ObtenerFechaConsulta()
+        {
+            DateTime fecha;
+            string valor = Request.QueryString["fecha"];
+            return DateTime.TryParseExact(valor, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out fecha) ? fecha.Date : DateTime.Today;
+        }
+
+        private bool EsVistaDiaria
+        {
+            get { return string.Equals(Request.QueryString["vista"], "dia", StringComparison.OrdinalIgnoreCase); }
+        }
+
+        private static DateTime InicioSemana(DateTime fecha)
+        {
+            int desplazamiento = ((int)fecha.DayOfWeek + 6) % 7;
+            return fecha.Date.AddDays(-desplazamiento);
+        }
+
+        private string ObtenerFiltroAgenda()
+        {
+            string filtro = Request.QueryString["filtro"] ?? string.Empty;
+            filtro = filtro.ToLowerInvariant();
+            return filtro == "cancelados" || filtro == "reprogramados" ? filtro : string.Empty;
         }
 
         private static string ArmarResumen(

@@ -118,6 +118,12 @@ El adaptador HTTP de Gemini ya está incorporado. `Web.config` selecciona el pro
 
 La clave no debe guardarse en el repositorio. El adaptador utiliza el endpoint HTTPS `generateContent`, valida errores de autenticación, límites, timeout y respuestas inválidas, y registra el consumo informado por Gemini. Esta etapa permite obtener texto del modelo; todavía no habilita llamadas de herramientas ni operaciones de turnos hasta completar el contrato estructurado y sus validaciones.
 
+## Agenda profesional semanal y diaria
+
+La agenda profesional incluye una vista semanal de lunes a viernes y una vista diaria enlazada desde cada día. La vista semanal muestra únicamente turnos registrados, conserva los cancelados futuros y los cancelados recientes, diferencia las reprogramaciones y avisa cuando existen turnos en fin de semana. La vista diaria presenta el detalle completo de la jornada.
+
+La relación entre el turno original cancelado y el nuevo turno se conserva en `Turnos.TurnoReprogramadoDesdeId`. La migración idempotente `database/07_ReprogramacionesAgenda.sql` debe ejecutarse después de las migraciones anteriores. El panel profesional incluye además el acceso rápido `Jornada de hoy`.
+
 ## Preparar para la presentacion
 
 1. Preparar documentacion basica del proyecto     [ ]

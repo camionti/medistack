@@ -17,6 +17,8 @@ namespace MediStack.Web
             else if (TieneRol("PROFESIONAL"))
             {
                 ProfesionalPanel.Visible = true;
+                JornadaHoyLink.NavigateUrl = ResolveUrl("~/Agenda.aspx?vista=dia&fecha="
+                    + DateTime.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
             }
             else if (TieneRol("ADMINISTRATIVO"))
             {

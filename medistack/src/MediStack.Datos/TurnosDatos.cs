@@ -476,7 +476,7 @@ namespace MediStack.Datos
                         int nuevoTurnoId = InsertarTurno(
                             conexion, transaccion, destino,
                             nuevoMontoSena, nuevoEstadoSena, nuevoVencimientoSena,
-                            nuevoEstadoTurno, nuevaFechaHoraSena);
+                            nuevoEstadoTurno, nuevaFechaHoraSena, turnoId);
 
                         if (estadoSenaOriginal == "Pagada")
                         {
@@ -873,15 +873,16 @@ namespace MediStack.Datos
         private static int InsertarTurno(
             SqlConnection conexion, SqlTransaction transaccion, SolicitudTurno solicitud,
             decimal montoSena = 0m, string estadoSena = "NoRequerida", DateTime? vencimientoSena = null,
-            string estado = "Solicitado", DateTime? fechaHoraSena = null)
+            string estado = "Solicitado", DateTime? fechaHoraSena = null,
+            int? turnoReprogramadoDesdeId = null)
         {
             using (SqlCommand comando = new SqlCommand(@"
                 INSERT INTO dbo.Turnos
                     (PacienteId, ProfesionalId, EspecialidadId, FechaHora, Estado, Motivo,
-                     MontoSena, EstadoSena, VencimientoSena, FechaHoraSena)
+                     MontoSena, EstadoSena, VencimientoSena, FechaHoraSena, TurnoReprogramadoDesdeId)
                 VALUES
                     (@PacienteId, @ProfesionalId, @EspecialidadId, @FechaHora, @Estado, @Motivo,
-                     @MontoSena, @EstadoSena, @VencimientoSena, @FechaHoraSena);
+                     @MontoSena, @EstadoSena, @VencimientoSena, @FechaHoraSena, @TurnoReprogramadoDesdeId);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);",
                 conexion, transaccion))
             {
@@ -894,6 +895,8 @@ namespace MediStack.Datos
                     vencimientoSena.HasValue ? (object)vencimientoSena.Value : DBNull.Value;
                 comando.Parameters.Add("@FechaHoraSena", SqlDbType.DateTime2).Value =
                     fechaHoraSena.HasValue ? (object)fechaHoraSena.Value : DBNull.Value;
+                comando.Parameters.Add("@TurnoReprogramadoDesdeId", SqlDbType.Int).Value =
+                    turnoReprogramadoDesdeId.HasValue ? (object)turnoReprogramadoDesdeId.Value : DBNull.Value;
                 comando.Parameters.Add("@PacienteId", SqlDbType.UniqueIdentifier).Value = solicitud.PacienteId;
                 comando.Parameters.Add("@ProfesionalId", SqlDbType.UniqueIdentifier).Value = solicitud.ProfesionalId;
                 comando.Parameters.Add("@EspecialidadId", SqlDbType.Int).Value = solicitud.EspecialidadId;

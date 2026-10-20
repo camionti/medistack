@@ -832,6 +832,156 @@ body.is-resizing-sidebar * {
     min-width: 240px;
 }
 
+.agenda-week-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+}
+
+.agenda-filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin: .75rem 0 1rem;
+}
+
+.agenda-week-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: .75rem;
+    overflow-x: auto;
+}
+
+.agenda-day-column {
+    min-width: 170px;
+    min-height: 260px;
+    padding: .7rem;
+    background: #f8faff;
+    border: 1px solid var(--color-border);
+    border-radius: .85rem;
+}
+
+.agenda-day-locked {
+    background: #f0f1f4;
+    opacity: .72;
+}
+
+.agenda-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .4rem;
+    margin-bottom: .7rem;
+    color: var(--color-ink);
+    text-decoration: none;
+    text-transform: capitalize;
+}
+
+.agenda-day-header strong {
+    color: var(--color-primary);
+}
+
+.agenda-turno-card {
+    margin-bottom: .55rem;
+    border-left: 4px solid var(--color-primary);
+    border-radius: .55rem;
+    background: var(--color-white);
+    box-shadow: 0 2px 8px rgba(25, 43, 77, .08);
+}
+
+.agenda-turno-link {
+    display: flex;
+    flex-direction: column;
+    gap: .12rem;
+    padding: .55rem .6rem;
+    color: var(--color-ink);
+    text-decoration: none;
+}
+
+.agenda-turno-link time {
+    color: var(--color-primary);
+    font-weight: 800;
+}
+
+.agenda-turno-link span {
+    color: var(--color-muted);
+    font-size: .78rem;
+}
+
+.agenda-turno-link .agenda-turno-estado {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.agenda-turno-reprogramacion {
+    color: #8a4b00 !important;
+    font-size: .72rem !important;
+    font-weight: 700;
+}
+
+.agenda-turno-cancelado {
+    border-left-color: #b42318;
+    background: #fff4f2;
+}
+
+.agenda-turno-cancelado .agenda-turno-link time,
+.agenda-turno-cancelado .agenda-turno-estado {
+    color: #b42318;
+}
+
+.agenda-turno-reprogramado {
+    border-left-color: #a15c00;
+    background: #fff9eb;
+}
+
+.agenda-turno-reprogramado .agenda-turno-estado {
+    color: #8a4b00;
+}
+
+.agenda-turno-motivo {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.agenda-day-empty,
+.agenda-day-warning {
+    display: block;
+    margin-top: .75rem;
+    color: var(--color-muted);
+    font-size: .8rem;
+}
+
+.agenda-day-warning,
+.agenda-notice {
+    color: #824900;
+    background: #fff4df;
+    border: 1px solid #ead19f;
+    border-radius: .55rem;
+    padding: .55rem .7rem;
+}
+
+.agenda-notice {
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.dashboard-card-highlight {
+    border-color: #b8c5ff;
+    box-shadow: 0 8px 22px rgba(33, 82, 255, .1);
+}
+
+@media (max-width: 900px) {
+    .agenda-week-grid {
+        grid-template-columns: repeat(5, minmax(190px, 1fr));
+    }
+
+    .agenda-week-actions {
+        justify-content: flex-start;
+    }
+}
+
 .alert {
     display: block;
     padding: .75rem;

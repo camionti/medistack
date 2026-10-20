@@ -312,17 +312,52 @@ namespace MediStack.Datos
                 SELECT t.TurnoId, t.PacienteId,
                        paciente.Nombre + N' ' + paciente.Apellido AS Paciente,
                        t.FechaHora, t.Estado, t.Motivo, t.EstadoSena, t.MontoSena,
-                       e.Nombre AS Especialidad, e.DuracionEstandarMinutos
+                       e.Nombre AS Especialidad, e.DuracionEstandarMinutos,
+                       t.TurnoReprogramadoDesdeId,
+                       siguiente.TurnoId AS TurnoReprogramadoHaciaId,
+                       siguiente.FechaHora AS FechaReprogramacion
                 FROM dbo.Turnos t
                 INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
                 INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = p.PacienteId
                 INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                LEFT JOIN dbo.Turnos siguiente ON siguiente.TurnoReprogramadoDesdeId = t.TurnoId
                 WHERE t.ProfesionalId = @ProfesionalId
                   AND t.FechaHora >= @Fecha
                   AND t.FechaHora < DATEADD(day, 1, @Fecha)
                 ORDER BY t.FechaHora, t.TurnoId;",
                 ParametroGuid("@ProfesionalId", profesionalId),
                 new SqlParameter("@Fecha", SqlDbType.Date) { Value = fecha.Date });
+        }
+
+        public DataTable ObtenerTurnosAgendaSemana(Guid profesionalId, DateTime inicioSemana, DateTime finSemana)
+        {
+            return Consultar(@"
+                    SELECT t.TurnoId, t.PacienteId,
+                           paciente.Nombre + N' ' + paciente.Apellido AS Paciente,
+                           t.FechaHora, t.Estado, t.Motivo, t.EstadoSena, t.MontoSena,
+                           e.Nombre AS Especialidad, e.DuracionEstandarMinutos,
+                           t.TurnoReprogramadoDesdeId,
+                           siguiente.TurnoId AS TurnoReprogramadoHaciaId,
+                           siguiente.FechaHora AS FechaReprogramacion
+                    FROM dbo.Turnos t
+                    INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
+                    INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = p.PacienteId
+                    INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                    LEFT JOIN dbo.Turnos siguiente ON siguiente.TurnoReprogramadoDesdeId = t.TurnoId
+                    WHERE t.ProfesionalId = @ProfesionalId
+                      AND t.FechaHora >= @Inicio
+                      AND t.FechaHora < @Fin
+                      AND
+                      (
+                          t.Estado <> N'Cancelado'
+                          OR t.FechaHora >= DATEADD(day, -10, CONVERT(date, SYSDATETIME()))
+                          OR t.TurnoReprogramadoDesdeId IS NOT NULL
+                          OR siguiente.TurnoId IS NOT NULL
+                      )
+                    ORDER BY t.FechaHora, t.TurnoId;",
+                    ParametroGuid("@ProfesionalId", profesionalId),
+                    new SqlParameter("@Inicio", SqlDbType.DateTime2) { Value = inicioSemana },
+                    new SqlParameter("@Fin", SqlDbType.DateTime2) { Value = finSemana });
         }
 
         public void GuardarHorarioAtencion(HorarioAtencion horario)
