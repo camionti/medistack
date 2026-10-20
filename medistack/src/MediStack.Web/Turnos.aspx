@@ -386,7 +386,9 @@
                     <asp:BoundField DataField="DuracionEstandarMinutos" HeaderText="Duración (min)" />
                     <asp:BoundField DataField="Motivo" HeaderText="Motivo" />
                     <asp:TemplateField HeaderText="Estado">
-                        <ItemTemplate><span class="status-tag"><%#: Eval("Estado") %></span></ItemTemplate>
+                        <ItemTemplate>
+                            <span class="status-tag status-turno" data-estado='<%#: Eval("Estado") %>'><%#: Eval("Estado") %></span>
+                        </ItemTemplate>
                     </asp:TemplateField>
                     <asp:TemplateField HeaderText="Seña">
                         <ItemTemplate><%#: TextoSena(Eval("EstadoSena"), Eval("MontoSena"), Eval("VencimientoSena")) %></ItemTemplate>
