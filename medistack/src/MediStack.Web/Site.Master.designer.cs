@@ -78,6 +78,24 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.Panel NavegacionProfesional;
 
         /// <summary>
+        /// Control PhAvatarPaciente.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.PlaceHolder PhAvatarPaciente;
+
+        /// <summary>
+        /// Control PhAvatarGeneral.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.PlaceHolder PhAvatarGeneral;
+
+        /// <summary>
         /// Control NombreActual.
         /// </summary>
         /// <remarks>

@@ -177,12 +177,22 @@
 
                     <div class="sidebar-user-footer">
                         <div class="sidebar-user-card">
-                            <div class="user-avatar" title="Usuario activo">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="avatar-svg">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                    <circle cx="12" cy="7" r="4" />
-                                </svg>
-                            </div>
+                            <asp:PlaceHolder ID="PhAvatarPaciente" runat="server" Visible="false">
+                                <a href="<%: ResolveUrl("~/FichaPaciente.aspx") %>" class="user-avatar user-avatar-link" title="Mi ficha médica" aria-label="Mi ficha médica">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="avatar-svg">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                </a>
+                            </asp:PlaceHolder>
+                            <asp:PlaceHolder ID="PhAvatarGeneral" runat="server" Visible="true">
+                                <div class="user-avatar" title="Usuario activo">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="avatar-svg">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                </div>
+                            </asp:PlaceHolder>
                             <div class="sidebar-user-meta">
                                 <span class="sidebar-user-name"><asp:Literal ID="NombreActual" runat="server" /></span>
                                 <span class="sidebar-user-role"><asp:Literal ID="RolActual" runat="server" /></span>

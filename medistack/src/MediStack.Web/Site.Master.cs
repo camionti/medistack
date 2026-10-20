@@ -20,14 +20,17 @@ namespace MediStack.Web
                 string nombreCompleto = Convert.ToString(Session["NombreCompleto"]);
                 string rolNombre = Convert.ToString(Session["RolNombre"]);
                 string rolCodigo = Convert.ToString(Session["RolCodigo"]);
+                bool esPaciente = EsRol(rolCodigo, "PACIENTE");
 
                 if (NombreActual != null) NombreActual.Text = Server.HtmlEncode(nombreCompleto);
                 if (RolActual != null) RolActual.Text = Server.HtmlEncode(rolNombre);
 
                 if (NavegacionAdministrativa != null) NavegacionAdministrativa.Visible = EsRol(rolCodigo, "ADMINISTRATIVO");
-                if (NavegacionPaciente != null) NavegacionPaciente.Visible = EsRol(rolCodigo, "PACIENTE");
+                if (NavegacionPaciente != null) NavegacionPaciente.Visible = esPaciente;
                 if (NavegacionProfesional != null) NavegacionProfesional.Visible = EsRol(rolCodigo, "PROFESIONAL");
-                if (PhMiFicha != null) PhMiFicha.Visible = EsRol(rolCodigo, "PACIENTE");
+                if (PhMiFicha != null) PhMiFicha.Visible = esPaciente;
+                if (PhAvatarPaciente != null) PhAvatarPaciente.Visible = esPaciente;
+                if (PhAvatarGeneral != null) PhAvatarGeneral.Visible = !esPaciente;
             }
             else
             {
@@ -42,6 +45,8 @@ namespace MediStack.Web
                 if (NavegacionPaciente != null) NavegacionPaciente.Visible = false;
                 if (NavegacionProfesional != null) NavegacionProfesional.Visible = false;
                 if (PhMiFicha != null) PhMiFicha.Visible = false;
+                if (PhAvatarPaciente != null) PhAvatarPaciente.Visible = false;
+                if (PhAvatarGeneral != null) PhAvatarGeneral.Visible = false;
             }
         }
 
