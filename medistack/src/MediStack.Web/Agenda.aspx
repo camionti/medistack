@@ -21,9 +21,9 @@
                 </div>
             </div>
             <div class="agenda-filter-tabs" role="group" aria-label="Filtro de turnos">
-                <asp:HyperLink ID="FiltroTodos" runat="server" CssClass="turnos-tab-btn" Text="Todos" />
+                <asp:HyperLink ID="FiltroVigentes" runat="server" CssClass="turnos-tab-btn" Text="Vigentes" />
                 <asp:HyperLink ID="FiltroCancelados" runat="server" CssClass="turnos-tab-btn" Text="Cancelados recientes" />
-                <asp:HyperLink ID="FiltroReprogramados" runat="server" CssClass="turnos-tab-btn" Text="Reprogramados" />
+
             </div>
             <asp:Label ID="AvisoFinDeSemana" runat="server" Visible="false" CssClass="agenda-notice" />
             <div class="agenda-week-grid">
@@ -72,8 +72,8 @@
     <section class="panel management-panel" aria-labelledby="agenda-dia-title">
         <div class="section-heading-row">
             <h2 id="agenda-dia-title" class="section-title">Agenda diaria: horarios del día</h2>
-            <asp:HyperLink ID="VolverSemana" runat="server" CssClass="button button-light"
-                Text="Volver a la semana" Visible="false" />
+
+
         </div>
         <div class="search-row agenda-filter">
             <div class="form-group agenda-professional-filter">
@@ -120,7 +120,15 @@
     </asp:Panel>
 
     <section class="panel management-panel" aria-labelledby="turnos-dia-title">
-        <h2 id="turnos-dia-title" class="section-title">Turnos asignados en la fecha</h2>
+        <div class="section-heading-row">
+            <h2 id="turnos-dia-title" class="section-title">Turnos asignados en la fecha</h2>
+            <div class="agenda-week-actions">
+                <asp:Button ID="BotonVerCancelados" runat="server" CssClass="button button-light"
+                    Text="Ver cancelados" OnClick="BotonVerCancelados_Click" CausesValidation="false" />
+                <asp:HyperLink ID="VolverSemana" runat="server" CssClass="button button-light"
+                    Text="Volver a la semana" Visible="false" />
+            </div>
+        </div>
         <div class="table-wrap">
             <asp:GridView ID="TurnosGrid" runat="server" AutoGenerateColumns="false" CssClass="data-table"
                 GridLines="None" EmptyDataText="No hay turnos asignados para este profesional en la fecha seleccionada.">

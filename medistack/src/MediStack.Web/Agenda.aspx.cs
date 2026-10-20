@@ -79,6 +79,18 @@ namespace MediStack.Web
             EjecutarConManejoDeErrores("No se pudo actualizar la agenda", CargarDatosAgenda);
         }
 
+        private bool MostrarCanceladosDia
+        {
+            get { return ViewState["MostrarCanceladosDia"] != null && (bool)ViewState["MostrarCanceladosDia"]; }
+            set { ViewState["MostrarCanceladosDia"] = value; }
+        }
+
+        protected void BotonVerCancelados_Click(object sender, EventArgs e)
+        {
+            MostrarCanceladosDia = !MostrarCanceladosDia;
+            EjecutarConManejoDeErrores("No se pudo actualizar la vista de turnos", CargarDatosAgenda);
+        }
+
         protected void NuevoHorario_Click(object sender, EventArgs e)
         {
             LimpiarMensaje();
@@ -357,10 +369,37 @@ namespace MediStack.Web
             DataTable semanal = _negocio.ObtenerHorarios(profesionalId);
             DisponibilidadGrid.DataSource = franjas;
             DisponibilidadGrid.DataBind();
-            TurnosGrid.DataSource = turnos;
+            DataView vistaTurnos = turnos.DefaultView;
+            int turnosCancelados = turnos.Rows.Cast<DataRow>()
+                .Count(f => string.Equals(Convert.ToString(f["Estado"]), "Cancelado", StringComparison.OrdinalIgnoreCase));
+
+            if (!MostrarCanceladosDia)
+            {
+                vistaTurnos.RowFilter = "Estado <> 'Cancelado'";
+                BotonVerCancelados.Text = "Ver cancelados" + (turnosCancelados > 0 ? " (" + turnosCancelados + ")" : string.Empty);
+                BotonVerCancelados.CssClass = "button button-light";
+                TurnosGrid.EmptyDataText = turnosCancelados > 0
+                    ? "No hay turnos vigentes para este profesional en la fecha seleccionada (" + turnosCancelados + " cancelado/s)."
+                    : "No hay turnos asignados para este profesional en la fecha seleccionada.";
+            }
+            else
+            {
+                vistaTurnos.RowFilter = string.Empty;
+                BotonVerCancelados.Text = "Ocultar cancelados";
+                BotonVerCancelados.CssClass = "button button-secondary";
+                TurnosGrid.EmptyDataText = "No hay turnos asignados para este profesional en la fecha seleccionada.";
+            }
+
+            TurnosGrid.DataSource = vistaTurnos;
             TurnosGrid.DataBind();
             HorariosGrid.DataSource = semanal;
             HorariosGrid.DataBind();
+            if (TieneRol("PROFESIONAL"))
+            {
+                VolverSemana.Visible = true;
+                VolverSemana.NavigateUrl = UrlSemana(InicioSemana(fecha), string.Empty);
+            }
+
             ResumenAgenda.Text = HttpUtility.HtmlEncode(
                 ArmarResumen(Profesional.SelectedItem.Text, fecha, franjas, turnos, semanal));
         }
@@ -383,13 +422,21 @@ namespace MediStack.Web
                 foreach (DiaAgendaSemanal dia in dias)
                 {
                     dia.Turnos = dia.Turnos.Where(t => t.Estado == "Cancelado").ToList();
+                    if (dia.Turnos.Count == 0)
+                    {
+                        dia.TieneTurnosFueraDeHorario = false;
+                    }
                 }
             }
-            else if (filtro == "reprogramados")
+            else
             {
                 foreach (DiaAgendaSemanal dia in dias)
                 {
-                    dia.Turnos = dia.Turnos.Where(t => t.EsReprogramado).ToList();
+                    dia.Turnos = dia.Turnos.Where(t => t.Estado != "Cancelado").ToList();
+                    if (dia.Turnos.Count == 0)
+                    {
+                        dia.TieneTurnosFueraDeHorario = false;
+                    }
                 }
             }
 
@@ -412,12 +459,12 @@ namespace MediStack.Web
             SemanaAnterior.NavigateUrl = UrlSemana(lunes.AddDays(-7), filtro);
             SemanaActual.NavigateUrl = UrlSemana(DateTime.Today, filtro);
             SemanaSiguiente.NavigateUrl = UrlSemana(lunes.AddDays(7), filtro);
-            FiltroTodos.NavigateUrl = UrlSemana(lunes, string.Empty);
+            FiltroVigentes.NavigateUrl = UrlSemana(lunes, string.Empty);
             FiltroCancelados.NavigateUrl = UrlSemana(lunes, "cancelados");
-            FiltroReprogramados.NavigateUrl = UrlSemana(lunes, "reprogramados");
-            FiltroTodos.CssClass = ClaseFiltro(filtro, string.Empty);
+
+            FiltroVigentes.CssClass = ClaseFiltro(filtro, string.Empty);
             FiltroCancelados.CssClass = ClaseFiltro(filtro, "cancelados");
-            FiltroReprogramados.CssClass = ClaseFiltro(filtro, "reprogramados");
+
         }
 
         private string UrlSemana(DateTime fecha, string filtro)
@@ -456,7 +503,7 @@ namespace MediStack.Web
         {
             string filtro = Request.QueryString["filtro"] ?? string.Empty;
             filtro = filtro.ToLowerInvariant();
-            return filtro == "cancelados" || filtro == "reprogramados" ? filtro : string.Empty;
+            return filtro == "cancelados" ? filtro : string.Empty;
         }
 
         private static string ArmarResumen(

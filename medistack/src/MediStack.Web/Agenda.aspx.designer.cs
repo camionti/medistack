@@ -8,9 +8,9 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.HyperLink SemanaAnterior;
         protected global::System.Web.UI.WebControls.HyperLink SemanaActual;
         protected global::System.Web.UI.WebControls.HyperLink SemanaSiguiente;
-        protected global::System.Web.UI.WebControls.HyperLink FiltroTodos;
+        protected global::System.Web.UI.WebControls.HyperLink FiltroVigentes;
         protected global::System.Web.UI.WebControls.HyperLink FiltroCancelados;
-        protected global::System.Web.UI.WebControls.HyperLink FiltroReprogramados;
+        protected global::System.Web.UI.WebControls.Button BotonVerCancelados;
         protected global::System.Web.UI.WebControls.Label AvisoFinDeSemana;
         protected global::System.Web.UI.WebControls.Repeater AgendaSemanalRepeater;
         protected global::System.Web.UI.WebControls.Panel VistaDiariaPanel;
