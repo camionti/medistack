@@ -8,5 +8,7 @@ namespace MediStack.Web
         protected global::System.Web.UI.WebControls.Panel ProfesionalPanel;
         protected global::System.Web.UI.WebControls.HyperLink JornadaHoyLink;
         protected global::System.Web.UI.WebControls.Panel AdministrativoPanel;
+        protected global::System.Web.UI.WebControls.HyperLink AdminTurnosHoyLink;
+        protected global::System.Web.UI.WebControls.HyperLink AdminAgendaSemanaLink;
     }
 }

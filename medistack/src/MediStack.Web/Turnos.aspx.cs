@@ -80,6 +80,21 @@ namespace MediStack.Web
                         FechaDisponibilidad.Text = DateTime.Today.AddDays(1)
                             .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     }
+                    string filtro = (Request.QueryString["filtro"] ?? string.Empty).ToLowerInvariant();
+                    if (filtro == "hoy")
+                    {
+                        string hoy = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        Desde.Text = hoy;
+                        Hasta.Text = hoy;
+                    }
+                    else
+                    {
+                        string paramDesde = Request.QueryString["desde"];
+                        string paramHasta = Request.QueryString["hasta"];
+                        if (!string.IsNullOrWhiteSpace(paramDesde)) Desde.Text = paramDesde;
+                        if (!string.IsNullOrWhiteSpace(paramHasta)) Hasta.Text = paramHasta;
+                    }
+
                     CargarTurnos();
                     VerificarAccionUrl();
                 });

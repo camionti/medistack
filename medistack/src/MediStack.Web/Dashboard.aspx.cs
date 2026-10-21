@@ -23,6 +23,10 @@ namespace MediStack.Web
             else if (TieneRol("ADMINISTRATIVO"))
             {
                 AdministrativoPanel.Visible = true;
+                string fechaHoy = DateTime.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                AdminTurnosHoyLink.NavigateUrl = ResolveUrl("~/Turnos.aspx?filtro=hoy");
+                AdminAgendaSemanaLink.NavigateUrl = ResolveUrl("~/Agenda.aspx?fecha=" + fechaHoy);
+
             }
             else
             {
