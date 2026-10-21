@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace MediStack.Dominio
 {
@@ -31,6 +32,7 @@ namespace MediStack.Dominio
         public string Telefono { get; set; }
         public string MatriculaProfesional { get; set; }
         public bool Activo { get; set; }
+        public List<int> EspecialidadesIds { get; set; } = new List<int>();
     }
 
     public class Especialidad

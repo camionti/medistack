@@ -204,9 +204,24 @@ namespace MediStack.Negocio
             EjecutarSeguro(() => _datos.CambiarEstadoPaciente(pacienteId, activo));
         }
 
+        public DataTable ObtenerEspecialidadesProfesional(Guid profesionalId)
+        {
+            if (profesionalId == Guid.Empty)
+            {
+                return new DataTable();
+            }
+
+            return EjecutarSeguro(() => _datos.ObtenerEspecialidadesProfesionalAgenda(profesionalId));
+        }
+
         public void GuardarProfesional(Profesional profesional, string password)
         {
             ValidarProfesional(profesional);
+            if (profesional.EspecialidadesIds == null || profesional.EspecialidadesIds.Count == 0)
+            {
+                throw new InvalidOperationException("Selecciona al menos una especialidad para el profesional.");
+            }
+
             string hash = null;
             if (profesional.UsuarioId == Guid.Empty)
             {
@@ -216,7 +231,6 @@ namespace MediStack.Negocio
 
             EjecutarSeguro(() => _datos.GuardarProfesional(profesional, hash));
         }
-
         public void CambiarEstadoProfesional(Guid profesionalId, bool activo)
         {
             if (profesionalId == Guid.Empty)

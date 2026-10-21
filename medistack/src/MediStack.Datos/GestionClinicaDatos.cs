@@ -563,7 +563,14 @@ namespace MediStack.Datos
             return Consultar(@"
                 SELECT p.ProfesionalId, u.NombreUsuario, u.Nombre, u.Apellido,
                        u.NumeroDocumento, u.Email, u.Telefono, u.FechaNacimiento,
-                       p.MatriculaProfesional, p.Activo
+                       p.MatriculaProfesional, p.Activo,
+                       STUFF((
+                           SELECT N', ' + e.Nombre
+                           FROM dbo.ProfesionalesEspecialidades pe
+                           INNER JOIN dbo.Especialidades e ON e.EspecialidadId = pe.EspecialidadId
+                           WHERE pe.ProfesionalId = p.ProfesionalId AND pe.Activa = 1 AND e.Activa = 1
+                           FOR XML PATH('')
+                       ), 1, 2, N'') AS Especialidades
                 FROM dbo.Profesionales p
                 INNER JOIN dbo.Usuarios u ON u.UsuarioId = p.ProfesionalId
                 WHERE @Busqueda = N''
@@ -572,6 +579,12 @@ namespace MediStack.Datos
                    OR u.Apellido LIKE N'%' + @Busqueda + N'%'
                    OR u.NumeroDocumento LIKE N'%' + @Busqueda + N'%'
                    OR p.MatriculaProfesional LIKE N'%' + @Busqueda + N'%'
+                   OR EXISTS (
+                       SELECT 1 FROM dbo.ProfesionalesEspecialidades pe2
+                       INNER JOIN dbo.Especialidades e2 ON e2.EspecialidadId = pe2.EspecialidadId
+                       WHERE pe2.ProfesionalId = p.ProfesionalId AND pe2.Activa = 1 AND e2.Activa = 1
+                         AND e2.Nombre LIKE N'%' + @Busqueda + N'%'
+                   )
                 ORDER BY u.Apellido, u.Nombre;",
                 ParametroTexto("@Busqueda", busqueda, 100));
         }
@@ -721,7 +734,37 @@ namespace MediStack.Datos
             });
         }
 
+        public void CambiarEstadoProfesional(Guid profesionalId, bool activo)
+        {
+            EjecutarEnTransaccion((conexion, transaccion) =>
+            {
+                using (SqlCommand comando = new SqlCommand(@"
+                    UPDATE dbo.Profesionales SET Activo = @Activo WHERE ProfesionalId = @UsuarioId;
+                    IF @@ROWCOUNT = 0 THROW 51001, N'El profesional ya no existe.', 1;
+                    UPDATE dbo.Usuarios SET Activo = @Activo WHERE UsuarioId = @UsuarioId;",
+                    conexion, transaccion))
+                {
+                    comando.Parameters.Add("@UsuarioId", SqlDbType.UniqueIdentifier).Value = profesionalId;
+                    comando.Parameters.Add("@Activo", SqlDbType.Bit).Value = activo;
+                    comando.ExecuteNonQuery();
+                }
+            });
+        }
         public void GuardarProfesional(Profesional profesional, string passwordHash)
+        {
+            GuardarProfesional(profesional, passwordHash, null, 0m, null, 0m, null, null, null);
+        }
+
+        public void GuardarProfesional(
+             Profesional profesional,
+             string passwordHash,
+             int? especialidadId,
+             decimal valorConsulta,
+             string esquemaTipo,
+             decimal esquemaValor,
+             System.Collections.Generic.IList<int> diasAtencion,
+             TimeSpan? horaInicio,
+             TimeSpan? horaFin)
         {
             EjecutarEnTransaccion((conexion, transaccion) =>
             {
@@ -775,22 +818,54 @@ namespace MediStack.Datos
                         comando.ExecuteNonQuery();
                     }
                 }
-            });
-        }
 
-        public void CambiarEstadoProfesional(Guid profesionalId, bool activo)
-        {
-            EjecutarEnTransaccion((conexion, transaccion) =>
-            {
-                using (SqlCommand comando = new SqlCommand(@"
-                    UPDATE dbo.Profesionales SET Activo = @Activo WHERE ProfesionalId = @UsuarioId;
-                    IF @@ROWCOUNT = 0 THROW 51001, N'El profesional ya no existe.', 1;
-                    UPDATE dbo.Usuarios SET Activo = @Activo WHERE UsuarioId = @UsuarioId;",
+                // Limpiamos las especialidades anteriores para sincronizar las nuevas
+                using (SqlCommand comandoBorrar = new SqlCommand(
+                    "DELETE FROM dbo.ProfesionalesEspecialidades WHERE ProfesionalId = @ProfesionalId;",
                     conexion, transaccion))
                 {
-                    comando.Parameters.Add("@UsuarioId", SqlDbType.UniqueIdentifier).Value = profesionalId;
-                    comando.Parameters.Add("@Activo", SqlDbType.Bit).Value = activo;
-                    comando.ExecuteNonQuery();
+                    comandoBorrar.Parameters.Add("@ProfesionalId", SqlDbType.UniqueIdentifier).Value = profesional.UsuarioId;
+                    comandoBorrar.ExecuteNonQuery();
+                }
+
+                // Si vienen especialidades múltiples desde la lista de la interfaz, las insertamos
+                if (profesional.EspecialidadesIds != null && profesional.EspecialidadesIds.Count > 0)
+                {
+                    foreach (int espId in profesional.EspecialidadesIds)
+                    {
+                        using (SqlCommand comandoInsert = new SqlCommand(@"
+                            INSERT INTO dbo.ProfesionalesEspecialidades 
+                                (ProfesionalId, EspecialidadId, EsEspecialidadPrincipal, Activa, ValorConsulta, EsquemaTipo, EsquemaValor)
+                            VALUES 
+                                (@ProfesionalId, @EspecialidadId, 0, 1, @ValorConsulta, @EsquemaTipo, @EsquemaValor);",
+                            conexion, transaccion))
+                        {
+                            comandoInsert.Parameters.Add("@ProfesionalId", SqlDbType.UniqueIdentifier).Value = profesional.UsuarioId;
+                            comandoInsert.Parameters.Add("@EspecialidadId", SqlDbType.Int).Value = espId;
+                            comandoInsert.Parameters.Add("@ValorConsulta", SqlDbType.Decimal).Value = 0.00m;
+                            comandoInsert.Parameters.Add("@EsquemaTipo", SqlDbType.NVarChar, 20).Value = "Porcentaje";
+                            comandoInsert.Parameters.Add("@EsquemaValor", SqlDbType.Decimal).Value = 70.00m;
+                            comandoInsert.ExecuteNonQuery();
+                        }
+                    }
+                }
+                // Compatibilidad por si se pasa una especialidad individual por parámetro
+                else if (especialidadId.HasValue && especialidadId.Value > 0)
+                {
+                    using (SqlCommand comandoInsert = new SqlCommand(@"
+                        INSERT INTO dbo.ProfesionalesEspecialidades 
+                            (ProfesionalId, EspecialidadId, EsEspecialidadPrincipal, Activa, ValorConsulta, EsquemaTipo, EsquemaValor)
+                        VALUES 
+                            (@ProfesionalId, @EspecialidadId, 1, 1, @ValorConsulta, @EsquemaTipo, @EsquemaValor);",
+                        conexion, transaccion))
+                    {
+                        comandoInsert.Parameters.Add("@ProfesionalId", SqlDbType.UniqueIdentifier).Value = profesional.UsuarioId;
+                        comandoInsert.Parameters.Add("@EspecialidadId", SqlDbType.Int).Value = especialidadId.Value;
+                        comandoInsert.Parameters.Add("@ValorConsulta", SqlDbType.Decimal).Value = valorConsulta;
+                        comandoInsert.Parameters.Add("@EsquemaTipo", SqlDbType.NVarChar, 20).Value = string.IsNullOrEmpty(esquemaTipo) ? "Porcentaje" : esquemaTipo;
+                        comandoInsert.Parameters.Add("@EsquemaValor", SqlDbType.Decimal).Value = esquemaValor;
+                        comandoInsert.ExecuteNonQuery();
+                    }
                 }
             });
         }

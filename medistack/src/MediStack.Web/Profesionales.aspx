@@ -3,11 +3,34 @@
     <section class="page-heading">
         <p class="eyebrow">Gestión clínica</p>
         <h1>Profesionales</h1>
-        <p>Administra los datos y el acceso de los profesionales.</p>
+        <p>Administra los datos, especialidades y el acceso de los profesionales.</p>
     </section>
     <asp:Label ID="Mensaje" runat="server" Visible="false" role="status" />
     <section class="panel management-panel" aria-labelledby="buscar-profesional-title">
-        <h2 id="buscar-profesional-title" class="section-title">Buscar profesionales</h2>
+        <div class="section-heading-row">
+            <h2 id="buscar-profesional-title" class="section-title" style="margin-bottom: 0;">Buscar profesionales</h2>
+            <div class="acciones-exportar">
+                <asp:LinkButton ID="btnExportarCsv" runat="server" CssClass="btn-exportar-sutil"
+                    OnClick="btnExportarCsv_Click" CausesValidation="false" ToolTip="Exportar profesionales a CSV">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    CSV
+                </asp:LinkButton>
+                <asp:LinkButton ID="btnExportarPdf" runat="server" CssClass="btn-exportar-sutil"
+                    OnClick="btnExportarPdf_Click" CausesValidation="false" ToolTip="Descargar padrón en PDF">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <polyline points="9 15 12 18 15 15"></polyline>
+                    </svg>
+                    PDF
+                </asp:LinkButton>
+            </div>
+        </div>
         <div class="search-row">
             <asp:Label ID="BusquedaLabel" runat="server" AssociatedControlID="Busqueda" Text="Nombre, documento, matrícula o usuario" CssClass="visually-hidden" />
             <asp:TextBox ID="Busqueda" runat="server" CssClass="form-control" MaxLength="100" />
@@ -22,6 +45,7 @@
                     <asp:BoundField DataField="Nombre" HeaderText="Nombre" />
                     <asp:BoundField DataField="Apellido" HeaderText="Apellido" />
                     <asp:BoundField DataField="MatriculaProfesional" HeaderText="Matrícula" />
+                    <asp:BoundField DataField="Especialidades" HeaderText="Especialidades" NullDisplayText="Sin asignar" />
                     <asp:BoundField DataField="NumeroDocumento" HeaderText="Documento" />
                     <asp:BoundField DataField="Email" HeaderText="Correo" />
                     <asp:TemplateField HeaderText="Estado">
@@ -77,7 +101,13 @@
                 <asp:Label ID="MatriculaLabel" runat="server" AssociatedControlID="Matricula" Text="Matrícula profesional" />
                 <asp:TextBox ID="Matricula" runat="server" CssClass="form-control" MaxLength="50" required="required" />
             </div>
-            <asp:Panel ID="CuentaNueva" runat="server" CssClass="form-grid form-grid-nested">
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <span class="form-label" style="display:block; margin-bottom:6px; font-weight:600;">Especialidades que atiende</span>
+                <asp:CheckBoxList ID="EspecialidadesList" runat="server" RepeatDirection="Horizontal" RepeatLayout="Flow" CssClass="checkbox-group" />
+            </div>
+
+            <asp:Panel ID="CuentaNueva" runat="server" CssClass="form-grid form-grid-nested" style="grid-column: 1 / -1;">
                 <div class="form-group">
                     <asp:Label ID="UsuarioLabel" runat="server" AssociatedControlID="Usuario" Text="Usuario para iniciar sesión" />
                     <asp:TextBox ID="Usuario" runat="server" CssClass="form-control" MaxLength="50" autocomplete="off" />
@@ -85,6 +115,26 @@
                 <div class="form-group">
                     <asp:Label ID="ContrasenaLabel" runat="server" AssociatedControlID="Contrasena" Text="Contraseña inicial (mínimo 10 caracteres)" />
                     <asp:TextBox ID="Contrasena" runat="server" CssClass="form-control" TextMode="Password" MaxLength="128" autocomplete="new-password" />
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1; margin-top: 8px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                    <span class="form-label" style="display:block; margin-bottom:4px; font-weight:600;">Días y horario inicial de atención (opcional)</span>
+                    <p class="form-note" style="margin-bottom:8px;">Si marcas días y un rango horario al crear al profesional, se generará su agenda base automáticamente para las especialidades elegidas (también puedes administrarlo luego en <b>Agendas</b>).</p>
+                    <asp:CheckBoxList ID="DiasInicialesList" runat="server" RepeatDirection="Horizontal" RepeatLayout="Flow" CssClass="checkbox-group">
+                        <asp:ListItem Text="Lunes" Value="1" />
+                        <asp:ListItem Text="Martes" Value="2" />
+                        <asp:ListItem Text="Miércoles" Value="3" />
+                        <asp:ListItem Text="Jueves" Value="4" />
+                        <asp:ListItem Text="Viernes" Value="5" />
+                        <asp:ListItem Text="Sábado" Value="6" />
+                    </asp:CheckBoxList>
+                </div>
+                <div class="form-group">
+                    <asp:Label ID="HoraInicioLabel" runat="server" AssociatedControlID="HoraInicioInicial" Text="Hora de inicio (ej. 08:00)" />
+                    <asp:TextBox ID="HoraInicioInicial" runat="server" CssClass="form-control" TextMode="Time" Text="08:00" />
+                </div>
+                <div class="form-group">
+                    <asp:Label ID="HoraFinLabel" runat="server" AssociatedControlID="HoraFinInicial" Text="Hora de fin (ej. 14:00)" />
+                    <asp:TextBox ID="HoraFinInicial" runat="server" CssClass="form-control" TextMode="Time" Text="14:00" />
                 </div>
             </asp:Panel>
         </div>
