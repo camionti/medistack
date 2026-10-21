@@ -62,7 +62,7 @@
                     <span class="card-number" aria-hidden="true">01</span>
                     <h3>En foco hoy</h3>
                     <p>Atención directa en mostrador, recepción de pacientes y cobranza del día.</p>
-                    <asp:HyperLink ID="AdminTurnosHoyLink" runat="server" Text="Turnos de hoy" />
+                    <a href="<%: ResolveUrl("~/Turnos.aspx?filtro=hoy") %>">Turnos de hoy</a>
                     <a href="<%: ResolveUrl("~/RevisionDia.aspx") %>">Revisión del día</a>
                     <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Cobros</a>
                     <a href="<%: ResolveUrl("~/Caja.aspx") %>">Caja diaria</a>
@@ -72,7 +72,7 @@
                     <span class="card-number" aria-hidden="true">02</span>
                     <h3>Gestión semanal</h3>
                     <p>Seguimiento rutinario de agendas médicas, reprogramaciones y honorarios.</p>
-                    <asp:HyperLink ID="AdminAgendaSemanaLink" runat="server" Text="Agendas de la semana" />
+                    <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Agendas de la semana</a>
                     <a href="<%: ResolveUrl("~/Reembolsos.aspx") %>">Reembolsos pendientes</a>
                     <a href="<%: ResolveUrl("~/Liquidaciones.aspx") %>">Honorarios del período</a>
                     <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente de turnos</a>
