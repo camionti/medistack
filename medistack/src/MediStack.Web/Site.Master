@@ -193,10 +193,10 @@
                                     </svg>
                                 </div>
                             </asp:PlaceHolder>
-                            <div class="sidebar-user-meta">
-                                <span class="sidebar-user-name"><asp:Literal ID="NombreActual" runat="server" /></span>
-                                <span class="sidebar-user-role"><asp:Literal ID="RolActual" runat="server" /></span>
-                            </div>
+                            <a class="sidebar-user-meta" href="<%: ResolveUrl("~/MiCuenta.aspx") %>" title="Mi cuenta">
+    <span class="sidebar-user-name"><asp:Literal ID="NombreActual" runat="server" /></span>
+    <span class="sidebar-user-role"><asp:Literal ID="RolActual" runat="server" /></span>
+</a>
                             <a class="sidebar-logout-btn" href="<%: ResolveUrl("~/Salir.aspx") %>" title="Cerrar sesión" aria-label="Cerrar sesión">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

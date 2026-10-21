@@ -105,6 +105,21 @@ namespace MediStack.Negocio
                 ArmarPlantilla("Restablecer contraseña", contenido));
         }
 
+        public bool EnviarPasswordCambiada(string destino, string nombreCompleto)
+        {
+            string fecha = DateTime.Now.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
+            string contenido =
+                  "<p style=\"margin:0 0 16px\">Hola <b>" + WebUtility.HtmlEncode(nombreCompleto) + "</b>,</p>"
+                + "<p style=\"margin:0 0 16px\">Te avisamos que la <b>contraseña</b> de tu cuenta de MediStack "
+                + "fue modificada el <b>" + fecha + "</b>.</p>"
+                + "<div style=\"margin:0 0 20px;padding:14px 18px;background:#fff8e6;border:1px solid #ffe2a3;border-radius:10px\">"
+                + "<p style=\"margin:0\"><b>¿No fuiste vos?</b> Recuperá tu cuenta desde <i>Recuperar cuenta</i> "
+                + "en la pantalla de ingreso y avisá a la administración de la clínica.</p></div>"
+                + "<p style=\"margin:0;color:#64748b;font-size:13px\">Si fuiste vos, no tenés que hacer nada más.</p>";
+
+            return EnviarCorreo(destino, "Tu contraseña de MediStack fue modificada",
+                ArmarPlantilla("Contraseña modificada", contenido));
+        }
         public bool EnviarConfirmacionTurno(NotificacionTurno datos)
         {
             return EnviarConfirmacionTurnoAsync(datos).GetAwaiter().GetResult();

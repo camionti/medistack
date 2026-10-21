@@ -77,6 +77,7 @@
     <Content Include="Content\accesibilidad.css" />
     <Content Include="Content\landing.css" />
     <Content Include="Account\RecuperarCuenta.aspx" />
+    <Content Include="MiCuenta.aspx" />
     <Content Include="Scripts\accesibilidad.js" />
     <Content Include="Scripts\sidebar.js" />
     <Content Include="Content\MediStack-logo-violeta.png" />
@@ -151,6 +152,13 @@
       <DependentUpon>AsistentePaciente.aspx</DependentUpon>
     </Compile>
     <Compile Include="ExportadorUtil.cs" />
+    <Compile Include="MiCuenta.aspx.cs">
+      <DependentUpon>MiCuenta.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="MiCuenta.aspx.designer.cs">
+      <DependentUpon>MiCuenta.aspx</DependentUpon>
+    </Compile>
     <Compile Include="PaginaProtegida.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>

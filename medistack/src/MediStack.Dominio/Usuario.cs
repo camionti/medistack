@@ -14,5 +14,6 @@ namespace MediStack.Dominio
         public bool Activo { get; set; }
         public int IntentosFallidos { get; set; }
         public DateTime? BloqueadoHasta { get; set; }
+        public string Email { get; set; } 
     }
 }

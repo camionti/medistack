@@ -140,6 +140,42 @@ namespace MediStack.Datos
                 return comando.ExecuteNonQuery(); 
             }
         }
+
+        public Usuario ObtenerPorId(Guid usuarioId)
+        {
+            const string consulta = @"
+        SELECT u.UsuarioId, u.NombreUsuario, u.PasswordHash, u.Nombre, u.Apellido, u.Email,
+               u.Activo, u.IntentosFallidos, u.BloqueadoHasta,
+               r.Codigo AS RolCodigo, r.Nombre AS RolNombre
+        FROM dbo.Usuarios AS u
+        INNER JOIN dbo.Roles AS r ON r.RolId = u.RolId
+        WHERE u.UsuarioId = @UsuarioId;";
+
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            using (SqlCommand comando = new SqlCommand(consulta, conexion))
+            {
+                comando.Parameters.Add("@UsuarioId", SqlDbType.UniqueIdentifier).Value = usuarioId;
+                conexion.Open();
+                using (SqlDataReader lector = comando.ExecuteReader(CommandBehavior.SingleRow))
+                {
+                    if (!lector.Read()) { return null; }
+                    return new Usuario
+                    {
+                        UsuarioId = lector.GetGuid(0),
+                        NombreUsuario = lector.GetString(1),
+                        PasswordHash = lector.GetString(2),
+                        Nombre = lector.GetString(3),
+                        Apellido = lector.GetString(4),
+                        Email = lector.GetString(5),
+                        Activo = lector.GetBoolean(6),
+                        IntentosFallidos = lector.GetInt32(7),
+                        BloqueadoHasta = lector.IsDBNull(8) ? (DateTime?)null : lector.GetDateTime(8),
+                        RolCodigo = lector.GetString(9),
+                        RolNombre = lector.GetString(10)
+                    };
+                }
+            }
+        }
         private void EjecutarActualizacion(string consulta, Guid usuarioId)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
