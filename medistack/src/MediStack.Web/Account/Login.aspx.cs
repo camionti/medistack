@@ -40,7 +40,7 @@ namespace MediStack.Web.Account
             }
 
             SesionUsuario.Iniciar(Context, resultado.Usuario);
-            Redirigir("~/Default.aspx");
+            Redirigir("~/Dashboard.aspx");
         }
 
         private void Redirigir(string url)

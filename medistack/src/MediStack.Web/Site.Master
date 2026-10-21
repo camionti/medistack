@@ -113,7 +113,7 @@
                 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
                 <aside class="app-sidebar" id="appSidebar" aria-label="Navegación principal">
                     <div class="sidebar-header">
-                        <a class="sidebar-brand" href="<%: ResolveUrl("~/Default.aspx") %>" aria-label="MediStack, inicio">
+                        <a class="sidebar-brand" href="<%: ResolveUrl("~/Dashboard.aspx") %>" aria-label="MediStack, inicio">
                             <img class="brand-logo" src="<%: ResolveUrl("~/Content/MediStack-logo-violeta.png") %>" alt="MediStack" />
                             <span class="brand-compact-mark">MS</span>
                         </a>
@@ -228,7 +228,7 @@
                             </div>
                         </div>
                         <div class="topbar-right">
-                            <a class="topbar-action-btn" href="<%: ResolveUrl("~/Default.aspx") %>" title="Ir a Inicio" aria-label="Ir a Inicio">
+                            <a class="topbar-action-btn" href="<%: ResolveUrl("~/Dashboard.aspx") %>" title="Ir a Inicio" aria-label="Ir a Inicio">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                                     <polyline points="9 22 9 12 15 12 15 22" />

@@ -10,10 +10,6 @@
         <section class="landing-hero" aria-labelledby="hero-title">
             <div class="hero-grid">
                 <div class="hero-content">
-                    <div class="hero-badge">
-                        <span class="hero-badge-dot" aria-hidden="true"></span>
-                        <span>MediStack · Salud Digital Inclusiva</span>
-                    </div>
                     <h1 id="hero-title" class="hero-title">
                         Gestión clínica simple, ágil y <span class="gradient-text">para todas las personas</span>
                     </h1>
@@ -21,20 +17,7 @@
                         Transformamos la atención en salud con una plataforma moderna y fácil de usar. Gestioná turnos, seguimientos médicos y administración con total comodidad y sin barreras.
                     </p>
 
-                    <!-- Estado para usuario autenticado -->
-                    <asp:Panel ID="PanelUsuarioAutenticado" runat="server" CssClass="hero-auth-box" Visible="false">
-                        <div class="hero-auth-info">
-                            <p class="hero-auth-greeting">Bienvenido de nuevo, <asp:Literal ID="NombreUsuarioLiteral" runat="server" /></p>
-                            <p class="hero-auth-role">Perfil activo: <strong><asp:Literal ID="RolUsuarioLiteral" runat="server" /></strong></p>
-                        </div>
-                        <a href="<%: ResolveUrl("~/Dashboard.aspx") %>" class="btn-hero btn-hero-primary">
-                            Ver tu espacio
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                        </a>
-                    </asp:Panel>
-
-                    <!-- Estado para visitante anónimo -->
-                    <asp:Panel ID="PanelUsuarioAnonimo" runat="server" CssClass="hero-actions" Visible="true">
+                    <div class="hero-actions">
                         <a href="<%: ResolveUrl("~/Account/Login.aspx") %>" class="btn-hero btn-hero-primary">
                             Ingresar
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
@@ -45,7 +28,7 @@
                         <a href="#inclusion" class="btn-hero btn-hero-secondary">
                             Enfoque Inclusivo
                         </a>
-                    </asp:Panel>
+                    </div>
                 </div>
 
                 <!-- Hero Visual: Beneficios Clave -->
@@ -125,7 +108,7 @@
                     <div class="pillar-icon-box" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                            <circle cx="12" cy="12" r="3"/>
+                            <circle cx="12" cy="3"/>
                         </svg>
                     </div>
                     <h3>Lectura cómoda y clara</h3>
@@ -177,8 +160,6 @@
                         <span class="pillar-badge">Formularios Guiados</span>
                     </div>
                 </article>
-
-               
             </div>
         </section>
 
@@ -312,20 +293,14 @@
                 Descubrí cómo MediStack ayuda a centros de salud, médicos y pacientes a comunicarse y gestionarse sin dificultades.
             </p>
 
-            <asp:Panel ID="PanelCtaAutenticado" runat="server" CssClass="cta-banner-actions" Visible="false">
-                <a href="<%: ResolveUrl("~/Dashboard.aspx") %>" class="btn-hero btn-cta-white">
-                    Ver tu espacio
-                </a>
-            </asp:Panel>
-
-            <asp:Panel ID="PanelCtaAnonimo" runat="server" CssClass="cta-banner-actions" Visible="true">
+            <div class="cta-banner-actions">
                 <a href="<%: ResolveUrl("~/Account/Login.aspx") %>" class="btn-hero btn-cta-white">
                     Ingresar
                 </a>
                 <a href="<%: ResolveUrl("~/Account/Registro.aspx") %>" class="btn-hero btn-cta-outline">
                     Registrarse como Paciente
                 </a>
-            </asp:Panel>
+            </div>
         </section>
     </div>
 </asp:Content>
