@@ -5,6 +5,7 @@
         <h1>Pacientes</h1>
         <p>Consulta y mantiene los datos de los pacientes de la clínica.</p>
     </section>
+    <a class="ms-jump-link" href="#formulario-paciente-title">Ir al formulario de alta o edición</a>
     <asp:Label ID="Mensaje" runat="server" Visible="false" role="status" />
     <section class="panel management-panel" aria-labelledby="buscar-paciente-title">
         <div class="section-heading-row">

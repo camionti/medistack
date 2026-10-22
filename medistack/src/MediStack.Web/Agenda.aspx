@@ -18,6 +18,7 @@
                     <asp:HyperLink ID="SemanaAnterior" runat="server" CssClass="button button-light" Text="Semana anterior" />
                     <asp:HyperLink ID="SemanaActual" runat="server" CssClass="button button-secondary" Text="Semana actual" />
                     <asp:HyperLink ID="SemanaSiguiente" runat="server" CssClass="button button-light" Text="Semana siguiente" />
+                    <a class="button button-light" href="<%: ResolveUrl("~/Agenda.aspx?vista=dia") %>">Jornada de hoy</a>
                 </div>
             </div>
             <div class="agenda-filter-tabs" role="group" aria-label="Filtro de turnos">

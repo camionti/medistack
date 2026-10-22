@@ -7,6 +7,12 @@
     </section>
     <asp:Label ID="Mensaje" runat="server" Visible="false" role="status" />
     <asp:Panel ID="FichaPanel" runat="server" Visible="false">
+        <nav class="ms-page-shortcuts" aria-label="Secciones de la ficha">
+            <a href="#datos-paciente-title">Datos personales</a>
+            <a href="#cobertura-paciente-title">Cobertura</a>
+            <a href="#historial-paciente-title">Atenciones</a>
+            <a href="#cobros-paciente-title">Cobros</a>
+        </nav>
         <section class="panel management-panel" aria-labelledby="datos-paciente-title">
             <div class="section-heading-row">
                 <div>
