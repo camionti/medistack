@@ -6,6 +6,15 @@
         <p>Indicadores de turnos, ingresos, obras sociales y honorarios para el período elegido.</p>
     </section>
 
+    <nav class="ms-page-shortcuts" aria-label="Secciones de reportes">
+        <a href="#TurnosEstado-title">Turnos</a>
+        <a href="#IngresosMedio-title">Ingresos</a>
+        <a href="#ObrasSociales-title">Obras sociales</a>
+        <a href="#Honorarios-title">Honorarios</a>
+        <a href="#Egresos-title">Egresos</a>
+        <a href="#auditoria-title">Auditoría de IA</a>
+    </nav>
+
     <asp:Label ID="Mensaje" runat="server" Visible="false" role="status" />
 
     <section class="panel management-panel" aria-labelledby="filtro-title">

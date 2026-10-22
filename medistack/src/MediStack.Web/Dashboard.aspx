@@ -14,7 +14,8 @@
                     <span class="card-number" aria-hidden="true">01</span>
                     <h3>Mis turnos</h3>
                     <p>Consulta y administra tus próximos turnos.</p>
-                    <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Consultar y solicitar turnos</a>
+                    <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Consultar mis turnos</a>
+                    <a href="<%: ResolveUrl("~/Turnos.aspx?vista=solicitar") %>#solicitar-turno-title">Solicitar nuevo turno</a>
                 </article>
                 <article class="panel dashboard-card">
                     <span class="card-number" aria-hidden="true">02</span>

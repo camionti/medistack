@@ -5,6 +5,7 @@
         <h1>Profesionales</h1>
         <p>Administra los datos, especialidades y el acceso de los profesionales.</p>
     </section>
+    <a class="ms-jump-link" href="#formulario-profesional-title">Ir al formulario de alta o edición</a>
     <asp:Label ID="Mensaje" runat="server" Visible="false" role="status" />
     <section class="panel management-panel" aria-labelledby="buscar-profesional-title">
         <div class="section-heading-row">

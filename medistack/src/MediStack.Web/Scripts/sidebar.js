@@ -66,12 +66,26 @@
         if (mobileMenuBtn) {
             mobileMenuBtn.addEventListener("click", function () {
                 appShell.classList.add("sidebar-open-mobile");
+                mobileMenuBtn.setAttribute("aria-expanded", "true");
+                mobileMenuBtn.setAttribute("aria-label", "Cerrar menú");
+                var primerEnlace = sidebar && sidebar.querySelector(".sidebar-nav-panel .sidebar-nav-link");
+                if (primerEnlace) {
+                    primerEnlace.focus();
+                } else if (collapseBtn) {
+                    collapseBtn.focus();
+                }
             });
         }
 
         function closeMobileSidebar() {
-            if (appShell) {
-                appShell.classList.remove("sidebar-open-mobile");
+            var estabaAbierto = appShell.classList.contains("sidebar-open-mobile");
+            appShell.classList.remove("sidebar-open-mobile");
+            if (mobileMenuBtn) {
+                mobileMenuBtn.setAttribute("aria-expanded", "false");
+                mobileMenuBtn.setAttribute("aria-label", "Abrir menú");
+                if (estabaAbierto) {
+                    mobileMenuBtn.focus();
+                }
             }
         }
 
@@ -84,6 +98,26 @@
                 closeMobileSidebar();
             }
         });
+
+        if (sidebar) {
+            sidebar.addEventListener("keydown", function (e) {
+                if (e.key !== "Tab" || !appShell.classList.contains("sidebar-open-mobile")) return;
+                var elementos = sidebar.querySelectorAll("a[href], button:not([disabled]), summary");
+                var visibles = Array.prototype.filter.call(elementos, function (elemento) {
+                    return elemento.getClientRects().length > 0;
+                });
+                if (!visibles.length) return;
+                var primero = visibles[0];
+                var ultimo = visibles[visibles.length - 1];
+                if (e.shiftKey && document.activeElement === primero) {
+                    e.preventDefault();
+                    ultimo.focus();
+                } else if (!e.shiftKey && document.activeElement === ultimo) {
+                    e.preventDefault();
+                    primero.focus();
+                }
+            });
+        }
 
         // Resizable drag & drop on sidebar border
         if (resizer && sidebar) {
