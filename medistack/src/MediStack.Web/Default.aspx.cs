@@ -14,25 +14,11 @@ namespace MediStack.Web
                 Session.Clear();
             }
 
-            bool estaAutenticado = Context.User.Identity.IsAuthenticated && Session["UsuarioId"] != null;
-
-            PanelUsuarioAutenticado.Visible = estaAutenticado;
-            PanelUsuarioAnonimo.Visible = !estaAutenticado;
-            PanelCtaAutenticado.Visible = estaAutenticado;
-            PanelCtaAnonimo.Visible = !estaAutenticado;
-
-            if (estaAutenticado)
+            if (Context.User.Identity.IsAuthenticated && Session["UsuarioId"] != null)
             {
-                string nombre = Convert.ToString(Session["NombreCompleto"]);
-                string rol = Convert.ToString(Session["RolNombre"]);
-
-                if (string.IsNullOrWhiteSpace(nombre))
-                {
-                    nombre = Context.User.Identity.Name;
-                }
-
-                NombreUsuarioLiteral.Text = Server.HtmlEncode(nombre);
-                RolUsuarioLiteral.Text = Server.HtmlEncode(rol ?? string.Empty);
+                Response.Redirect("~/Dashboard.aspx", false);
+                Context.ApplicationInstance.CompleteRequest();
+                return;
             }
         }
     }

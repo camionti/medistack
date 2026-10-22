@@ -56,36 +56,36 @@
     </asp:Panel>
     <asp:Panel ID="AdministrativoPanel" runat="server" Visible="false">
         <section aria-labelledby="administrativo-title">
-            <h2 id="administrativo-title" class="section-title">Área administrativa</h2>
+            <h2 id="administrativo-title" class="section-title">Panel operativo administrativo</h2>
             <div class="card-grid">
-                <article class="panel dashboard-card">
+                <article class="panel dashboard-card dashboard-card-highlight">
                     <span class="card-number" aria-hidden="true">01</span>
-                    <h3>Gestión clínica</h3>
-                    <p>Pacientes, profesionales, especialidades y agendas.</p>
-                    <a href="<%: ResolveUrl("~/Pacientes.aspx") %>">Pacientes</a>
-                    <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Turnos</a>
-                    <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Agendas</a>
-                    <a href="<%: ResolveUrl("~/Profesionales.aspx") %>">Profesionales</a>
-                    <a href="<%: ResolveUrl("~/Especialidades.aspx") %>">Especialidades</a>
+                    <h3>En foco hoy</h3>
+                    <p>Atención directa en mostrador, recepción de pacientes y cobranza del día.</p>
+                    <a href="<%: ResolveUrl("~/Turnos.aspx?filtro=hoy") %>">Turnos de hoy</a>
+                    <a href="<%: ResolveUrl("~/RevisionDia.aspx") %>">Revisión del día</a>
+                    <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Cobros</a>
+                    <a href="<%: ResolveUrl("~/Caja.aspx") %>">Caja diaria</a>
+                    <a href="<%: ResolveUrl("~/Pacientes.aspx") %>">Recepción de pacientes</a>
                 </article>
                 <article class="panel dashboard-card">
                     <span class="card-number" aria-hidden="true">02</span>
-                    <h3>Caja y cobros</h3>
-                    <p>Registra pagos, consulta ingresos y controla los cierres diarios.</p>
-                    <a href="<%: ResolveUrl("~/Cobros.aspx") %>">Administrar cobros</a>
-                    <a href="<%: ResolveUrl("~/Caja.aspx") %>">Consultar y cerrar caja</a>
-                    <a href="<%: ResolveUrl("~/RevisionDia.aspx") %>">Revisión del día (ausentes)</a>
-                    <a href="<%: ResolveUrl("~/Liquidaciones.aspx") %>">Liquidar honorarios</a>
+                    <h3>Gestión semanal</h3>
+                    <p>Seguimiento rutinario de agendas médicas, reprogramaciones y honorarios.</p>
+                    <a href="<%: ResolveUrl("~/Agenda.aspx") %>">Agendas de la semana</a>
+                    <a href="<%: ResolveUrl("~/Reembolsos.aspx") %>">Reembolsos pendientes</a>
+                    <a href="<%: ResolveUrl("~/Liquidaciones.aspx") %>">Honorarios del período</a>
+                    <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente de turnos</a>
                 </article>
                 <article class="panel dashboard-card">
                     <span class="card-number" aria-hidden="true">03</span>
-                    <h3>Obras sociales y reportes</h3>
-                    <p>Convenios, coberturas y estadísticas de la clínica.</p>
-                    <a href="<%: ResolveUrl("~/ObrasSociales.aspx") %>">Obras sociales</a>
-                    <a href="<%: ResolveUrl("~/Coberturas.aspx") %>">Coberturas</a>
-                    <a href="<%: ResolveUrl("~/Convenios.aspx") %>">Convenios</a>
+                    <h3>Archivo y catálogos</h3>
+                    <p>Búsquedas históricas globales, métricas y mantenimiento de maestros.</p>
+                    <a href="<%: ResolveUrl("~/Pacientes.aspx") %>">Padrón histórico de pacientes</a>
+                    <a href="<%: ResolveUrl("~/Turnos.aspx") %>">Historial de turnos</a>
                     <a href="<%: ResolveUrl("~/Reportes.aspx") %>">Reportes y estadísticas</a>
-                    <a href="<%: ResolveUrl("~/AsistentePaciente.aspx") %>">Asistente de IA</a>
+                    <a href="<%: ResolveUrl("~/ObrasSociales.aspx") %>">Obras sociales</a>
+                    <a href="<%: ResolveUrl("~/Convenios.aspx") %>">Convenios y coberturas</a>
                 </article>
             </div>
         </section>
