@@ -134,7 +134,7 @@
                                 <a href="<%: ResolveUrl("~/Turnos.aspx") %>" class="sidebar-nav-link" data-title="Turnos"><span>Turnos</span></a>
                                 <a href="<%: ResolveUrl("~/Cobros.aspx") %>" class="sidebar-nav-link" data-title="Cobros"><span>Cobros</span></a>
                                 <a href="<%: ResolveUrl("~/Caja.aspx") %>" class="sidebar-nav-link" data-title="Caja"><span>Caja</span></a>
-                                <a href="<%: ResolveUrl("~/RevisionDia.aspx") %>" class="sidebar-nav-link" data-title="Revisión del día"><span>Revisión del día</span></a>
+                                <a href="<%: ResolveUrl("~/RevisionDia.aspx") %>" class="sidebar-nav-link" data-title="Recepción del día"><span>Recepción del día</span></a>
 
                                 <div class="sidebar-section-title"><span>Gestión y Seguimiento</span></div>
                                 <a href="<%: ResolveUrl("~/Agenda.aspx") %>" class="sidebar-nav-link" data-title="Agendas"><span>Agendas</span></a>

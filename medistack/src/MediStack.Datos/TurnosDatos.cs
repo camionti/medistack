@@ -155,7 +155,7 @@ namespace MediStack.Datos
                 INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
                 WHERE t.ProfesionalId = @ProfesionalId AND t.EspecialidadId = @EspecialidadId
                   AND t.FechaHora >= @Fecha AND t.FechaHora < DATEADD(day, 1, @Fecha)
-                  AND t.Estado IN (N'Solicitado', N'Confirmado')
+                  AND t.Estado IN (N'Solicitado', N'Confirmado', N'EnEspera')
                   AND (@TurnoExcluido IS NULL OR t.TurnoId <> @TurnoExcluido)
                 ORDER BY t.FechaHora, t.TurnoId;",
                 ParametroGuid("@ProfesionalId", profesionalId),
@@ -199,7 +199,7 @@ namespace MediStack.Datos
                 INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
                 WHERE t.ProfesionalId = @ProfesionalId AND t.EspecialidadId = @EspecialidadId
                   AND t.FechaHora >= @Desde AND t.FechaHora < DATEADD(day, 1, @Hasta)
-                  AND t.Estado IN (N'Solicitado', N'Confirmado')
+                  AND t.Estado IN (N'Solicitado', N'Confirmado', N'EnEspera')
                   AND (@TurnoExcluido IS NULL OR t.TurnoId <> @TurnoExcluido)
                 ORDER BY t.FechaHora, t.TurnoId;",
                 ParametroGuid("@ProfesionalId", profesionalId),
@@ -223,7 +223,7 @@ namespace MediStack.Datos
                 INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = t.PacienteId
                 INNER JOIN dbo.Usuarios profesional ON profesional.UsuarioId = t.ProfesionalId
                 INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
-                WHERE t.Estado IN (N'Solicitado', N'Confirmado')
+                WHERE t.Estado IN (N'Solicitado', N'Confirmado', N'EnEspera')
                   AND t.FechaHora <= SYSDATETIME()
                 ORDER BY t.FechaHora, t.TurnoId;");
         }
@@ -235,7 +235,8 @@ namespace MediStack.Datos
                        paciente.Nombre + N' ' + paciente.Apellido AS Paciente,
                        profesional.Nombre + N' ' + profesional.Apellido AS Profesional,
                        e.Nombre AS Especialidad, e.DuracionEstandarMinutos, t.FechaHora,
-                       t.Estado, t.Motivo, t.EstadoSena, t.MontoSena, t.VencimientoSena
+                       t.Estado, t.Motivo, t.EstadoSena, t.MontoSena, t.VencimientoSena,
+                       t.FechaHoraLlegada
                 FROM dbo.Turnos t
                 INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
                 INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = p.PacienteId
@@ -253,11 +254,59 @@ namespace MediStack.Datos
                 new SqlParameter("@Hasta", SqlDbType.Date) { Value = hasta.HasValue ? (object)hasta.Value.Date : DBNull.Value });
         }
 
+        public DataTable ObtenerTurnosRecepcion(
+            DateTime fecha, string filtro, int? especialidadId, Guid? profesionalId, string estadoFiltro)
+        {
+            DateTime fechaInicio = fecha.Date;
+            DateTime fechaFin = fechaInicio.AddDays(1);
+            string filtroLimpio = string.IsNullOrWhiteSpace(filtro) ? null : filtro.Trim();
+            string filtroLike = filtroLimpio != null ? "%" + filtroLimpio + "%" : null;
+            string estadoLimpio = string.IsNullOrWhiteSpace(estadoFiltro) || estadoFiltro == "Todos" ? null : estadoFiltro.Trim();
+
+            return Consultar(@"
+                SELECT t.TurnoId, t.PacienteId,
+                       paciente.Nombre + N' ' + paciente.Apellido AS Paciente,
+                       paciente.NumeroDocumento AS PacienteDni,
+                       t.ProfesionalId,
+                       profesional.Nombre + N' ' + profesional.Apellido AS Profesional,
+                       t.EspecialidadId,
+                       e.Nombre AS Especialidad,
+                       e.DuracionEstandarMinutos,
+                       t.FechaHora,
+                       t.Estado,
+                       t.Motivo,
+                       t.EstadoSena,
+                       t.MontoSena,
+                       t.VencimientoSena,
+                       t.FechaHoraLlegada
+                FROM dbo.Turnos t
+                INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
+                INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = p.PacienteId
+                INNER JOIN dbo.Profesionales pr ON pr.ProfesionalId = t.ProfesionalId
+                INNER JOIN dbo.Usuarios profesional ON profesional.UsuarioId = pr.ProfesionalId
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                WHERE t.FechaHora >= @FechaInicio AND t.FechaHora < @FechaFin
+                  AND (@EspecialidadId IS NULL OR t.EspecialidadId = @EspecialidadId)
+                  AND (@ProfesionalId IS NULL OR t.ProfesionalId = @ProfesionalId)
+                  AND (@EstadoFiltro IS NULL OR t.Estado = @EstadoFiltro)
+                  AND (@Filtro IS NULL OR paciente.NumeroDocumento LIKE @FiltroLike 
+                                       OR paciente.Apellido LIKE @FiltroLike 
+                                       OR paciente.Nombre LIKE @FiltroLike)
+                ORDER BY t.FechaHora ASC, t.TurnoId ASC;",
+                new SqlParameter("@FechaInicio", SqlDbType.DateTime2) { Value = fechaInicio },
+                new SqlParameter("@FechaFin", SqlDbType.DateTime2) { Value = fechaFin },
+                ParametroInt32Nullable("@EspecialidadId", especialidadId),
+                ParametroGuidNullable("@ProfesionalId", profesionalId),
+                new SqlParameter("@EstadoFiltro", SqlDbType.NVarChar, 20) { Value = (object)estadoLimpio ?? DBNull.Value },
+                new SqlParameter("@Filtro", SqlDbType.NVarChar, 100) { Value = (object)filtroLimpio ?? DBNull.Value },
+                new SqlParameter("@FiltroLike", SqlDbType.NVarChar, 105) { Value = (object)filtroLike ?? DBNull.Value });
+        }
+
         public TurnoDetalle ObtenerTurno(int turnoId)
         {
             DataTable datos = Consultar(@"
                 SELECT TurnoId, PacienteId, ProfesionalId, EspecialidadId,
-                       FechaHora, Estado, Motivo
+                       FechaHora, Estado, Motivo, FechaHoraLlegada
                 FROM dbo.Turnos
                 WHERE TurnoId = @TurnoId;",
                 ParametroInt32("@TurnoId", turnoId));
@@ -276,7 +325,8 @@ namespace MediStack.Datos
                 EspecialidadId = Convert.ToInt32(fila["EspecialidadId"]),
                 FechaHora = Convert.ToDateTime(fila["FechaHora"]),
                 Estado = Convert.ToString(fila["Estado"]),
-                Motivo = fila.IsNull("Motivo") ? string.Empty : Convert.ToString(fila["Motivo"])
+                Motivo = fila.IsNull("Motivo") ? string.Empty : Convert.ToString(fila["Motivo"]),
+                FechaHoraLlegada = fila.IsNull("FechaHoraLlegada") ? (DateTime?)null : Convert.ToDateTime(fila["FechaHoraLlegada"])
             };
         }
 
@@ -591,13 +641,15 @@ namespace MediStack.Datos
 
                         bool puedeCambiar = esAdministrativo
                             ? ((turno.Estado == "Solicitado" && nuevoEstado == "Confirmado")
+                                || (turno.Estado == "Confirmado" && nuevoEstado == "EnEspera" && turno.FechaHora.Date == DateTime.Today)
+                                || (turno.Estado == "EnEspera" && nuevoEstado == "Confirmado")
                                 || (EsVigente(turno.Estado) && nuevoEstado == "Cancelado")
-                                || (turno.Estado == "Confirmado"
+                                || ((turno.Estado == "Confirmado" || turno.Estado == "EnEspera")
                                     && (nuevoEstado == "Atendido" || nuevoEstado == "Ausente")
-                                    && turno.FechaHora <= DateTime.Now))
-                            : turno.Estado == "Confirmado"
+                                    && (nuevoEstado == "Ausente" || turno.Estado == "EnEspera" || turno.FechaHora <= DateTime.Now)))
+                            : (turno.Estado == "Confirmado" || turno.Estado == "EnEspera")
                                 && (nuevoEstado == "Atendido" || nuevoEstado == "Ausente")
-                                && turno.FechaHora <= DateTime.Now;
+                                && (nuevoEstado == "Ausente" || turno.Estado == "EnEspera" || turno.FechaHora <= DateTime.Now);
 
                         if (!puedeCambiar)
                         {
@@ -607,6 +659,9 @@ namespace MediStack.Datos
                         using (SqlCommand comando = new SqlCommand(@"
                             UPDATE dbo.Turnos
                             SET Estado = @Estado,
+                                FechaHoraLlegada = CASE WHEN @Estado = N'EnEspera' AND FechaHoraLlegada IS NULL THEN SYSDATETIME()
+                                                        WHEN @Estado = N'Confirmado' THEN NULL
+                                                        ELSE FechaHoraLlegada END,
                                 -- Ausente: el paciente no vino, la clinica se queda con la seña.
                                 -- Cancelado: la seña sin pagar deja de ser necesaria; la pagada
                                 -- la resuelve ResolverSenaAlCancelar (mas abajo).
@@ -694,7 +749,7 @@ namespace MediStack.Datos
                     FROM dbo.Turnos t WITH (UPDLOCK, HOLDLOCK, INDEX(UX_Turnos_Profesional_FechaHora_Vigente))
                     INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
                     WHERE t.ProfesionalId = @ProfesionalId
-                      AND t.Estado IN (N'Solicitado', N'Confirmado')
+                      AND t.Estado IN (N'Solicitado', N'Confirmado', N'EnEspera')
                       AND t.FechaHora < DATEADD(minute, @Duracion, @FechaHora)
                       AND DATEADD(minute, e.DuracionEstandarMinutos, t.FechaHora) > @FechaHora
                       AND (@TurnoExcluido IS NULL OR t.TurnoId <> @TurnoExcluido)
@@ -706,7 +761,7 @@ namespace MediStack.Datos
                     SELECT 1
                     FROM dbo.Turnos t WITH (UPDLOCK, HOLDLOCK, INDEX(UX_Turnos_Paciente_Especialidad_Vigente))
                     WHERE t.PacienteId = @PacienteId AND t.EspecialidadId = @EspecialidadId
-                      AND t.Estado IN (N'Solicitado', N'Confirmado')
+                      AND t.Estado IN (N'Solicitado', N'Confirmado', N'EnEspera')
                       AND (@TurnoExcluido IS NULL OR t.TurnoId <> @TurnoExcluido)
                 )
                     THROW 51025, N'El paciente ya tiene un turno vigente para esta especialidad.', 1;",
@@ -727,7 +782,7 @@ namespace MediStack.Datos
         {
             using (SqlCommand comando = new SqlCommand(@"
                 SELECT TurnoId, PacienteId, ProfesionalId, EspecialidadId,
-                       FechaHora, Estado, Motivo
+                       FechaHora, Estado, Motivo, FechaHoraLlegada
                 FROM dbo.Turnos WITH (UPDLOCK, HOLDLOCK)
                 WHERE TurnoId = @TurnoId;",
                 conexion, transaccion))
@@ -748,7 +803,8 @@ namespace MediStack.Datos
                         EspecialidadId = lector.GetInt32(3),
                         FechaHora = lector.GetDateTime(4),
                         Estado = lector.GetString(5),
-                        Motivo = lector.IsDBNull(6) ? string.Empty : lector.GetString(6)
+                        Motivo = lector.IsDBNull(6) ? string.Empty : lector.GetString(6),
+                        FechaHoraLlegada = lector.IsDBNull(7) ? (DateTime?)null : lector.GetDateTime(7)
                     };
                 }
             }
@@ -1016,7 +1072,7 @@ namespace MediStack.Datos
                 FROM dbo.Turnos
                 WHERE PacienteId = @PacienteId
                   AND EspecialidadId = @EspecialidadId
-                  AND Estado IN (N'Solicitado', N'Confirmado')
+                  AND Estado IN (N'Solicitado', N'Confirmado', N'EnEspera')
                   AND (@TurnoExcluido IS NULL OR TurnoId <> @TurnoExcluido);",
                 ParametroGuid("@PacienteId", pacienteId),
                 ParametroInt32("@EspecialidadId", especialidadId),
@@ -1064,9 +1120,17 @@ namespace MediStack.Datos
             return new SqlParameter(nombre, SqlDbType.Int) { Value = valor };
         }
 
+        private static SqlParameter ParametroInt32Nullable(string nombre, int? valor)
+        {
+            return new SqlParameter(nombre, SqlDbType.Int)
+            {
+                Value = valor.HasValue ? (object)valor.Value : DBNull.Value
+            };
+        }
+
         private static bool EsVigente(string estado)
         {
-            return estado == "Solicitado" || estado == "Confirmado";
+            return estado == "Solicitado" || estado == "Confirmado" || estado == "EnEspera";
         }
     }
 }

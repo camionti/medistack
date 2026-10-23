@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -901,8 +901,9 @@ namespace MediStack.Web
 
         protected bool PuedeCerrarTurno(object estado, object fechaHora)
         {
-            return Convert.ToString(estado) == "Confirmado"
-                && Convert.ToDateTime(fechaHora) <= DateTime.Now
+            string est = Convert.ToString(estado);
+            return (est == "Confirmado" || est == "EnEspera")
+                && (est == "EnEspera" || Convert.ToDateTime(fechaHora) <= DateTime.Now)
                 && (EsAdministrativo || TieneRol("PROFESIONAL"));
         }
 

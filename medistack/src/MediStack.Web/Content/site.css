@@ -1169,6 +1169,16 @@ body.is-resizing-sidebar * {
     background: #fff5db;
 }
 
+.status-turno[data-estado="EnEspera"] {
+    color: #6b21a8;
+    background: #f3e8ff;
+    border: 1px solid #d8b4fe;
+    font-weight: 600;
+}
+
+.status-turno[data-estado="EnEspera"]::before {
+    background: #9333ea;
+}
 .status-turno[data-estado="Confirmado"] {
     color: #174d98;
     background: #eaf3ff;
@@ -1942,4 +1952,87 @@ a.sidebar-user-meta {
     .ms-page-shortcuts a {
         flex: 1 1 auto;
     }
+}
+
+/* --- Recepción del Día y Sala de Espera (F-02) --- */
+.recepcion-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 1.25rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md, 8px);
+}
+
+.recepcion-stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+
+.recepcion-stat-card {
+    flex: 1 1 180px;
+    padding: 0.85rem 1.15rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md, 8px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.recepcion-stat-card.stat-espera {
+    border-left: 4px solid #9333ea;
+    background: #faf5ff;
+}
+
+.recepcion-stat-card.stat-total {
+    border-left: 4px solid #2563eb;
+}
+
+.recepcion-stat-card.stat-atendidos {
+    border-left: 4px solid #16a34a;
+}
+
+.recepcion-stat-num {
+    font-size: 1.65rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #0f172a;
+}
+
+.recepcion-stat-label {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+.badge-sena {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.78rem;
+    border-radius: 4px;
+    font-weight: 600;
+}
+.badge-sena-pagada { background: #dcfce7; color: #166534; }
+.badge-sena-pendiente { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.badge-sena-norequerida { background: #f1f5f9; color: #64748b; }
+.badge-sena-retenida { background: #fee2e2; color: #991b1b; }
+
+.hora-destacada {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #1e293b;
+}
+
+.llegada-time {
+    display: block;
+    font-size: 0.78rem;
+    color: #7c3aed;
+    font-weight: 500;
 }

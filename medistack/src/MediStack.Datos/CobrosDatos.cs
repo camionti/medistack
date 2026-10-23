@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
@@ -56,7 +56,7 @@ namespace MediStack.Datos
                        paciente.Nombre + N' ' + paciente.Apellido AS Paciente,
                        profesional.Nombre + N' ' + profesional.Apellido AS Profesional,
                        e.Nombre AS Especialidad,
-                       CAST(CASE WHEN t.Estado IN (N'Solicitado', N'Confirmado')
+                       CAST(CASE WHEN t.Estado IN (N'Solicitado', N'Confirmado', N'EnEspera')
                                  AND t.EstadoSena = N'Pendiente' AND t.MontoSena > 0
                                  AND NOT EXISTS (SELECT 1 FROM dbo.Cobros c
                                                  WHERE c.TurnoId = t.TurnoId AND c.TipoCobro = N'Sena')
@@ -73,7 +73,7 @@ namespace MediStack.Datos
                   AND (@ProfesionalId IS NULL OR t.ProfesionalId = @ProfesionalId)
                   AND
                   (
-                      (t.Estado IN (N'Solicitado', N'Confirmado') AND t.EstadoSena = N'Pendiente'
+                      (t.Estado IN (N'Solicitado', N'Confirmado', N'EnEspera') AND t.EstadoSena = N'Pendiente'
                        AND t.MontoSena > 0 AND NOT EXISTS
                            (SELECT 1 FROM dbo.Cobros c WHERE c.TurnoId = t.TurnoId AND c.TipoCobro = N'Sena'))
                       OR

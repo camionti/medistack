@@ -458,6 +458,59 @@ namespace MediStack.Negocio
             return _datos.ObtenerTurnosSinResolver();
         }
 
+        public DataTable ObtenerTurnosRecepcion(
+            DateTime fecha, string filtro, int? especialidadId, Guid? profesionalId, string estadoFiltro)
+        {
+            _datos.LiberarReservasVencidas();
+            return _datos.ObtenerTurnosRecepcion(fecha, filtro, especialidadId, profesionalId, estadoFiltro);
+        }
+
+        public void RegistrarLlegada(int turnoId)
+        {
+            if (turnoId <= 0)
+            {
+                throw new InvalidOperationException("Identificador de turno inválido.");
+            }
+
+            TurnoDetalle turno = _datos.ObtenerTurno(turnoId);
+            if (turno == null)
+            {
+                throw new InvalidOperationException("El turno no existe.");
+            }
+
+            if (turno.FechaHora.Date != DateTime.Today)
+            {
+                throw new InvalidOperationException("Solo se puede registrar la llegada de turnos de la fecha de hoy.");
+            }
+
+            if (turno.Estado != "Confirmado")
+            {
+                throw new InvalidOperationException("Solo se puede registrar la llegada de turnos en estado Confirmado.");
+            }
+
+            EjecutarSeguro(() => _datos.CambiarEstadoTurno(turnoId, "EnEspera", true, null));
+        }
+
+        public void DeshacerLlegada(int turnoId)
+        {
+            if (turnoId <= 0)
+            {
+                throw new InvalidOperationException("Identificador de turno inválido.");
+            }
+
+            TurnoDetalle turno = _datos.ObtenerTurno(turnoId);
+            if (turno == null)
+            {
+                throw new InvalidOperationException("El turno no existe.");
+            }
+
+            if (turno.Estado != "EnEspera")
+            {
+                throw new InvalidOperationException("El turno no se encuentra en sala de espera.");
+            }
+
+            EjecutarSeguro(() => _datos.CambiarEstadoTurno(turnoId, "Confirmado", true, null));
+        }
         public TurnoDetalle ObtenerTurno(int turnoId)
         {
             if (turnoId <= 0)
@@ -604,7 +657,7 @@ namespace MediStack.Negocio
         // Para "Cancelado" (Revision del dia) devuelve que paso con la seña; para el resto, null.
         public ResultadoCancelacion CambiarEstado(int turnoId, string estado, bool esAdministrativo, Guid? profesionalAutorizado)
         {
-            string[] estados = { "Confirmado", "Atendido", "Ausente", "Cancelado" };
+            string[] estados = { "Confirmado", "EnEspera", "Atendido", "Ausente", "Cancelado" };
             if (turnoId <= 0 || !estados.Contains(estado, StringComparer.Ordinal))
             {
                 throw new InvalidOperationException("Selecciona un estado valido para el turno.");

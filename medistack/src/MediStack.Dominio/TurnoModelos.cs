@@ -138,6 +138,41 @@ namespace MediStack.Dominio
         public DateTime FechaHora { get; set; }
         public string Estado { get; set; }
         public string Motivo { get; set; }
+        public DateTime? FechaHoraLlegada { get; set; }
+    }
+
+    public sealed class TurnoRecepcion
+    {
+        public int TurnoId { get; set; }
+        public Guid PacienteId { get; set; }
+        public string PacienteNombre { get; set; }
+        public string PacienteDni { get; set; }
+        public Guid ProfesionalId { get; set; }
+        public string ProfesionalNombre { get; set; }
+        public int EspecialidadId { get; set; }
+        public string Especialidad { get; set; }
+        public DateTime FechaHora { get; set; }
+        public string Estado { get; set; }
+        public string Motivo { get; set; }
+        public decimal MontoSena { get; set; }
+        public string EstadoSena { get; set; }
+        public DateTime? FechaHoraLlegada { get; set; }
+        public int DuracionEstandarMinutos { get; set; }
+
+        public bool PuedeRegistrarLlegada
+        {
+            get { return Estado == "Confirmado"; }
+        }
+
+        public bool EnEspera
+        {
+            get { return Estado == "EnEspera"; }
+        }
+
+        public bool TieneSenaPendiente
+        {
+            get { return EstadoSena == "Pendiente" && MontoSena > 0; }
+        }
     }
 
     public sealed class NotificacionTurno
