@@ -1,3 +1,4 @@
+﻿using System.Collections.Generic;
 using System;
 using System.Configuration;
 using System.Data;
@@ -55,6 +56,60 @@ namespace MediStack.Datos
                 ParametroGuid("@PacienteId", pacienteId));
         }
 
+        public ResumenClinicoRapido ObtenerResumenClinicoRapido(Guid pacienteId)
+        {
+            DataTable dtPaciente = ObtenerFichaPaciente(pacienteId);
+            if (dtPaciente.Rows.Count == 0)
+            {
+                return null;
+            }
+
+            DataRow fila = dtPaciente.Rows[0];
+            DateTime fechaNac = Convert.ToDateTime(fila["FechaNacimiento"]);
+            int edad = DateTime.Today.Year - fechaNac.Year;
+            if (fechaNac.Date > DateTime.Today.AddYears(-edad)) edad--;
+
+            DataTable dtHistorial = Consultar(@"
+                SELECT TOP (5) t.FechaHora, profesional.Nombre + N' ' + profesional.Apellido AS Profesional,
+                       e.Nombre AS Especialidad, rc.MotivoConsulta, rc.Diagnostico, rc.Observaciones
+                FROM dbo.Turnos t
+                INNER JOIN dbo.Profesionales p ON p.ProfesionalId = t.ProfesionalId
+                INNER JOIN dbo.Usuarios profesional ON profesional.UsuarioId = p.ProfesionalId
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                INNER JOIN dbo.RegistrosClinicos rc ON rc.TurnoId = t.TurnoId
+                WHERE t.PacienteId = @PacienteId
+                ORDER BY t.FechaHora DESC, t.TurnoId DESC;",
+                ParametroGuid("@PacienteId", pacienteId));
+
+            List<AntecedenteClinicoItem> antecedentes = new List<AntecedenteClinicoItem>(dtHistorial.Rows.Count);
+            foreach (DataRow h in dtHistorial.Rows)
+            {
+                antecedentes.Add(new AntecedenteClinicoItem
+                {
+                    Fecha = Convert.ToDateTime(h["FechaHora"]),
+                    Profesional = Convert.ToString(h["Profesional"]),
+                    Especialidad = Convert.ToString(h["Especialidad"]),
+                    MotivoConsulta = h.IsNull("MotivoConsulta") ? null : Convert.ToString(h["MotivoConsulta"]),
+                    Diagnostico = h.IsNull("Diagnostico") ? null : Convert.ToString(h["Diagnostico"]),
+                    Observaciones = h.IsNull("Observaciones") ? null : Convert.ToString(h["Observaciones"])
+                });
+            }
+
+            return new ResumenClinicoRapido
+            {
+                PacienteId = pacienteId,
+                NombreCompleto = Convert.ToString(fila["Nombre"]) + " " + Convert.ToString(fila["Apellido"]),
+                NumeroDocumento = Convert.ToString(fila["NumeroDocumento"]),
+                FechaNacimiento = fechaNac,
+                Edad = edad,
+                Telefono = fila.IsNull("Telefono") ? null : Convert.ToString(fila["Telefono"]),
+                ObraSocial = fila.IsNull("ObraSocial") ? null : Convert.ToString(fila["ObraSocial"]),
+                NumeroAfiliado = fila.IsNull("NumeroAfiliado") ? null : Convert.ToString(fila["NumeroAfiliado"]),
+                ContactoEmergenciaNombre = fila.IsNull("ContactoEmergenciaNombre") ? null : Convert.ToString(fila["ContactoEmergenciaNombre"]),
+                ContactoEmergenciaTelefono = fila.IsNull("ContactoEmergenciaTelefono") ? null : Convert.ToString(fila["ContactoEmergenciaTelefono"]),
+                AntecedentesRecientes = antecedentes
+            };
+        }
         public Paciente ObtenerPacientePorAfiliado(string numeroAfiliado)
         {
             DataTable tabla = Consultar(@"

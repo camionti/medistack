@@ -1084,6 +1084,167 @@ namespace MediStack.Datos
             return tabla.Rows.Count > 0;
         }
 
+        public IList<TurnoConsultorioItem> ObtenerTurnosConsultorio(Guid profesionalId, DateTime fecha)
+        {
+            DateTime fechaInicio = fecha.Date;
+            DateTime fechaFin = fechaInicio.AddDays(1);
+
+            DataTable tabla = Consultar(@"
+                SELECT t.TurnoId,
+                       t.FechaHora,
+                       t.PacienteId,
+                       paciente.Nombre + N' ' + paciente.Apellido AS NombrePaciente,
+                       paciente.NumeroDocumento,
+                       ISNULL(os.Nombre, N'Particular') AS ObraSocial,
+                       p.NumeroAfiliado,
+                       e.Nombre AS Especialidad,
+                       t.Motivo AS MotivoTurno,
+                       t.Estado,
+                       t.FechaHoraLlegada,
+                       CASE WHEN rc.TurnoId IS NOT NULL THEN 1 ELSE 0 END AS TieneEvolucion,
+                       rc.Diagnostico,
+                       rc.Observaciones,
+                       rc.FechaRegistro AS FechaRegistroEvolucion
+                FROM dbo.Turnos t
+                INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = t.PacienteId
+                INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
+                LEFT JOIN dbo.ObrasSociales os ON os.ObraSocialId = p.ObraSocialId
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                LEFT JOIN dbo.RegistrosClinicos rc ON rc.TurnoId = t.TurnoId
+                WHERE t.ProfesionalId = @ProfesionalId
+                  AND t.FechaHora >= @FechaInicio AND t.FechaHora < @FechaFin
+                  AND t.Estado <> N'Cancelado'
+                ORDER BY
+                    CASE WHEN t.Estado = N'EnEspera' THEN 0
+                         WHEN t.Estado = N'Confirmado' THEN 1
+                         WHEN t.Estado = N'Atendido' AND rc.TurnoId IS NULL THEN 2
+                         WHEN t.Estado = N'Atendido' THEN 3
+                         ELSE 4 END,
+                    t.FechaHora ASC;",
+                ParametroGuid("@ProfesionalId", profesionalId),
+                new SqlParameter("@FechaInicio", SqlDbType.DateTime2) { Value = fechaInicio },
+                new SqlParameter("@FechaFin", SqlDbType.DateTime2) { Value = fechaFin });
+
+            List<TurnoConsultorioItem> turnos = new List<TurnoConsultorioItem>(tabla.Rows.Count);
+            foreach (DataRow fila in tabla.Rows)
+            {
+                turnos.Add(new TurnoConsultorioItem
+                {
+                    TurnoId = Convert.ToInt32(fila["TurnoId"]),
+                    FechaHora = Convert.ToDateTime(fila["FechaHora"]),
+                    PacienteId = (Guid)fila["PacienteId"],
+                    NombrePaciente = Convert.ToString(fila["NombrePaciente"]),
+                    NumeroDocumento = Convert.ToString(fila["NumeroDocumento"]),
+                    ObraSocial = fila.IsNull("ObraSocial") ? null : Convert.ToString(fila["ObraSocial"]),
+                    NumeroAfiliado = fila.IsNull("NumeroAfiliado") ? null : Convert.ToString(fila["NumeroAfiliado"]),
+                    Especialidad = Convert.ToString(fila["Especialidad"]),
+                    MotivoTurno = fila.IsNull("MotivoTurno") ? null : Convert.ToString(fila["MotivoTurno"]),
+                    Estado = Convert.ToString(fila["Estado"]),
+                    FechaHoraLlegada = fila.IsNull("FechaHoraLlegada") ? (DateTime?)null : Convert.ToDateTime(fila["FechaHoraLlegada"]),
+                    TieneEvolucion = Convert.ToBoolean(fila["TieneEvolucion"]),
+                    Diagnostico = fila.IsNull("Diagnostico") ? null : Convert.ToString(fila["Diagnostico"]),
+                    Observaciones = fila.IsNull("Observaciones") ? null : Convert.ToString(fila["Observaciones"]),
+                    FechaRegistroEvolucion = fila.IsNull("FechaRegistroEvolucion") ? (DateTime?)null : Convert.ToDateTime(fila["FechaRegistroEvolucion"])
+                });
+            }
+
+            return turnos;
+        }
+
+        public void GuardarAtencionClinica(int turnoId, string motivoConsulta, string diagnostico, string observaciones)
+        {
+            if (turnoId <= 0)
+            {
+                throw new ArgumentException("El identificador del turno no es válido.", "turnoId");
+            }
+
+            if (string.IsNullOrWhiteSpace(diagnostico))
+            {
+                throw new InvalidOperationException("El diagnóstico es obligatorio para registrar la atención médica.");
+            }
+
+            using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
+            {
+                conexion.Open();
+                using (SqlTransaction transaccion = conexion.BeginTransaction(IsolationLevel.ReadCommitted))
+                {
+                    try
+                    {
+                        using (SqlCommand cmdTurno = new SqlCommand(@"
+                            SELECT Estado
+                            FROM dbo.Turnos WITH (UPDLOCK, ROWLOCK)
+                            WHERE TurnoId = @TurnoId;", conexion, transaccion))
+                        {
+                            cmdTurno.Parameters.Add(ParametroInt32("@TurnoId", turnoId));
+                            object estadoObj = cmdTurno.ExecuteScalar();
+                            if (estadoObj == null || estadoObj == DBNull.Value)
+                            {
+                                throw new InvalidOperationException("El turno no existe.");
+                            }
+
+                            string estado = Convert.ToString(estadoObj);
+                            if (estado == "Cancelado")
+                            {
+                                throw new InvalidOperationException("No se puede registrar atención sobre un turno cancelado.");
+                            }
+
+                            if (estado != "Atendido")
+                            {
+                                using (SqlCommand cmdUpdate = new SqlCommand(@"
+                                    UPDATE dbo.Turnos
+                                    SET Estado = N'Atendido'
+                                    WHERE TurnoId = @TurnoId;", conexion, transaccion))
+                                {
+                                    cmdUpdate.Parameters.Add(ParametroInt32("@TurnoId", turnoId));
+                                    cmdUpdate.ExecuteNonQuery();
+                                }
+                            }
+                        }
+
+                        using (SqlCommand cmdRegistro = new SqlCommand(@"
+                            IF EXISTS (SELECT 1 FROM dbo.RegistrosClinicos WITH (UPDLOCK, ROWLOCK) WHERE TurnoId = @TurnoId)
+                            BEGIN
+                                UPDATE dbo.RegistrosClinicos
+                                SET Diagnostico = @Diagnostico,
+                                    Observaciones = @Observaciones,
+                                    MotivoConsulta = ISNULL(@MotivoConsulta, MotivoConsulta),
+                                    FechaRegistro = SYSDATETIME()
+                                WHERE TurnoId = @TurnoId;
+                            END
+                            ELSE
+                            BEGIN
+                                INSERT INTO dbo.RegistrosClinicos (TurnoId, FechaRegistro, MotivoConsulta, Diagnostico, Observaciones)
+                                VALUES (@TurnoId, SYSDATETIME(), @MotivoConsulta, @Diagnostico, @Observaciones);
+                            END", conexion, transaccion))
+                        {
+                            cmdRegistro.Parameters.Add(ParametroInt32("@TurnoId", turnoId));
+                            cmdRegistro.Parameters.Add(new SqlParameter("@MotivoConsulta", SqlDbType.NVarChar, 500)
+                            {
+                                Value = string.IsNullOrWhiteSpace(motivoConsulta) ? (object)DBNull.Value : motivoConsulta.Trim()
+                            });
+                            cmdRegistro.Parameters.Add(new SqlParameter("@Diagnostico", SqlDbType.NVarChar, 1000)
+                            {
+                                Value = diagnostico.Trim()
+                            });
+                            cmdRegistro.Parameters.Add(new SqlParameter("@Observaciones", SqlDbType.NVarChar, -1)
+                            {
+                                Value = string.IsNullOrWhiteSpace(observaciones) ? (object)DBNull.Value : observaciones.Trim()
+                            });
+
+                            cmdRegistro.ExecuteNonQuery();
+                        }
+
+                        transaccion.Commit();
+                    }
+                    catch
+                    {
+                        transaccion.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
         private DataTable Consultar(string sql, params SqlParameter[] parametros)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))

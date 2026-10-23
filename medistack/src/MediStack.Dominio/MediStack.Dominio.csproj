@@ -39,6 +39,7 @@
     <Compile Include="ReembolsoModelos.cs" />
     <Compile Include="IAModelos.cs" />
     <Compile Include="IAContratos.cs" />
+    <Compile Include="ConsultorioModelos.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
