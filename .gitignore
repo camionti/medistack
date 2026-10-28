@@ -9,7 +9,9 @@
 vslog.xml
 .agents
 AGENTS.md
-
+scripts/
+*.ts
+package*
 # User-specific files
 *.rsuser
 *.suo

@@ -104,9 +104,24 @@
                         </ItemTemplate>
                     </asp:TemplateField>
 
-                    <asp:TemplateField HeaderText="Seña">
+                    <asp:TemplateField HeaderText="Pagos / Caja">
                         <ItemTemplate>
-                            <%# BadgeSena(Eval("EstadoSena"), Eval("MontoSena"), Eval("TurnoId")) %>
+                            <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+                                <%# RenderBadgePagos(Eval("Estado"), Eval("EstadoSena"), Eval("MontoSena"), Eval("ConsultaCobrada")) %>
+                                <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
+                                    <asp:Button runat="server" Text="Cobrar seña" CssClass="button button-secondary button-sm"
+                                        CommandName="AbrirCobroSena" CommandArgument='<%# Eval("TurnoId") %>'
+                                        Visible='<%# Convert.ToString(Eval("EstadoSena")) == "Pendiente" && Convert.ToDecimal(Eval("MontoSena")) > 0 && Convert.ToString(Eval("Estado")) != "Cancelado" %>' />
+
+                                    <asp:Button runat="server" Text="Cobrar consulta" CssClass="button button-primary button-sm"
+                                        CommandName="AbrirCobroConsulta" CommandArgument='<%# Eval("TurnoId") %>'
+                                        Visible='<%# (Convert.ToString(Eval("Estado")) == "EnEspera" || Convert.ToString(Eval("Estado")) == "Atendido") && !Convert.ToBoolean(Eval("ConsultaCobrada")) %>' />
+
+                                    <asp:Button runat="server" Text="Recibo PDF" CssClass="button button-light button-sm"
+                                        CommandName="DescargarComprobante" CommandArgument='<%# Eval("UltimoCobroId") %>'
+                                        Visible='<%# Eval("UltimoCobroId") != DBNull.Value %>' CausesValidation="false" />
+                                </div>
+                            </div>
                         </ItemTemplate>
                     </asp:TemplateField>
 
@@ -190,4 +205,160 @@
             </asp:GridView>
         </div>
     </asp:Panel>
+    <%-- Modal de Cobro Rápido en Mostrador --%>
+    <asp:Panel ID="ModalCobro" runat="server" CssClass="cobro-modal-backdrop" Visible="false">
+        <div class="cobro-modal-card">
+            <div class="cobro-modal-header">
+                <div>
+                    <h3 class="cobro-modal-title">Cobro en Mostrador</h3>
+                    <p class="cobro-modal-sub"><asp:Literal ID="LitCobroSubtitulo" runat="server" /></p>
+                </div>
+                <asp:Button ID="BtnCerrarModalCobro" runat="server" Text="X" CssClass="cobro-modal-close"
+                    OnClick="BtnCerrarModalCobro_Click" CausesValidation="false" />
+            </div>
+
+            <asp:Label ID="MensajeModalCobro" runat="server" Visible="false" role="status" />
+
+            <div class="cobro-modal-body">
+                <asp:HiddenField ID="HdnCobroTurnoId" runat="server" />
+                <asp:HiddenField ID="HdnMontoCobrado" runat="server" />
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <asp:Label ID="LblCobroTipo" runat="server" AssociatedControlID="DdlCobroTipo" Text="Concepto a cobrar" />
+                        <asp:DropDownList ID="DdlCobroTipo" runat="server" CssClass="form-control" AutoPostBack="true"
+                            OnSelectedIndexChanged="DdlCobroTipo_SelectedIndexChanged" />
+                    </div>
+
+                    <div class="form-group">
+                        <asp:Label ID="LblCobroMedioPago" runat="server" AssociatedControlID="DdlCobroMedioPago" Text="Medio de pago" />
+                        <asp:DropDownList ID="DdlCobroMedioPago" runat="server" CssClass="form-control" onchange="actualizarMedioPago()">
+                            <asp:ListItem Text="Efectivo" Value="Efectivo" />
+                            <asp:ListItem Text="Tarjeta" Value="Tarjeta" />
+                            <asp:ListItem Text="Transferencia" Value="Transferencia" />
+                        </asp:DropDownList>
+                    </div>
+                </div>
+
+                <div class="cobro-desglose-panel">
+                    <h4 class="modal-section-title" style="margin-bottom: 0.5rem;">Liquidación Arancelaria</h4>
+                    <div class="cobro-desglose-grid">
+                        <asp:Panel ID="PnlDesgloseConsulta" runat="server">
+                            <div class="desglose-row">
+                                <span>Valor Consulta Base:</span>
+                                <strong><asp:Literal ID="LitCobroValorBase" runat="server">$ 0,00</asp:Literal></strong>
+                            </div>
+                            <div class="desglose-row">
+                                <span>Cobertura Obra Social:</span>
+                                <strong style="color: #059669;">- <asp:Literal ID="LitCobroMontoOS" runat="server">$ 0,00</asp:Literal></strong>
+                            </div>
+                            <div class="desglose-row">
+                                <span>Copago Paciente:</span>
+                                <strong><asp:Literal ID="LitCobroCopago" runat="server">$ 0,00</asp:Literal></strong>
+                            </div>
+                            <asp:Panel ID="PnlCobroSenaDescontada" runat="server" CssClass="desglose-row" Visible="false">
+                                <span>SeÃ±a Previa Abonada:</span>
+                                <strong style="color: #0284c7;">- <asp:Literal ID="LitCobroSenaDescontada" runat="server">$ 0,00</asp:Literal></strong>
+                            </asp:Panel>
+                        </asp:Panel>
+
+                        <div class="desglose-row desglose-total">
+                            <span>TOTAL A COBRAR:</span>
+                            <span class="total-monto"><asp:Literal ID="LitCobroTotalCobrar" runat="server">$ 0,00</asp:Literal></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pnlCuentaDevolucion" class="form-group" style="display: none;">
+                    <asp:Label ID="LblCuentaDevolucion" runat="server" AssociatedControlID="TxtCuentaDevolucion"
+                        Text="CBU/CVU o alias de la cuenta del paciente (para devoluciÃ³n si cancela)" />
+                    <asp:TextBox ID="TxtCuentaDevolucion" runat="server" CssClass="form-control" MaxLength="30"
+                        placeholder="Ej: 0000003100012345678901 o alias.mp" />
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <asp:Label ID="LblCobroMontoRecibido" runat="server" AssociatedControlID="TxtCobroMontoRecibido" Text="Importe recibido ($)" />
+                        <asp:TextBox ID="TxtCobroMontoRecibido" runat="server" CssClass="form-control" TextMode="Number"
+                            min="0" max="9999999999.99" step="0.01" inputmode="decimal" oninput="calcularVuelto()" />
+                    </div>
+                    <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-end;">
+                        <div id="vueltoContainer" class="vuelto-badge-box">
+                            <span class="vuelto-label">Vuelto a entregar:</span>
+                            <span id="lblVueltoValor" class="vuelto-valor">$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <asp:Panel ID="PnlCobroExito" runat="server" Visible="false" CssClass="cobro-exito-box">
+                    <div>
+                        <strong style="color: #065f46; display: block;">Â¡Cobro registrado exitosamente!</strong>
+                        <span style="font-size: 0.85rem; color: #047857;">La atenciÃ³n mÃ©dica quedÃ³ habilitada.</span>
+                    </div>
+                    <asp:Button ID="BtnDescargarPdfModal" runat="server" Text="Descargar Comprobante PDF"
+                        CssClass="button button-primary button-sm" OnClick="BtnDescargarPdfModal_Click" CausesValidation="false" />
+                </asp:Panel>
+            </div>
+
+            <div class="cobro-modal-footer">
+                <asp:Button ID="BtnConfirmarCobro" runat="server" Text="Registrar Cobro"
+                    CssClass="button button-primary" OnClick="BtnConfirmarCobro_Click" />
+                <asp:Button ID="BtnCancelarCobro" runat="server" Text="Cerrar"
+                    CssClass="button button-light" OnClick="BtnCerrarModalCobro_Click" CausesValidation="false" />
+            </div>
+        </div>
+    </asp:Panel>
+
+    <script type="text/javascript">
+        function actualizarMedioPago() {
+            var ddlMedio = document.getElementById('<%= DdlCobroMedioPago.ClientID %>');
+            var ddlTipo = document.getElementById('<%= DdlCobroTipo.ClientID %>');
+            var pnlCuenta = document.getElementById('pnlCuentaDevolucion');
+            var txtRecibido = document.getElementById('<%= TxtCobroMontoRecibido.ClientID %>');
+            var hdnTotal = document.getElementById('<%= HdnMontoCobrado.ClientID %>');
+            
+            if (!ddlMedio || !txtRecibido || !hdnTotal) return;
+            
+            var medio = ddlMedio.value;
+            var tipo = ddlTipo ? ddlTipo.value : '';
+            var total = parseFloat(hdnTotal.value) || 0;
+            
+            if (pnlCuenta) {
+                pnlCuenta.style.display = (tipo === 'Sena' && (medio === 'Tarjeta' || medio === 'Transferencia')) ? 'block' : 'none';
+            }
+            
+            if (medio !== 'Efectivo') {
+                txtRecibido.value = total.toFixed(2);
+                txtRecibido.readOnly = true;
+            } else {
+                txtRecibido.readOnly = false;
+            }
+            calcularVuelto();
+        }
+
+        function calcularVuelto() {
+            var txtRecibido = document.getElementById('<%= TxtCobroMontoRecibido.ClientID %>');
+            var hdnTotal = document.getElementById('<%= HdnMontoCobrado.ClientID %>');
+            var lblVuelto = document.getElementById('lblVueltoValor');
+            var container = document.getElementById('vueltoContainer');
+            
+            if (!txtRecibido || !hdnTotal || !lblVuelto) return;
+            
+            var total = parseFloat(hdnTotal.value) || 0;
+            var recibido = parseFloat(txtRecibido.value) || 0;
+            var vuelto = recibido - total;
+            
+            if (recibido >= total) {
+                lblVuelto.innerText = '$ ' + vuelto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (container) {
+                    container.className = 'vuelto-badge-box vuelto-ok';
+                }
+            } else {
+                lblVuelto.innerText = 'Faltan $ ' + (total - recibido).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (container) {
+                    container.className = 'vuelto-badge-box vuelto-insuficiente';
+                }
+            }
+        }
+    </script>
 </asp:Content>

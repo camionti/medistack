@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MediStack.Dominio;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -203,6 +204,231 @@ namespace MediStack.Web
                 response.SuppressContent = true;
                 HttpContext.Current.ApplicationInstance.CompleteRequest();
             }
+        }
+        public static byte[] GenerarBytesComprobantePDF(ComprobanteCobroModel c)
+        {
+            if (c == null) throw new ArgumentNullException("c");
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                Document pdfDoc = new Document(PageSize.A4, 40f, 40f, 40f, 40f);
+                PdfWriter.GetInstance(pdfDoc, ms);
+                pdfDoc.Open();
+
+                BaseColor colorPrimario = new BaseColor(2, 132, 199);
+                BaseColor colorTextoOscuro = new BaseColor(15, 23, 42);
+                BaseColor colorTextoGris = new BaseColor(100, 116, 139);
+                BaseColor colorFondoGris = new BaseColor(248, 250, 252);
+                BaseColor colorBorde = new BaseColor(226, 232, 240);
+                BaseColor colorTotalFondo = new BaseColor(240, 249, 255);
+
+                Font fontMarca = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 14, colorPrimario);
+                Font fontMarcaSub = FontFactory.GetFont(FontFactory.HELVETICA, 8.5f, colorTextoGris);
+                Font fontTituloDoc = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12, colorTextoOscuro);
+                Font fontDocMeta = FontFactory.GetFont(FontFactory.HELVETICA, 8.5f, colorTextoGris);
+                Font fontSeccion = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9.5f, colorPrimario);
+                Font fontEtiqueta = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 8.5f, colorTextoOscuro);
+                Font fontValor = FontFactory.GetFont(FontFactory.HELVETICA, 8.5f, colorTextoOscuro);
+                Font fontTablaCab = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9f, BaseColor.WHITE);
+                Font fontTotal = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11f, colorPrimario);
+                Font fontPie = FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 8f, colorTextoGris);
+
+                // 1) Cabecera institucional
+                PdfPTable cabecera = new PdfPTable(2);
+                cabecera.WidthPercentage = 100;
+                cabecera.SetWidths(new float[] { 60f, 40f });
+
+                PdfPCell celdaIzquierda = new PdfPCell();
+                celdaIzquierda.Border = Rectangle.NO_BORDER;
+                celdaIzquierda.AddElement(new Paragraph("MEDISTACK CLÃNICA MÃ‰DICA", fontMarca));
+                celdaIzquierda.AddElement(new Paragraph("Centro de AtenciÃ³n MÃ©dica y Especialidades Ambulatorias", fontMarcaSub));
+                cabecera.AddCell(celdaIzquierda);
+
+                PdfPCell celdaDerecha = new PdfPCell();
+                celdaDerecha.Border = Rectangle.NO_BORDER;
+                celdaDerecha.HorizontalAlignment = Element.ALIGN_RIGHT;
+                Paragraph pTit = new Paragraph("COMPROBANTE DE COBRO", fontTituloDoc);
+                pTit.Alignment = Element.ALIGN_RIGHT;
+                celdaDerecha.AddElement(pTit);
+                Paragraph pNum = new Paragraph("NÂ° Comprobante: #COB-" + c.CobroId.ToString("D6") + "\nFecha de emisiÃ³n: " + c.FechaHoraCobro.ToString("dd/MM/yyyy HH:mm") + " hs", fontDocMeta);
+                pNum.Alignment = Element.ALIGN_RIGHT;
+                celdaDerecha.AddElement(pNum);
+                cabecera.AddCell(celdaDerecha);
+
+                pdfDoc.Add(cabecera);
+
+                // Separador
+                Paragraph sep = new Paragraph(new Chunk(new iTextSharp.text.pdf.draw.LineSeparator(1f, 100f, colorBorde, Element.ALIGN_CENTER, -4f)));
+                sep.SpacingBefore = 8f;
+                sep.SpacingAfter = 14f;
+                pdfDoc.Add(sep);
+
+                // 2) Datos del paciente y la atenciÃ³n mÃ©dica
+                PdfPTable tablaDatos = new PdfPTable(2);
+                tablaDatos.WidthPercentage = 100;
+                tablaDatos.SetWidths(new float[] { 50f, 50f });
+                tablaDatos.SpacingAfter = 14f;
+
+                PdfPCell celdaPac = new PdfPCell();
+                celdaPac.BackgroundColor = colorFondoGris;
+                celdaPac.BorderColor = colorBorde;
+                celdaPac.Padding = 8f;
+                celdaPac.AddElement(new Paragraph("DATOS DEL PACIENTE", fontSeccion));
+                Paragraph pPac = new Paragraph();
+                pPac.Add(new Chunk("Paciente: ", fontEtiqueta));
+                pPac.Add(new Chunk(c.PacienteNombreCompleto + "\n", fontValor));
+                pPac.Add(new Chunk("DNI: ", fontEtiqueta));
+                pPac.Add(new Chunk(c.PacienteDni + "\n", fontValor));
+                pPac.Add(new Chunk("Obra Social: ", fontEtiqueta));
+                pPac.Add(new Chunk(c.ObraSocialNombre + "\n", fontValor));
+                pPac.Add(new Chunk("NÂ° Afiliado: ", fontEtiqueta));
+                pPac.Add(new Chunk(c.NumeroAfiliado, fontValor));
+                celdaPac.AddElement(pPac);
+                tablaDatos.AddCell(celdaPac);
+
+                PdfPCell celdaAten = new PdfPCell();
+                celdaAten.BackgroundColor = colorFondoGris;
+                celdaAten.BorderColor = colorBorde;
+                celdaAten.Padding = 8f;
+                celdaAten.AddElement(new Paragraph("DATOS DE LA ATENCIÃ“N", fontSeccion));
+                Paragraph pAten = new Paragraph();
+                pAten.Add(new Chunk("Profesional: ", fontEtiqueta));
+                pAten.Add(new Chunk(c.ProfesionalNombreCompleto + "\n", fontValor));
+                pAten.Add(new Chunk("MatrÃ­cula: ", fontEtiqueta));
+                pAten.Add(new Chunk(c.ProfesionalMatricula + "\n", fontValor));
+                pAten.Add(new Chunk("Especialidad: ", fontEtiqueta));
+                pAten.Add(new Chunk(c.EspecialidadNombre + "\n", fontValor));
+                pAten.Add(new Chunk("Turno: ", fontEtiqueta));
+                pAten.Add(new Chunk("#" + c.TurnoId + " Â· " + c.FechaHoraTurno.ToString("dd/MM/yyyy HH:mm") + " hs", fontValor));
+                celdaAten.AddElement(pAten);
+                tablaDatos.AddCell(celdaAten);
+
+                pdfDoc.Add(tablaDatos);
+
+                // 3) Desglose financiero
+                PdfPTable tablaDesglose = new PdfPTable(2);
+                tablaDesglose.WidthPercentage = 100;
+                tablaDesglose.SetWidths(new float[] { 70f, 30f });
+                tablaDesglose.SpacingAfter = 14f;
+
+                PdfPCell cabDesc = new PdfPCell(new Phrase("CONCEPTO / DETALLE", fontTablaCab));
+                cabDesc.BackgroundColor = colorPrimario;
+                cabDesc.BorderColor = colorPrimario;
+                cabDesc.Padding = 6f;
+                tablaDesglose.AddCell(cabDesc);
+
+                PdfPCell cabImp = new PdfPCell(new Phrase("IMPORTE", fontTablaCab));
+                cabImp.BackgroundColor = colorPrimario;
+                cabImp.BorderColor = colorPrimario;
+                cabImp.Padding = 6f;
+                cabImp.HorizontalAlignment = Element.ALIGN_RIGHT;
+                tablaDesglose.AddCell(cabImp);
+
+                if (c.TipoCobro == "Consulta")
+                {
+                    AgregarFilaDesglose(tablaDesglose, "Valor base de la consulta mÃ©dica", "$ " + c.MontoBase.ToString("N2"), fontValor, colorBorde, false);
+                    AgregarFilaDesglose(tablaDesglose, "Cobertura por Obra Social (" + c.ObraSocialNombre + ")", "- $ " + c.MontoObraSocial.ToString("N2"), fontValor, colorBorde, false);
+                    AgregarFilaDesglose(tablaDesglose, "Copago arancelario a cargo del paciente", "$ " + c.Copago.ToString("N2"), fontValor, colorBorde, false);
+                    if (c.SenaDescontada > 0)
+                    {
+                        AgregarFilaDesglose(tablaDesglose, "SeÃ±a de reserva previa descontada", "- $ " + c.SenaDescontada.ToString("N2"), fontValor, colorBorde, false);
+                    }
+                }
+                else
+                {
+                    AgregarFilaDesglose(tablaDesglose, "SeÃ±a anticipada de reserva de turno", "$ " + c.MontoCobrado.ToString("N2"), fontValor, colorBorde, false);
+                }
+
+                // Fila Total
+                PdfPCell celdaTotLabel = new PdfPCell(new Phrase("TOTAL ABONADO", fontTotal));
+                celdaTotLabel.BackgroundColor = colorTotalFondo;
+                celdaTotLabel.BorderColor = colorBorde;
+                celdaTotLabel.Padding = 8f;
+                tablaDesglose.AddCell(celdaTotLabel);
+
+                PdfPCell celdaTotVal = new PdfPCell(new Phrase("$ " + c.MontoCobrado.ToString("N2"), fontTotal));
+                celdaTotVal.BackgroundColor = colorTotalFondo;
+                celdaTotVal.BorderColor = colorBorde;
+                celdaTotVal.Padding = 8f;
+                celdaTotVal.HorizontalAlignment = Element.ALIGN_RIGHT;
+                tablaDesglose.AddCell(celdaTotVal);
+
+                pdfDoc.Add(tablaDesglose);
+
+                // 4) Medio de pago y detalle de cobro en mostrador
+                PdfPTable tablaPago = new PdfPTable(2);
+                tablaPago.WidthPercentage = 100;
+                tablaPago.SetWidths(new float[] { 50f, 50f });
+                tablaPago.SpacingAfter = 18f;
+
+                PdfPCell celdaMedio = new PdfPCell();
+                celdaMedio.BackgroundColor = colorFondoGris;
+                celdaMedio.BorderColor = colorBorde;
+                celdaMedio.Padding = 7f;
+                Paragraph pMed = new Paragraph();
+                pMed.Add(new Chunk("Medio de Pago: ", fontEtiqueta));
+                pMed.Add(new Chunk(c.MedioPago + "\n", fontValor));
+                if (c.MedioPago == "Efectivo")
+                {
+                    pMed.Add(new Chunk("Importe Recibido: ", fontEtiqueta));
+                    pMed.Add(new Chunk("$ " + c.MontoRecibido.ToString("N2") + "   |   ", fontValor));
+                    pMed.Add(new Chunk("Vuelto: ", fontEtiqueta));
+                    pMed.Add(new Chunk("$ " + c.Vuelto.ToString("N2"), fontValor));
+                }
+                celdaMedio.AddElement(pMed);
+                tablaPago.AddCell(celdaMedio);
+
+                PdfPCell celdaCajero = new PdfPCell();
+                celdaCajero.BackgroundColor = colorFondoGris;
+                celdaCajero.BorderColor = colorBorde;
+                celdaCajero.Padding = 7f;
+                Paragraph pCaj = new Paragraph();
+                pCaj.Add(new Chunk("Operador / Cajero: ", fontEtiqueta));
+                pCaj.Add(new Chunk(c.CajeroNombreCompleto + "\n", fontValor));
+                pCaj.Add(new Chunk("Estado: ", fontEtiqueta));
+                pCaj.Add(new Chunk("Cobrado / Acreditado", fontValor));
+                celdaCajero.AddElement(pCaj);
+                tablaPago.AddCell(celdaCajero);
+
+                pdfDoc.Add(tablaPago);
+
+                // 5) Pie y validez
+                Paragraph pie = new Paragraph("Comprobante emitido automÃ¡ticamente por el sistema de gestiÃ³n MediStack. Este documento certifica el pago registrado de la atenciÃ³n mÃ©dica correspondiente. Conserve su comprobante.", fontPie);
+                pie.Alignment = Element.ALIGN_CENTER;
+                pie.SpacingBefore = 10f;
+                pdfDoc.Add(pie);
+
+                pdfDoc.Close();
+                return ms.ToArray();
+            }
+        }
+
+        private static void AgregarFilaDesglose(PdfPTable tabla, string concepto, string monto, Font font, BaseColor colorBorde, bool esNegrita)
+        {
+            PdfPCell cConcepto = new PdfPCell(new Phrase(concepto, font));
+            cConcepto.BorderColor = colorBorde;
+            cConcepto.Padding = 6f;
+            tabla.AddCell(cConcepto);
+
+            PdfPCell cMonto = new PdfPCell(new Phrase(monto, font));
+            cMonto.BorderColor = colorBorde;
+            cMonto.Padding = 6f;
+            cMonto.HorizontalAlignment = Element.ALIGN_RIGHT;
+            tabla.AddCell(cMonto);
+        }
+
+        public static void DescargarComprobantePDF(ComprobanteCobroModel c)
+        {
+            byte[] bytesPdf = GenerarBytesComprobantePDF(c);
+            HttpResponse response = HttpContext.Current.Response;
+            response.Clear();
+            response.Buffer = true;
+            response.ContentType = "application/pdf";
+            response.AddHeader("content-disposition", "attachment;filename=Comprobante_Cobro_" + c.CobroId + ".pdf");
+            response.BinaryWrite(bytesPdf);
+            response.Flush();
+            response.SuppressContent = true;
+            HttpContext.Current.ApplicationInstance.CompleteRequest();
         }
     }
 }

@@ -1,4 +1,4 @@
-using MediStack.Negocio;
+﻿using MediStack.Negocio;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -119,6 +119,25 @@ namespace MediStack.Web
             };
 
             return ExportadorUtil.PrepararTablaParaReporte(datosCrudos, columnas);
+        }
+
+        protected void CobrosGrid_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            if (e.CommandName == "DescargarPdf")
+            {
+                int cobroId;
+                if (!int.TryParse(Convert.ToString(e.CommandArgument), out cobroId))
+                {
+                    return;
+                }
+
+                EjecutarConManejoDeErrores("No se pudo generar el comprobante", () =>
+                {
+                    bool esAdmin = TieneRol("ADMINISTRATIVO");
+                    var comprobante = _negocio.ObtenerComprobanteCobro(cobroId, ObtenerUsuarioActual(), esAdmin);
+                    ExportadorUtil.DescargarComprobantePDF(comprobante);
+                });
+            }
         }
 
         protected void Turno_SelectedIndexChanged(object sender, EventArgs e)

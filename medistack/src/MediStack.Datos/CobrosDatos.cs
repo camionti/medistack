@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
@@ -61,7 +61,7 @@ namespace MediStack.Datos
                                  AND NOT EXISTS (SELECT 1 FROM dbo.Cobros c
                                                  WHERE c.TurnoId = t.TurnoId AND c.TipoCobro = N'Sena')
                                  THEN 1 ELSE 0 END AS bit) AS PuedeCobrarSena,
-                       CAST(CASE WHEN t.Estado = N'Atendido'
+                       CAST(CASE WHEN t.Estado IN (N'EnEspera', N'Atendido')
                                  AND NOT EXISTS (SELECT 1 FROM dbo.Cobros c
                                                  WHERE c.TurnoId = t.TurnoId AND c.TipoCobro = N'Consulta')
                                  THEN 1 ELSE 0 END AS bit) AS PuedeCobrarConsulta
@@ -77,7 +77,7 @@ namespace MediStack.Datos
                        AND t.MontoSena > 0 AND NOT EXISTS
                            (SELECT 1 FROM dbo.Cobros c WHERE c.TurnoId = t.TurnoId AND c.TipoCobro = N'Sena'))
                       OR
-                      (t.Estado = N'Atendido' AND NOT EXISTS
+                      (t.Estado IN (N'EnEspera', N'Atendido') AND NOT EXISTS
                            (SELECT 1 FROM dbo.Cobros c WHERE c.TurnoId = t.TurnoId AND c.TipoCobro = N'Consulta'))
                   )
                 ORDER BY t.FechaHora DESC, t.TurnoId DESC;",
@@ -138,7 +138,7 @@ namespace MediStack.Datos
                 new SqlParameter("@TurnoId", SqlDbType.Int) { Value = turnoId });
         }
 
-        public void RegistrarCobro(int turnoId, string tipoCobro, string medioPago, decimal montoRecibido, Guid cobradorId,
+        public int RegistrarCobro(int turnoId, string tipoCobro, string medioPago, decimal montoRecibido, Guid cobradorId,
             string cuentaDevolucion)
         {
             using (SqlConnection conexion = new SqlConnection(_cadenaConexion))
@@ -151,6 +151,7 @@ namespace MediStack.Datos
                         ValidarCajaAbierta(conexion, transaccion);
                         ValidarCobrador(conexion, transaccion, cobradorId);
 
+                        int nuevoCobroId;
                         using (SqlCommand comando = new SqlCommand(@"
                             DECLARE @PacienteId UNIQUEIDENTIFIER;
                             DECLARE @ProfesionalId UNIQUEIDENTIFIER;
@@ -185,8 +186,8 @@ namespace MediStack.Datos
                             END
                             ELSE IF @TipoCobro = N'Consulta'
                             BEGIN
-                                IF @EstadoTurno <> N'Atendido'
-                                    THROW 51103, N'Solo se puede cobrar una consulta de un turno atendido.', 1;
+                                IF @EstadoTurno NOT IN (N'EnEspera', N'Atendido')
+                                    THROW 51103, N'Solo se puede cobrar una consulta de un turno en sala de espera o atendido.', 1;
 
                                 SELECT @MontoBase = pe.ValorConsulta
                                 FROM dbo.ProfesionalesEspecialidades pe
@@ -256,7 +257,9 @@ namespace MediStack.Datos
                             IF @TipoCobro = N'Sena'
                                 UPDATE dbo.Turnos
                                 SET EstadoSena = N'Pagada', FechaHoraSena = SYSDATETIME()
-                                WHERE TurnoId = @TurnoId;",
+                                WHERE TurnoId = @TurnoId;
+
+                            SELECT CAST(SCOPE_IDENTITY() AS int);",
                             conexion, transaccion))
                         {
                             comando.Parameters.Add("@TurnoId", SqlDbType.Int).Value = turnoId;
@@ -268,10 +271,11 @@ namespace MediStack.Datos
                             comando.Parameters["@MontoRecibido"].Precision = 12;
                             comando.Parameters["@MontoRecibido"].Scale = 2;
                             comando.Parameters.Add("@CobradorId", SqlDbType.UniqueIdentifier).Value = cobradorId;
-                            comando.ExecuteNonQuery();
+                            nuevoCobroId = Convert.ToInt32(comando.ExecuteScalar());
                         }
 
                         transaccion.Commit();
+                        return nuevoCobroId;
                     }
                     catch
                     {
@@ -739,6 +743,70 @@ namespace MediStack.Datos
                 comando.Parameters.Add("@CobradorId", SqlDbType.UniqueIdentifier).Value = cobradorId;
                 comando.ExecuteNonQuery();
             }
+        }
+
+        public ComprobanteCobroModel ObtenerComprobanteCobro(int cobroId)
+        {
+            DataTable tabla = Consultar(@"
+                SELECT c.CobroId, c.TurnoId, c.FechaHoraCobro, c.TipoCobro, c.MedioPago,
+                       COALESCE(c.MontoBase, c.MontoCobrado) AS MontoBase,
+                       COALESCE(c.MontoObraSocial, 0) AS MontoObraSocial,
+                       COALESCE(c.Copago, c.MontoCobrado) AS Copago,
+                       COALESCE(c.SenaDescontada, 0) AS SenaDescontada,
+                       c.MontoCobrado, c.MontoRecibido, c.Vuelto,
+                       t.PacienteId,
+                       paciente.Nombre + N' ' + paciente.Apellido AS PacienteNombreCompleto,
+                       paciente.DNI AS PacienteDni,
+                       COALESCE(os.Nombre, N'Particular') AS ObraSocialNombre,
+                       COALESCE(p.NumeroAfiliado, N'-') AS NumeroAfiliado,
+                       t.FechaHora AS FechaHoraTurno,
+                       profesional.Nombre + N' ' + profesional.Apellido AS ProfesionalNombreCompleto,
+                       COALESCE(prof.MatriculaProfesional, N'-') AS ProfesionalMatricula,
+                       e.Nombre AS EspecialidadNombre,
+                       ISNULL(cajero.Nombre + N' ' + cajero.Apellido, N'Online') AS CajeroNombreCompleto
+                FROM dbo.Cobros c
+                INNER JOIN dbo.Turnos t ON t.TurnoId = c.TurnoId
+                INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = t.PacienteId
+                LEFT JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
+                LEFT JOIN dbo.ObrasSociales os ON os.ObraSocialId = p.ObraSocialId
+                INNER JOIN dbo.Usuarios profesional ON profesional.UsuarioId = t.ProfesionalId
+                LEFT JOIN dbo.Profesionales prof ON prof.ProfesionalId = t.ProfesionalId
+                INNER JOIN dbo.Especialidades e ON e.EspecialidadId = t.EspecialidadId
+                LEFT JOIN dbo.Usuarios cajero ON cajero.UsuarioId = c.UsuarioCobradorId
+                WHERE c.CobroId = @CobroId;",
+                new SqlParameter("@CobroId", SqlDbType.Int) { Value = cobroId });
+
+            if (tabla.Rows.Count == 0)
+            {
+                return null;
+            }
+
+            DataRow fila = tabla.Rows[0];
+            return new ComprobanteCobroModel
+            {
+                CobroId = Convert.ToInt32(fila["CobroId"]),
+                TurnoId = Convert.ToInt32(fila["TurnoId"]),
+                FechaHoraCobro = Convert.ToDateTime(fila["FechaHoraCobro"]),
+                TipoCobro = Convert.ToString(fila["TipoCobro"]),
+                MedioPago = Convert.ToString(fila["MedioPago"]),
+                MontoBase = Convert.ToDecimal(fila["MontoBase"]),
+                MontoObraSocial = Convert.ToDecimal(fila["MontoObraSocial"]),
+                Copago = Convert.ToDecimal(fila["Copago"]),
+                SenaDescontada = Convert.ToDecimal(fila["SenaDescontada"]),
+                MontoCobrado = Convert.ToDecimal(fila["MontoCobrado"]),
+                MontoRecibido = Convert.ToDecimal(fila["MontoRecibido"]),
+                Vuelto = Convert.ToDecimal(fila["Vuelto"]),
+                PacienteId = (Guid)fila["PacienteId"],
+                PacienteNombreCompleto = Convert.ToString(fila["PacienteNombreCompleto"]),
+                PacienteDni = Convert.ToString(fila["PacienteDni"]),
+                ObraSocialNombre = Convert.ToString(fila["ObraSocialNombre"]),
+                NumeroAfiliado = Convert.ToString(fila["NumeroAfiliado"]),
+                FechaHoraTurno = Convert.ToDateTime(fila["FechaHoraTurno"]),
+                ProfesionalNombreCompleto = Convert.ToString(fila["ProfesionalNombreCompleto"]),
+                ProfesionalMatricula = Convert.ToString(fila["ProfesionalMatricula"]),
+                EspecialidadNombre = Convert.ToString(fila["EspecialidadNombre"]),
+                CajeroNombreCompleto = Convert.ToString(fila["CajeroNombreCompleto"])
+            };
         }
 
         private DataTable Consultar(string consulta, params SqlParameter[] parametros)

@@ -1,4 +1,4 @@
-<%@ Page Title="Cobros" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Cobros.aspx.cs" Inherits="MediStack.Web.CobrosPagina" %>
+﻿<%@ Page Title="Cobros" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Cobros.aspx.cs" Inherits="MediStack.Web.CobrosPagina" %>
 <asp:Content ID="CobrosContent" ContentPlaceHolderID="MainContent" runat="server">
     <section class="page-heading" aria-labelledby="cobros-title">
         <p class="eyebrow">Administración financiera</p>

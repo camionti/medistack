@@ -57,7 +57,7 @@ namespace MediStack.Negocio
 
         // cuentaDevolucion: solo para señas con tarjeta o transferencia (CBU, CVU o alias del paciente
         // para poder devolverla si cancela). En otros casos se ignora.
-        public void RegistrarCobro(
+        public int RegistrarCobro(
             int turnoId, string tipoCobro, string medioPago, decimal montoRecibido, Guid cobradorId,
             string cuentaDevolucion)
         {
@@ -102,8 +102,36 @@ namespace MediStack.Negocio
                 cuentaDevolucion = null;
             }
 
-            EjecutarSeguro(() => _datos.RegistrarCobro(
+            int nuevoCobroId = 0;
+            EjecutarSeguro(() => nuevoCobroId = _datos.RegistrarCobro(
                 turnoId, tipoCobro, medioPago, montoRecibido, cobradorId, cuentaDevolucion));
+            return nuevoCobroId;
+        }
+
+        public ComprobanteCobroModel ObtenerComprobanteCobro(int cobroId, Guid usuarioActual, bool esAdministrativo)
+        {
+            if (cobroId <= 0)
+            {
+                throw new InvalidOperationException("El identificador del cobro no es válido.");
+            }
+
+            if (usuarioActual == Guid.Empty)
+            {
+                throw new InvalidOperationException("No se pudo validar la sesión del usuario.");
+            }
+
+            ComprobanteCobroModel comprobante = _datos.ObtenerComprobanteCobro(cobroId);
+            if (comprobante == null)
+            {
+                throw new InvalidOperationException("No se encontró el cobro solicitado.");
+            }
+
+            if (!esAdministrativo && comprobante.PacienteId != usuarioActual)
+            {
+                throw new InvalidOperationException("No tienes permiso para acceder a este comprobante.");
+            }
+
+            return comprobante;
         }
 
         // Acredita una seña pagada online. Lo llaman la vuelta de Mercado Pago y el webhook,

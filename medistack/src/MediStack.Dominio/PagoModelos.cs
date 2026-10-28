@@ -95,4 +95,34 @@ namespace MediStack.Dominio
         // El importe pagado no coincide con la seña del turno: no se acredita, hay que revisarlo.
         MontoIncorrecto
     }
+
+    // Datos completos para la emisión de un comprobante / recibo oficial de pago (PDF).
+    public sealed class ComprobanteCobroModel
+    {
+        public int CobroId { get; set; }
+        public int TurnoId { get; set; }
+        public DateTime FechaHoraCobro { get; set; }
+        public string TipoCobro { get; set; }
+        public string MedioPago { get; set; }
+        public decimal MontoBase { get; set; }
+        public decimal MontoObraSocial { get; set; }
+        public decimal Copago { get; set; }
+        public decimal SenaDescontada { get; set; }
+        public decimal MontoCobrado { get; set; }
+        public decimal MontoRecibido { get; set; }
+        public decimal Vuelto { get; set; }
+
+        public Guid PacienteId { get; set; }
+        public string PacienteNombreCompleto { get; set; }
+        public string PacienteDni { get; set; }
+        public string ObraSocialNombre { get; set; }
+        public string NumeroAfiliado { get; set; }
+
+        public DateTime FechaHoraTurno { get; set; }
+        public string ProfesionalNombreCompleto { get; set; }
+        public string ProfesionalMatricula { get; set; }
+        public string EspecialidadNombre { get; set; }
+
+        public string CajeroNombreCompleto { get; set; }
+    }
 }

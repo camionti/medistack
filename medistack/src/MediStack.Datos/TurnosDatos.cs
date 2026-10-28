@@ -236,7 +236,9 @@ namespace MediStack.Datos
                        profesional.Nombre + N' ' + profesional.Apellido AS Profesional,
                        e.Nombre AS Especialidad, e.DuracionEstandarMinutos, t.FechaHora,
                        t.Estado, t.Motivo, t.EstadoSena, t.MontoSena, t.VencimientoSena,
-                       t.FechaHoraLlegada
+                       t.FechaHoraLlegada,
+                       CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.Cobros c WHERE c.TurnoId = t.TurnoId AND c.TipoCobro = N'Consulta') THEN 1 ELSE 0 END AS bit) AS ConsultaCobrada,
+                       (SELECT TOP 1 c.CobroId FROM dbo.Cobros c WHERE c.TurnoId = t.TurnoId ORDER BY c.CobroId DESC) AS UltimoCobroId
                 FROM dbo.Turnos t
                 INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
                 INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = p.PacienteId
@@ -278,7 +280,9 @@ namespace MediStack.Datos
                        t.EstadoSena,
                        t.MontoSena,
                        t.VencimientoSena,
-                       t.FechaHoraLlegada
+                       t.FechaHoraLlegada,
+                       CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.Cobros c WHERE c.TurnoId = t.TurnoId AND c.TipoCobro = N'Consulta') THEN 1 ELSE 0 END AS bit) AS ConsultaCobrada,
+                       (SELECT TOP 1 c.CobroId FROM dbo.Cobros c WHERE c.TurnoId = t.TurnoId ORDER BY c.CobroId DESC) AS UltimoCobroId
                 FROM dbo.Turnos t
                 INNER JOIN dbo.Pacientes p ON p.PacienteId = t.PacienteId
                 INNER JOIN dbo.Usuarios paciente ON paciente.UsuarioId = p.PacienteId

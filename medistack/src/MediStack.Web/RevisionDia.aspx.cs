@@ -2,8 +2,10 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Text;
 using System.Web;
 using System.Web.UI.WebControls;
+using MediStack.Dominio;
 using MediStack.Negocio;
 
 namespace MediStack.Web
@@ -11,6 +13,7 @@ namespace MediStack.Web
     public partial class RevisionDiaPagina : PaginaAdministrativa
     {
         private readonly TurnosNegocio _turnosNegocio = new TurnosNegocio();
+        private readonly CobrosNegocio _cobrosNegocio = new CobrosNegocio();
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -46,8 +49,8 @@ namespace MediStack.Web
 
         protected void RecepcionGrid_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            int turnoId;
-            if (!int.TryParse(Convert.ToString(e.CommandArgument), out turnoId))
+            int argumentoId;
+            if (!int.TryParse(Convert.ToString(e.CommandArgument), out argumentoId))
             {
                 return;
             }
@@ -57,33 +60,33 @@ namespace MediStack.Web
                 switch (e.CommandName)
                 {
                     case "CheckIn":
-                        _turnosNegocio.RegistrarLlegada(turnoId);
+                        _turnosNegocio.RegistrarLlegada(argumentoId);
                         MostrarExito(Mensaje, "Se registró la llegada del paciente a la sala de espera.");
                         break;
 
                     case "DeshacerCheckIn":
-                        _turnosNegocio.DeshacerLlegada(turnoId);
+                        _turnosNegocio.DeshacerLlegada(argumentoId);
                         MostrarExito(Mensaje, "Se revirtió la llegada a sala de espera (el turno volvió a estado Confirmado).");
                         break;
 
                     case "Atendido":
-                        _turnosNegocio.CambiarEstado(turnoId, "Atendido", true, null);
+                        _turnosNegocio.CambiarEstado(argumentoId, "Atendido", true, null);
                         MostrarExito(Mensaje, "El turno fue marcado como atendido.");
                         break;
 
                     case "Ausente":
-                        _turnosNegocio.CambiarEstado(turnoId, "Ausente", true, null);
+                        _turnosNegocio.CambiarEstado(argumentoId, "Ausente", true, null);
                         MostrarExito(Mensaje, "El turno fue marcado como ausente.");
                         break;
 
                     case "Confirmado":
-                        _turnosNegocio.CambiarEstado(turnoId, "Confirmado", true, null);
+                        _turnosNegocio.CambiarEstado(argumentoId, "Confirmado", true, null);
                         MostrarExito(Mensaje, "El turno fue confirmado.");
                         break;
 
                     case "Cancelado":
                         MediStack.Dominio.ResultadoCancelacion cancelacion =
-                            _turnosNegocio.CambiarEstado(turnoId, "Cancelado", true, null);
+                            _turnosNegocio.CambiarEstado(argumentoId, "Cancelado", true, null);
                         string texto = "El turno fue cancelado.";
                         string textoSena = TurnosNegocio.DescribirSena(cancelacion);
                         if (!string.IsNullOrEmpty(textoSena))
@@ -92,6 +95,18 @@ namespace MediStack.Web
                         }
                         MostrarExito(Mensaje, texto);
                         break;
+
+                    case "AbrirCobroSena":
+                        AbrirModalCobro(argumentoId, "Sena");
+                        return;
+
+                    case "AbrirCobroConsulta":
+                        AbrirModalCobro(argumentoId, "Consulta");
+                        return;
+
+                    case "DescargarComprobante":
+                        DescargarComprobanteDirecto(argumentoId);
+                        return;
                 }
             }
             catch (InvalidOperationException ex)
@@ -119,18 +134,25 @@ namespace MediStack.Web
 
             try
             {
-                MediStack.Dominio.ResultadoCancelacion cancelacion =
-                    _turnosNegocio.CambiarEstado(turnoId, e.CommandName, true, null);
-                string texto = e.CommandName == "Atendido" ? "El turno fue marcado como atendido."
-                    : e.CommandName == "Ausente" ? "El turno fue marcado como ausente."
-                    : e.CommandName == "Confirmado" ? "El turno fue confirmado."
-                    : "El turno fue cancelado.";
-                string textoSena = TurnosNegocio.DescribirSena(cancelacion);
-                if (!string.IsNullOrEmpty(textoSena))
+                switch (e.CommandName)
                 {
-                    texto += " " + textoSena;
+                    case "Atendido":
+                        _turnosNegocio.CambiarEstado(turnoId, "Atendido", true, null);
+                        MostrarExito(Mensaje, "El turno pendiente fue marcado como atendido.");
+                        break;
+                    case "Ausente":
+                        _turnosNegocio.CambiarEstado(turnoId, "Ausente", true, null);
+                        MostrarExito(Mensaje, "El turno pendiente fue marcado como ausente.");
+                        break;
+                    case "Confirmado":
+                        _turnosNegocio.CambiarEstado(turnoId, "Confirmado", true, null);
+                        MostrarExito(Mensaje, "El turno pendiente fue confirmado.");
+                        break;
+                    case "Cancelado":
+                        _turnosNegocio.CambiarEstado(turnoId, "Cancelado", true, null);
+                        MostrarExito(Mensaje, "El turno pendiente fue cancelado.");
+                        break;
                 }
-                MostrarExito(Mensaje, texto);
             }
             catch (InvalidOperationException ex)
             {
@@ -138,7 +160,7 @@ namespace MediStack.Web
             }
             catch (SqlException)
             {
-                MostrarError(Mensaje, "No se pudo actualizar el turno debido a un inconveniente con el servidor de base de datos.");
+                MostrarError(Mensaje, "No se pudo actualizar el turno pendiente.");
             }
 
             CargarTableroRecepcion();
@@ -149,18 +171,18 @@ namespace MediStack.Web
         {
             CargarConManejoDeErrores(Mensaje, "No se pudieron cargar los catálogos de filtro", delegate
             {
+                DataTable profs = _turnosNegocio.ObtenerProfesionalesActivos();
                 FiltroProfesional.Items.Clear();
-                FiltroProfesional.Items.Add(new ListItem("Todos los profesionales", string.Empty));
-                DataTable profesionales = _turnosNegocio.ObtenerProfesionalesActivos();
-                foreach (DataRow fila in profesionales.Rows)
+                FiltroProfesional.Items.Add(new ListItem("Todos los profesionales", ""));
+                foreach (DataRow fila in profs.Rows)
                 {
                     FiltroProfesional.Items.Add(new ListItem(Convert.ToString(fila["Nombre"]), Convert.ToString(fila["ProfesionalId"])));
                 }
 
+                DataTable esps = _turnosNegocio.ObtenerEspecialidadesActivas();
                 FiltroEspecialidad.Items.Clear();
-                FiltroEspecialidad.Items.Add(new ListItem("Todas las especialidades", string.Empty));
-                DataTable especialidades = _turnosNegocio.ObtenerEspecialidadesActivas();
-                foreach (DataRow fila in especialidades.Rows)
+                FiltroEspecialidad.Items.Add(new ListItem("Todas las especialidades", ""));
+                foreach (DataRow fila in esps.Rows)
                 {
                     FiltroEspecialidad.Items.Add(new ListItem(Convert.ToString(fila["Nombre"]), Convert.ToString(fila["EspecialidadId"])));
                 }
@@ -188,13 +210,11 @@ namespace MediStack.Web
                     especialidadId = espParsed;
                 }
 
-                // Turnos filtrados para el grid
                 DataTable turnos = _turnosNegocio.ObtenerTurnosRecepcion(
                     DateTime.Today, filtro, especialidadId, profesionalId, estado);
                 RecepcionGrid.DataSource = turnos;
                 RecepcionGrid.DataBind();
 
-                // Métricas generales del día (sin filtro de estado ni búsqueda para que el resumen sea global)
                 DataTable turnosDiaCompleto = _turnosNegocio.ObtenerTurnosRecepcion(
                     DateTime.Today, null, null, null, null);
 
@@ -209,12 +229,13 @@ namespace MediStack.Web
                     else if (est == "Atendido") cantAtendidos++;
                 }
 
-                LitEnEspera.Text = cantEnEspera.ToString(CultureInfo.InvariantCulture);
-                LitTotalHoy.Text = cantTotal.ToString(CultureInfo.InvariantCulture);
-                LitAtendidosHoy.Text = cantAtendidos.ToString(CultureInfo.InvariantCulture);
+                LitEnEspera.Text = cantEnEspera.ToString();
+                LitTotalHoy.Text = cantTotal.ToString();
+                LitAtendidosHoy.Text = cantAtendidos.ToString();
 
-                LitResumenTurnos.Text = turnos.Rows.Count + (turnos.Rows.Count == 1 ? " turno listado" : " turnos listados")
-                    + " para hoy " + DateTime.Today.ToString("dd/MM/yyyy") + ".";
+                LitResumenTurnos.Text = turnos.Rows.Count == 0
+                    ? "Sin turnos que coincidan con la búsqueda."
+                    : string.Format("Mostrando {0} turno(s) para hoy.", turnos.Rows.Count);
             });
         }
 
@@ -234,9 +255,9 @@ namespace MediStack.Web
             string est = Convert.ToString(estado);
             switch (est)
             {
-                case "EnEspera": return "En sala de espera";
-                case "Confirmado": return "Confirmado";
                 case "Solicitado": return "Solicitado";
+                case "Confirmado": return "Confirmado";
+                case "EnEspera": return "En espera";
                 case "Atendido": return "Atendido";
                 case "Ausente": return "Ausente";
                 case "Cancelado": return "Cancelado";
@@ -255,7 +276,6 @@ namespace MediStack.Web
         {
             string estado = Convert.ToString(estadoSena);
             decimal monto = montoSena != null && montoSena != DBNull.Value ? Convert.ToDecimal(montoSena) : 0m;
-            int id = Convert.ToInt32(turnoId);
 
             if (estado == "Pagada")
             {
@@ -263,9 +283,7 @@ namespace MediStack.Web
             }
             if (estado == "Pendiente" && monto > 0)
             {
-                string urlCobro = ResolveUrl("~/Cobros.aspx");
-                return "<span class=\"badge-sena badge-sena-pendiente\">Debe " + monto.ToString("C", CultureInfo.GetCultureInfo("es-AR")) + "</span> "
-                    + "<a href=\"" + urlCobro + "\" class=\"button button-secondary button-sm\" title=\"Ir a cobrar seña\">Cobrar</a>";
+                return "<span class=\"badge-sena badge-sena-pendiente\">Debe " + monto.ToString("C", CultureInfo.GetCultureInfo("es-AR")) + "</span>";
             }
             if (estado == "Retenida")
             {
@@ -273,6 +291,269 @@ namespace MediStack.Web
             }
 
             return "<span class=\"badge-sena badge-sena-norequerida\">No requerida</span>";
+        }
+
+        protected string RenderBadgePagos(object estadoObj, object estadoSenaObj, object montoSenaObj, object consultaCobradaObj)
+        {
+            string estado = Convert.ToString(estadoObj);
+            string estadoSena = Convert.ToString(estadoSenaObj);
+            decimal montoSena = montoSenaObj != null && montoSenaObj != DBNull.Value ? Convert.ToDecimal(montoSenaObj) : 0m;
+            bool consultaCobrada = consultaCobradaObj != null && consultaCobradaObj != DBNull.Value && Convert.ToBoolean(consultaCobradaObj);
+            CultureInfo ar = CultureInfo.GetCultureInfo("es-AR");
+
+            StringBuilder sb = new StringBuilder();
+
+            if (estadoSena == "Pagada")
+            {
+                sb.Append("<span class=\"badge-cobro badge-cobro-pagado\">Seña: " + montoSena.ToString("C2", ar) + "</span>");
+            }
+            else if (estadoSena == "Pendiente" && montoSena > 0)
+            {
+                sb.Append("<span class=\"badge-cobro badge-cobro-pendiente\">Debe seña: " + montoSena.ToString("C2", ar) + "</span>");
+            }
+
+            if (consultaCobrada)
+            {
+                sb.Append("<span class=\"badge-cobro badge-cobro-pagado\">Consulta Pagada</span>");
+            }
+            else if (estado == "EnEspera" || estado == "Atendido")
+            {
+                sb.Append("<span class=\"badge-cobro badge-cobro-pendiente\">Copago pendiente</span>");
+            }
+
+            if (sb.Length == 0)
+            {
+                return "<span style=\"color: #94a3b8; font-size: 0.8rem;\">—</span>";
+            }
+
+            return sb.ToString();
+        }
+
+        private void AbrirModalCobro(int turnoId, string conceptoPreferido)
+        {
+            LimpiarMensaje(Mensaje);
+            LimpiarMensaje(MensajeModalCobro);
+
+            EstadoCajaDia estadoCaja = _cobrosNegocio.ObtenerEstadoCajaHoy();
+            if (estadoCaja == EstadoCajaDia.SinAbrir || estadoCaja == EstadoCajaDia.PendienteDiaAnterior)
+            {
+                MostrarError(Mensaje, "La caja del día no está abierta. Para registrar cobros en mostrador, abrí la caja desde Caja indicando el fondo inicial.");
+                return;
+            }
+            if (estadoCaja == EstadoCajaDia.Cerrada)
+            {
+                MostrarError(Mensaje, "La caja de hoy ya está cerrada: no se pueden registrar cobros hasta mañana.");
+                return;
+            }
+
+            DataTable cobrables = _cobrosNegocio.ObtenerTurnosCobrables(null, null);
+            DataRow seleccionado = null;
+            foreach (DataRow fila in cobrables.Rows)
+            {
+                if (Convert.ToInt32(fila["TurnoId"]) == turnoId)
+                {
+                    seleccionado = fila;
+                    break;
+                }
+            }
+
+            if (seleccionado == null)
+            {
+                MostrarError(Mensaje, "El turno ya no posee conceptos pendientes de cobro.");
+                return;
+            }
+
+            HdnCobroTurnoId.Value = turnoId.ToString();
+            DateTime fechaTurno = Convert.ToDateTime(seleccionado["FechaTurno"]);
+            LitCobroSubtitulo.Text = string.Format("Turno #{0} ({1:dd/MM HH:mm} hs) · Paciente: {2} · Dr/a. {3} ({4})",
+                turnoId, fechaTurno, seleccionado["Paciente"], seleccionado["Profesional"], seleccionado["Especialidad"]);
+
+            DdlCobroTipo.Items.Clear();
+
+            bool puedeCobrarSena = Convert.ToBoolean(seleccionado["PuedeCobrarSena"]);
+            if (puedeCobrarSena)
+            {
+                DdlCobroTipo.Items.Add(new ListItem("Seña de Reserva", "Sena"));
+            }
+
+            bool puedeCobrarConsulta = Convert.ToBoolean(seleccionado["PuedeCobrarConsulta"]);
+            if (puedeCobrarConsulta)
+            {
+                DdlCobroTipo.Items.Add(new ListItem("Consulta Médica (Copago)", "Consulta"));
+            }
+
+            if (DdlCobroTipo.Items.Count == 0)
+            {
+                MostrarError(Mensaje, "El turno no tiene conceptos pendientes de cobro.");
+                return;
+            }
+
+            ListItem itemPreferido = DdlCobroTipo.Items.FindByValue(conceptoPreferido);
+            if (itemPreferido != null)
+            {
+                DdlCobroTipo.SelectedValue = conceptoPreferido;
+            }
+            else
+            {
+                DdlCobroTipo.SelectedIndex = 0;
+            }
+
+            DdlCobroTipo.Enabled = true;
+            DdlCobroMedioPago.Enabled = true;
+            DdlCobroMedioPago.SelectedValue = "Efectivo";
+            TxtCobroMontoRecibido.Enabled = true;
+            TxtCuentaDevolucion.Enabled = true;
+            TxtCuentaDevolucion.Text = string.Empty;
+            BtnConfirmarCobro.Visible = true;
+            PnlCobroExito.Visible = false;
+
+            CargarDatosCobroModal(turnoId, DdlCobroTipo.SelectedValue);
+            ModalCobro.Visible = true;
+        }
+
+        private void CargarDatosCobroModal(int turnoId, string tipoCobro)
+        {
+            DataTable importes = _cobrosNegocio.ObtenerImportesCobro(turnoId);
+            if (importes == null || importes.Rows.Count == 0)
+            {
+                MostrarError(MensajeModalCobro, "No se pudieron obtener los importes de liquidación para este turno.");
+                return;
+            }
+
+            DataRow fila = importes.Rows[0];
+            CultureInfo ar = CultureInfo.GetCultureInfo("es-AR");
+
+            if (tipoCobro == "Consulta")
+            {
+                PnlDesgloseConsulta.Visible = true;
+                decimal montoBase = Convert.ToDecimal(fila["MontoBase"]);
+                decimal montoOS = Convert.ToDecimal(fila["MontoObraSocial"]);
+                decimal copago = Convert.ToDecimal(fila["Copago"]);
+                decimal senaDescontada = Convert.ToDecimal(fila["SenaDescontada"]);
+                decimal saldoConsulta = Convert.ToDecimal(fila["SaldoConsulta"]);
+
+                LitCobroValorBase.Text = montoBase.ToString("C2", ar);
+                LitCobroMontoOS.Text = montoOS.ToString("C2", ar);
+                LitCobroCopago.Text = copago.ToString("C2", ar);
+
+                if (senaDescontada > 0)
+                {
+                    PnlCobroSenaDescontada.Visible = true;
+                    LitCobroSenaDescontada.Text = senaDescontada.ToString("C2", ar);
+                }
+                else
+                {
+                    PnlCobroSenaDescontada.Visible = false;
+                }
+
+                LitCobroTotalCobrar.Text = saldoConsulta.ToString("C2", ar);
+                HdnMontoCobrado.Value = saldoConsulta.ToString(CultureInfo.InvariantCulture);
+                TxtCobroMontoRecibido.Text = saldoConsulta.ToString("F2", CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                PnlDesgloseConsulta.Visible = false;
+                decimal montoSena = Convert.ToDecimal(fila["MontoSena"]);
+                LitCobroTotalCobrar.Text = montoSena.ToString("C2", ar);
+                HdnMontoCobrado.Value = montoSena.ToString(CultureInfo.InvariantCulture);
+                TxtCobroMontoRecibido.Text = montoSena.ToString("F2", CultureInfo.InvariantCulture);
+            }
+        }
+
+        protected void DdlCobroTipo_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int turnoId;
+            if (int.TryParse(HdnCobroTurnoId.Value, out turnoId))
+            {
+                CargarDatosCobroModal(turnoId, DdlCobroTipo.SelectedValue);
+            }
+        }
+
+        protected void BtnCerrarModalCobro_Click(object sender, EventArgs e)
+        {
+            ModalCobro.Visible = false;
+            LimpiarMensaje(MensajeModalCobro);
+            CargarTableroRecepcion();
+        }
+
+        protected void BtnConfirmarCobro_Click(object sender, EventArgs e)
+        {
+            int turnoId;
+            if (!int.TryParse(HdnCobroTurnoId.Value, out turnoId))
+            {
+                MostrarError(MensajeModalCobro, "Turno inválido.");
+                return;
+            }
+
+            decimal montoRecibido;
+            if (!decimal.TryParse(TxtCobroMontoRecibido.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out montoRecibido))
+            {
+                MostrarError(MensajeModalCobro, "Ingresa un importe recibido válido.");
+                return;
+            }
+
+            string tipoCobro = DdlCobroTipo.SelectedValue;
+            string medioPago = DdlCobroMedioPago.SelectedValue;
+            string cuentaDevolucion = TxtCuentaDevolucion.Text;
+
+            try
+            {
+                Guid cajeroId = ObtenerUsuarioActual();
+                int nuevoCobroId = _cobrosNegocio.RegistrarCobro(
+                    turnoId, tipoCobro, medioPago, montoRecibido, cajeroId, cuentaDevolucion);
+
+                Session["UltimoCobroIdEmitido"] = nuevoCobroId;
+                PnlCobroExito.Visible = true;
+                BtnConfirmarCobro.Visible = false;
+                DdlCobroTipo.Enabled = false;
+                DdlCobroMedioPago.Enabled = false;
+                TxtCobroMontoRecibido.Enabled = false;
+                TxtCuentaDevolucion.Enabled = false;
+
+                MostrarExito(Mensaje, "Cobro registrado correctamente. Se habilitó la emisión del comprobante.");
+                CargarTableroRecepcion();
+            }
+            catch (InvalidOperationException ex)
+            {
+                MostrarError(MensajeModalCobro, ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                MostrarError(MensajeModalCobro, "No se pudo registrar el cobro en la base de datos (error SQL " + ex.Number + ").");
+            }
+        }
+
+        protected void BtnDescargarPdfModal_Click(object sender, EventArgs e)
+        {
+            if (Session["UltimoCobroIdEmitido"] != null)
+            {
+                int cobroId = Convert.ToInt32(Session["UltimoCobroIdEmitido"]);
+                DescargarComprobanteDirecto(cobroId);
+            }
+        }
+
+        private void DescargarComprobanteDirecto(int cobroId)
+        {
+            try
+            {
+                var comprobante = _cobrosNegocio.ObtenerComprobanteCobro(cobroId, ObtenerUsuarioActual(), true);
+                ExportadorUtil.DescargarComprobantePDF(comprobante);
+            }
+            catch (Exception ex)
+            {
+                MostrarError(Mensaje, "No se pudo generar el comprobante: " + ex.Message);
+            }
+        }
+
+        private Guid ObtenerUsuarioActual()
+        {
+            Guid usuarioId;
+            if (!Guid.TryParse(Convert.ToString(Session["UsuarioId"]), out usuarioId))
+            {
+                throw new InvalidOperationException("No se pudo validar el usuario de la sesión.");
+            }
+
+            return usuarioId;
         }
     }
 }
