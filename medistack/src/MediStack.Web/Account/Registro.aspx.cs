@@ -111,6 +111,8 @@ namespace MediStack.Web.Account
         {
             ErrorMessage.Text = mensaje;
             ErrorMessage.Visible = true;
+            Password.Attributes["value"] = Password.Text;
+            ConfirmarPassword.Attributes["value"] = ConfirmarPassword.Text;
         }
     }
 }
