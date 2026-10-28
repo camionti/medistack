@@ -126,6 +126,61 @@
                 });
             });
 
+            function mostrarErrorCliente(mensaje) {
+                var alertBox = document.getElementById('<%= ErrorMessage.ClientID %>') || document.getElementById('ClientAlert');
+                if (!alertBox) {
+                    alertBox = document.createElement('div');
+                    alertBox.id = 'ClientAlert';
+                    alertBox.className = 'alert alert-error';
+                    alertBox.setAttribute('role', 'alert');
+                    var heading = document.querySelector('.login-heading');
+                    if (heading && heading.parentNode) {
+                        heading.parentNode.insertBefore(alertBox, heading.nextSibling);
+                    }
+                }
+                alertBox.textContent = mensaje;
+                alertBox.style.display = 'block';
+                alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            var form = document.forms[0];
+            var btnRegistrar = document.getElementById('<%= Registrarme.ClientID %>');
+            var txtPassword = document.getElementById('<%= Password.ClientID %>');
+            var txtConfirmar = document.getElementById('<%= ConfirmarPassword.ClientID %>');
+            var txtUsuario = document.getElementById('<%= Usuario.ClientID %>');
+            var chkTerminos = document.getElementById('<%= Terminos.ClientID %>');
+
+            if (form && btnRegistrar) {
+                form.addEventListener('submit', function (e) {
+                    if (txtPassword && txtConfirmar) {
+                        if (txtPassword.value.length < 10) {
+                            e.preventDefault();
+                            mostrarErrorCliente('La contraseña debe tener al menos 10 caracteres.');
+                            txtPassword.focus();
+                            return;
+                        }
+                        if (txtPassword.value !== txtConfirmar.value) {
+                            e.preventDefault();
+                            mostrarErrorCliente('Las contraseñas no coinciden.');
+                            txtConfirmar.focus();
+                            return;
+                        }
+                        if (txtUsuario && txtPassword.value.trim().toLowerCase() === txtUsuario.value.trim().toLowerCase()) {
+                            e.preventDefault();
+                            mostrarErrorCliente('La contraseña no puede ser igual a tu nombre de usuario.');
+                            txtPassword.focus();
+                            return;
+                        }
+                    }
+                    if (chkTerminos && !chkTerminos.checked) {
+                        e.preventDefault();
+                        mostrarErrorCliente('Debes aceptar los términos para continuar.');
+                        chkTerminos.focus();
+                        return;
+                    }
+                });
+            }
+
             var errorAlert = document.getElementById('<%= ErrorMessage.ClientID %>');
             if (errorAlert && errorAlert.offsetParent !== null) {
                 errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
