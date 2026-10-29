@@ -14,47 +14,24 @@ namespace MediStack.Negocio
     {
         public bool EnviarBienvenida(Paciente paciente)
         {
-            try
-            {
-                string servidor = ConfigurationManager.AppSettings["Email.Servidor"];
-                int puerto = int.Parse(ConfigurationManager.AppSettings["Email.Puerto"]);
-                string usuario = ConfigurationManager.AppSettings["Email.Usuario"];
-                string clave = ConfigurationManager.AppSettings["Email.Clave"];
-                string remitente = ConfigurationManager.AppSettings["Email.NombreRemitente"];
+            string nombre = WebUtility.HtmlEncode(paciente.Nombre + " " + paciente.Apellido); // HtmlEncode: un nombre con < > no rompe el HTML
 
-                if (string.IsNullOrEmpty(clave))
-                {
-                    Trace.TraceError("Falta Email.Clave: revisá que secrets.config esté en la carpeta de MediStack.Web"); // ahora deja rastro
-                    return false;
-                }
+            string contenido =
+                  "<h2 style=\"margin:0 0 6px;font-size:20px;color:#0f172a\">¡Tu registro fue exitoso!</h2>" // título, igual que en los mails de turno
+                + "<p style=\"margin:0 0 16px;color:#64748b;font-size:13px\">Te damos la bienvenida a MediStack</p>" // subtítulo gris
+                + "<p style=\"margin:0 0 16px;color:#334155;font-size:15px;line-height:1.55\">Hola <b>" + nombre + "</b>,<br/>"
+                + "tu registro se completó con éxito. Ya podés iniciar sesión con este usuario:</p>"
+                + "<p style=\"margin:0 0 20px;padding:14px 18px;background:#f1f5ff;border:1px solid #d6e0ff;" // caja azul con el usuario (la misma de EnviarNombreUsuario)
+                + "border-radius:10px;font-size:20px;font-weight:700;color:#2152ff;text-align:center\">"
+                + WebUtility.HtmlEncode(paciente.NombreUsuario) + "</p>"
+                + "<p style=\"margin:0 0 20px;color:#334155;font-size:15px;line-height:1.55\">"
+                + "Desde tu cuenta vas a poder sacar y gestionar tus turnos médicos.</p>"
+                + "<div style=\"margin:0 0 20px;padding:14px 18px;background:#fff8e6;border:1px solid #ffe2a3;border-radius:10px\">" // caja amarilla (la misma de EnviarPasswordCambiada)
+                + "<p style=\"margin:0\"><b>¿No fuiste vos?</b> Si no creaste esta cuenta, avisá a la administración de la clínica.</p></div>"
+                + "<p style=\"margin:0;color:#64748b;font-size:13px\">Si fuiste vos, no tenés que hacer nada más.</p>";
 
-                string nombre = WebUtility.HtmlEncode(paciente.Nombre + " " + paciente.Apellido);
-
-                using (MailMessage mensaje = new MailMessage())  
-                {
-                    mensaje.From = new MailAddress(usuario, remitente); 
-                    mensaje.To.Add(paciente.Email);                      
-                    mensaje.Subject = "¡Registro exitoso en Medistack!"; 
-                    mensaje.IsBodyHtml = true;                           
-                    mensaje.Body = "<h2>¡Hola " + nombre + "!</h2>"
-                                 + "<p>Tu registro en <b>Medistack</b> se completó con éxito.</p>"
-                                 + "<p>Ya podés iniciar sesión con tu usuario <b>"
-                                 + WebUtility.HtmlEncode(paciente.NombreUsuario) + "</b>.</p>";
-
-                    using (SmtpClient smtp = new SmtpClient(servidor, puerto)) 
-                    {
-                        smtp.EnableSsl = true;                                  
-                        smtp.Credentials = new NetworkCredential(usuario, clave); 
-                        smtp.Send(mensaje);                                     
-                    }
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError("No se pudo enviar el mail de bienvenida: " + ex);
-                return false;
-            }
+            return EnviarCorreo(paciente.Email, "¡Registro exitoso en MediStack!", // asunto con el mismo nombre que los demás mails
+                ArmarPlantilla("Registro exitoso", contenido)); // ArmarPlantilla = banner azul + tarjeta + pie
         }
 
         public bool EnviarNombreUsuario(string destino, string nombreCompleto, string nombreUsuario)
@@ -252,7 +229,8 @@ namespace MediStack.Negocio
 
         private bool EnviarCorreo(string destino, string asunto, string cuerpoHtml)
         {
-            return EnviarCorreoAsync(destino, asunto, cuerpoHtml).GetAwaiter().GetResult();
+          
+            return Task.Run(() => EnviarCorreoAsync(destino, asunto, cuerpoHtml)).GetAwaiter().GetResult();
         }
 
         private async Task<bool> EnviarCorreoAsync(string destino, string asunto, string cuerpoHtml)

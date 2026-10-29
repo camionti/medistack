@@ -67,7 +67,7 @@ namespace MediStack.Negocio
             }
         }
 
-        public void CambiarPassword(Guid usuarioId, string actual, string nueva, string repetir)
+        public bool CambiarPassword(Guid usuarioId, string actual, string nueva, string repetir) 
         {
             if (usuarioId == Guid.Empty)
                 throw new InvalidOperationException("No se pudo identificar tu cuenta. Volvé a iniciar sesión.");
@@ -100,7 +100,7 @@ namespace MediStack.Negocio
             if (!_gestionDatos.ActualizarPassword(usuarioId, usuario.PasswordHash, hashNuevo))
                 throw new InvalidOperationException("Tu cuenta cambió mientras guardabas. Volvé a intentarlo.");
 
-            _email.EnviarPasswordCambiada(usuario.Email, usuario.Nombre + " " + usuario.Apellido);
+            return _email.EnviarPasswordCambiada(usuario.Email, usuario.Nombre + " " + usuario.Apellido);
         }
     }
 }

@@ -14,8 +14,10 @@ namespace MediStack.Web
             try
             {
                 Guid usuarioId = (Guid)Session["UsuarioId"];
-                _negocio.CambiarPassword(usuarioId, ClaveActual.Text, ClaveNueva.Text, ClaveRepetir.Text);
-                MostrarMensaje(true, "Tu contraseña se actualizó correctamente.");
+                bool avisoEnviado = _negocio.CambiarPassword(usuarioId, ClaveActual.Text, ClaveNueva.Text, ClaveRepetir.Text); 
+                MostrarMensaje(true, avisoEnviado
+                    ? "Tu contraseña se actualizó correctamente." // 
+                    : "Tu contraseña se actualizó, pero no pudimos enviarte el aviso por correo."); 
             }
             catch (InvalidOperationException ex)
             {
