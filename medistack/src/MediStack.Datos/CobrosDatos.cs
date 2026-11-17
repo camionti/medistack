@@ -756,7 +756,7 @@ namespace MediStack.Datos
                        c.MontoCobrado, c.MontoRecibido, c.Vuelto,
                        t.PacienteId,
                        paciente.Nombre + N' ' + paciente.Apellido AS PacienteNombreCompleto,
-                       paciente.DNI AS PacienteDni,
+                       paciente.NumeroDocumento AS PacienteDni,
                        COALESCE(os.Nombre, N'Particular') AS ObraSocialNombre,
                        COALESCE(p.NumeroAfiliado, N'-') AS NumeroAfiliado,
                        t.FechaHora AS FechaHoraTurno,
